@@ -322,24 +322,24 @@ h1 {
 }
 
 .issue-preview h3 {
-  margin-top: 44px;
-  font-size: clamp(3.6rem, 6.8vw, 5.8rem);
+  margin-top: 36px;
+  font-size: clamp(2.8rem, 5vw, 4.4rem);
   font-weight: 500;
-  line-height: 0.95;
+  line-height: 1;
 }
 
 .issue-subtitle {
-  max-width: 740px;
-  margin: 28px 0 0;
+  max-width: 680px;
+  margin: 22px 0 0;
   color: rgb(17 24 39 / 62%);
-  font-size: clamp(1.45rem, 2.6vw, 2.35rem);
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
   font-weight: 650;
-  line-height: 1.35;
+  line-height: 1.38;
 }
 
 .issue-meta {
-  margin-top: 38px;
-  padding: 24px 0;
+  margin-top: 32px;
+  padding: 20px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -353,7 +353,7 @@ h1 {
 }
 
 .issue-preview h4 {
-  font-size: clamp(2.7rem, 5vw, 4.5rem);
+  font-size: clamp(2.15rem, 4vw, 3.45rem);
   font-weight: 800;
   line-height: 1;
 }
@@ -371,7 +371,7 @@ h1 {
 .issue-entry h5 {
   max-width: 760px;
   margin-top: 24px;
-  font-size: clamp(1.75rem, 2.9vw, 2.4rem);
+  font-size: clamp(1.45rem, 2.35vw, 2rem);
   font-weight: 800;
   line-height: 1.16;
 }
@@ -424,6 +424,24 @@ h1 {
   color: var(--muted);
   font-size: 18px;
   line-height: 1.6;
+}
+
+.community-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 34rem);
+  margin-top: 30px;
+  margin-inline: auto;
+}
+
+.community-actions .secondary-button {
+  width: 100%;
+  margin-top: 0;
+}
+
+.community-actions .secondary-button:first-child {
+  grid-column: 1 / -1;
 }
 
 .hero-form {
@@ -495,6 +513,7 @@ button:hover svg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   margin-top: 30px;
   padding: 0 24px;
   border: 1px solid var(--line);
@@ -506,24 +525,112 @@ button:hover svg {
   transition: background 180ms ease, transform 180ms ease;
 }
 
+.secondary-button svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.secondary-button svg circle {
+  fill: none;
+}
+
+.secondary-button svg circle[cx="4"] {
+  fill: currentColor;
+  stroke: none;
+}
+
 .secondary-button:hover {
   background: rgb(0 0 0 / 88%);
   transform: translateY(-1px);
 }
 
-.site-footer {
-  background: var(--black);
-  padding: 64px 16px;
+.secondary-button-light {
+  background: var(--white);
+  color: var(--ink);
 }
 
-.site-footer p {
-  max-width: 760px;
+.secondary-button-light:hover {
+  background: rgb(0 0 0 / 4%);
+}
+
+.site-footer {
+  background: var(--black);
+  padding: 56px 16px;
+}
+
+.footer-inner {
+  width: min(100%, 72rem);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 40px;
+  margin: 0 auto;
+}
+
+.footer-brand {
   margin: 0;
-  margin-inline: auto;
+  color: var(--white);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.footer-copy {
+  max-width: 560px;
+  margin: 18px 0 0;
   color: rgb(255 255 255 / 48%);
-  text-align: center;
   font-size: 15px;
   line-height: 1.8;
+}
+
+.footer-links {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.footer-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: rgb(255 255 255 / 62%);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.3;
+  transition: color 180ms ease;
+}
+
+.footer-links svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.footer-links svg circle {
+  fill: none;
+}
+
+.footer-links svg circle[cx="4"] {
+  fill: currentColor;
+  stroke: none;
+}
+
+.footer-links a:hover {
+  color: var(--white);
 }
 
 .sr-only {
@@ -590,6 +697,15 @@ button:hover svg {
 
   .local-section {
     padding: 76px 16px 92px;
+  }
+
+  .footer-inner {
+    display: grid;
+    gap: 28px;
+  }
+
+  .footer-links {
+    justify-items: start;
   }
 }
 
@@ -695,12 +811,13 @@ button:hover svg {
   }
 
   .issue-preview h3 {
-    margin-top: 36px;
-    font-size: clamp(3.25rem, 17vw, 4.35rem);
+    margin-top: 32px;
+    font-size: clamp(2.55rem, 12vw, 3.25rem);
   }
 
   .issue-subtitle {
-    margin-top: 24px;
+    margin-top: 20px;
+    font-size: clamp(1.05rem, 5vw, 1.25rem);
   }
 
   .issue-meta {
@@ -721,7 +838,21 @@ button:hover svg {
     padding: 34px 24px;
   }
 
-  .site-footer p {
+  .community-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .secondary-button {
+    width: 100%;
+  }
+
+  .site-footer {
+    padding: 48px 16px;
+  }
+
+  .footer-copy {
     font-size: 14px;
   }
 }
