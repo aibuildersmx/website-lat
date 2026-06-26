@@ -136,7 +136,7 @@ h1 {
 
 .proof-section {
   border-top: 1px solid var(--faint);
-  padding: 28px 16px;
+  padding: 30px 16px;
 }
 
 .section-wrap {
@@ -144,45 +144,50 @@ h1 {
   margin: 0 auto;
 }
 
-.proof-grid {
-  display: grid;
-  grid-template-columns: 1.25fr repeat(3, 1fr);
-  gap: 14px;
-}
-
-.proof-item {
-  min-height: 118px;
+.proof-band {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: space-between;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--white);
+  gap: 28px;
 }
 
-.proof-featured {
-  background: var(--ink);
-  color: var(--white);
-}
-
-.proof-item strong {
-  font-family: var(--serif);
-  font-size: clamp(2rem, 3.2vw, 3rem);
-  font-weight: 400;
-  line-height: 0.95;
-}
-
-.proof-item span {
-  max-width: 220px;
+.proof-lead {
+  max-width: 520px;
+  margin: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: clamp(1.05rem, 1.45vw, 1.25rem);
   font-weight: 600;
   line-height: 1.45;
 }
 
-.proof-featured span {
-  color: rgb(255 255 255 / 68%);
+.proof-lead strong {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.proof-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proof-list li {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.proof-list li + li {
+  border-left: 1px solid var(--line);
 }
 
 .value-grid {
@@ -397,8 +402,14 @@ button:hover svg {
     padding-bottom: 68px;
   }
 
-  .proof-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .proof-band {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .proof-list {
+    justify-content: flex-start;
   }
 
   .value-section {
@@ -456,12 +467,24 @@ button:hover svg {
     width: 100%;
   }
 
-  .proof-grid {
-    grid-template-columns: 1fr;
+  .proof-section {
+    padding: 24px 16px;
   }
 
-  .proof-item {
-    min-height: 102px;
+  .proof-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .proof-list li {
+    width: 100%;
+    min-height: 0;
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  .proof-list li + li {
+    border-left: 0;
   }
 
   .local-card {
