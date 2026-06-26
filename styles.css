@@ -1,0 +1,475 @@
+:root {
+  --black: #212121;
+  --ink: #000;
+  --muted: rgb(0 0 0 / 60%);
+  --faint: rgb(0 0 0 / 5%);
+  --line: rgb(0 0 0 / 10%);
+  --white: #fff;
+  --serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+  background: var(--black);
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+svg {
+  display: block;
+}
+
+button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.hero {
+  position: relative;
+  padding: 104px 16px 96px;
+}
+
+.hero-inner {
+  width: min(100%, 48rem);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 30px;
+  padding: 8px 14px 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 2%);
+  color: var(--ink);
+}
+
+.brand-name {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.brand-context {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.section-label {
+  margin: 0 0 22px;
+  color: rgb(0 0 0 / 40%);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+h1 {
+  max-width: 760px;
+  margin-inline: auto;
+  font-size: clamp(3rem, 7vw, 5.875rem);
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.hero-copy {
+  max-width: 680px;
+  margin: 24px auto 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.45vw, 1.25rem);
+  line-height: 1.7;
+}
+
+.value-section {
+  border-top: 1px solid var(--faint);
+  padding: 88px 16px;
+}
+
+.proof-section {
+  border-top: 1px solid var(--faint);
+  padding: 28px 16px;
+}
+
+.section-wrap {
+  width: min(100%, 72rem);
+  margin: 0 auto;
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: 1.25fr repeat(3, 1fr);
+  gap: 14px;
+}
+
+.proof-item {
+  min-height: 118px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--white);
+}
+
+.proof-featured {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.proof-item strong {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-weight: 400;
+  line-height: 0.95;
+}
+
+.proof-item span {
+  max-width: 220px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.proof-featured span {
+  color: rgb(255 255 255 / 68%);
+}
+
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.value-card {
+  min-height: 254px;
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--white);
+  transition: border-color 300ms ease, box-shadow 300ms ease, transform 300ms ease;
+}
+
+.value-card:hover {
+  border-color: rgb(0 0 0 / 20%);
+  box-shadow: 0 22px 60px rgb(0 0 0 / 7%);
+  transform: translateY(-2px);
+}
+
+.value-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 3%);
+  color: rgb(0 0 0 / 60%);
+  transition: background 300ms ease, color 300ms ease;
+}
+
+.value-card:hover .value-icon {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.value-icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.value-card h2 {
+  margin-top: 22px;
+  font-size: clamp(1.7rem, 2.4vw, 2rem);
+  line-height: 1.1;
+}
+
+.value-card p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.local-section {
+  border-top: 1px solid var(--faint);
+  padding: 112px 16px;
+}
+
+.local-card {
+  width: min(100%, 42rem);
+  margin: 0 auto;
+  padding: 48px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 20% 0%, rgb(0 0 0 / 4%), transparent 32%),
+    var(--white);
+  text-align: center;
+}
+
+.local-card .section-label {
+  margin-bottom: 18px;
+}
+
+.local-card h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.local-card p {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.hero-form {
+  width: min(100%, 560px);
+  display: flex;
+  gap: 14px;
+  margin: 34px auto 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: 0 22px 70px rgb(0 0 0 / 7%);
+}
+
+input {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  font: 500 16px/1.2 var(--sans);
+  padding: 0 20px;
+  outline: none;
+}
+
+input::placeholder {
+  color: rgb(0 0 0 / 35%);
+}
+
+input:focus {
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%);
+}
+
+button {
+  flex: 0 0 auto;
+  min-height: 60px;
+  gap: 10px;
+  padding: 0 24px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 16px;
+  font-weight: 800;
+  transition: background 180ms ease;
+}
+
+button:hover {
+  background: rgb(0 0 0 / 88%);
+}
+
+button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 180ms ease;
+}
+
+button:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.secondary-button {
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+  padding: 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 700;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.secondary-button:hover {
+  background: rgb(0 0 0 / 88%);
+  transform: translateY(-1px);
+}
+
+.site-footer {
+  background: var(--black);
+  padding: 64px 16px;
+}
+
+.site-footer p {
+  max-width: 760px;
+  margin: 0;
+  margin-inline: auto;
+  color: rgb(255 255 255 / 48%);
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 820px) {
+  .hero {
+    padding-top: 72px;
+    padding-bottom: 68px;
+  }
+
+  .proof-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .value-section {
+    padding: 64px 16px;
+  }
+
+  .value-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .value-card {
+    min-height: 0;
+    padding: 28px;
+  }
+
+  .local-section {
+    padding: 76px 16px 92px;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero {
+    padding-inline: 18px;
+  }
+
+  .brand-lockup {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .brand-context {
+    min-height: 0;
+    padding-left: 0;
+    padding-top: 8px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  h1 {
+    font-size: clamp(3.1rem, 15vw, 4rem);
+  }
+
+  .hero-copy {
+    line-height: 1.62;
+  }
+
+  .hero-form {
+    display: grid;
+    padding: 8px;
+  }
+
+  .hero-form button {
+    width: 100%;
+  }
+
+  .proof-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .proof-item {
+    min-height: 102px;
+  }
+
+  .local-card {
+    border-radius: 20px;
+    padding: 34px 24px;
+  }
+
+  .site-footer p {
+    font-size: 14px;
+  }
+}
