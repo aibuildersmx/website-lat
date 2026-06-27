@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-black: #212121;
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased;
+  }
+}
