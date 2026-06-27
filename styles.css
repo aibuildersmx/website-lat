@@ -720,7 +720,8 @@ button:hover svg {
     flex-direction: column;
     gap: 7px;
     margin-bottom: 34px;
-    padding: 10px 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
   }
 
   .brand-context {
@@ -772,29 +773,42 @@ button:hover svg {
   }
 
   .proof-section {
-    padding: 26px 16px 30px;
+    padding: 28px 16px 34px;
   }
 
   .proof-band {
-    gap: 16px;
+    align-items: center;
+    gap: 18px;
+    padding: 22px 18px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgb(0 0 0 / 2%);
+    text-align: center;
   }
 
   .proof-lead {
+    max-width: 320px;
     font-size: 16px;
-    line-height: 1.45;
+    line-height: 1.35;
   }
 
   .proof-list {
-    display: grid;
-    gap: 9px;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
   }
 
   .proof-list li {
-    width: 100%;
     min-height: 0;
-    justify-content: flex-start;
-    padding: 0;
-    font-size: 13px;
+    justify-content: center;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--white);
+    font-size: 12px;
+    line-height: 1;
   }
 
   .proof-list li + li {
