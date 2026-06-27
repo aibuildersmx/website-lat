@@ -20,7 +20,7 @@
 html {
   min-height: 100%;
   scroll-behavior: smooth;
-  background: var(--black);
+  background: var(--white);
 }
 
 body {
@@ -970,7 +970,7 @@ button:hover svg {
   .reader-logos {
     gap: 32px;
     padding: 0 16px;
-    animation-duration: 46s;
+    animation-duration: 26s;
   }
 
   .reader-logos img {
