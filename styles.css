@@ -703,6 +703,44 @@ h1 {
   border-color: rgb(0 0 0 / 22%);
 }
 
+/* Honeypot field — off-screen, never shown to humans. */
+.hero-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  opacity: 0;
+}
+
+/* Inline signup feedback (success / error), replacing or following the pill. */
+.hero-form-status {
+  width: min(100%, 560px);
+  margin: 34px auto 0;
+  font: 600 13px/1.5 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hero-form-status.is-success {
+  color: #16a34a;
+}
+
+.hero-form .hero-form-status {
+  flex-basis: 100%;
+  margin: 6px 4px 0;
+}
+
+.hero-form-status.is-error {
+  color: #dc2626;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 input {
   width: 100%;
   min-height: 58px;
