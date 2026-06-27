@@ -827,6 +827,40 @@ git commit -m "docs: build-log migration complete"
 
 ---
 
+## Phase 5 outcome (actual)
+
+Phase 5 turned out simpler than planned: the `aibm` Railway project (workspace
+`yaya`) already had the infra. No dump/restore migration was needed.
+
+- **Services** (env `production`): `website` (old, `aibuildersmx/website-v2`),
+  `newsletter-worker` (old repo), `website-lat` (this repo,
+  `aibuildersmx/website-lat`), `database` (shared Postgres), `aiby-bridge`.
+- **Shared `database`** already holds the data: 2,246 contacts (2,211 subscribed),
+  3 issues (all `status=sent`), 2 admin users. So the existing admin login works,
+  and the public archive renders the 3 real issues. **No seeding, no migration.**
+- **Do NOT run `pnpm db:migrate`** against the shared DB — the tables already exist
+  (managed by the old app's migrations). The regenerated `drizzle/0000_*` here is
+  only for a from-scratch DB.
+- **`website-lat` variables** set as Railway references (no secret copying):
+  `DATABASE_URL=${{database.DATABASE_URL}}`,
+  `RESEND_API_KEY=${{website.RESEND_API_KEY}}`,
+  `NEWSLETTER_FROM=${{website.NEWSLETTER_FROM}}`,
+  `NEWSLETTER_REPLY_TO=${{website.NEWSLETTER_REPLY_TO}}`,
+  `NEXT_PUBLIC_SITE_URL=https://aibuilders.lat`.
+- **Deploy:** pushed `main` → `website-lat` rebuilt → deployment `SUCCESS`.
+  Live verification: `/` (pill signup) 200, `/newsletters` renders the 3 DB issues,
+  `/login` 200, `/admin` → 307 to `/login`, `/unsubscribe` 200, icons route 200.
+- **Worker note:** `newsletter-worker` still runs the OLD repo's code against the
+  shared DB + pg-boss queue, so sends enqueued from the new admin are processed.
+  Optional follow-up: repoint `newsletter-worker` to `aibuildersmx/website-lat`.
+
+### ✅ Migration complete (deployed & verified)
+
+Remaining manual smoke test (needs admin login — Ricardo):
+1. Log in at https://aibuilders.lat/login with the existing admin creds.
+2. Open an issue in `/admin/newsletter/[id]` → "enviar prueba" to your own email.
+3. Open + click the email; confirm rows land in `newsletter_events`.
+
 ## Self-review notes
 
 - **Spec coverage:** every spec section maps to a task — conversion/design (T1–2), DB trim (T3), newsletter libs/queue/worker (T4–5), auth (T6), subscribe+tracking+admin actions (T7), public signup (T8), DB-backed archive (T9, new work flagged in spec), admin newsletter-only (T10–11), scripts (T12), Railway deploy (T13), data migration contacts+issues with optional history (T14), smoke test (T15).
