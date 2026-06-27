@@ -1,1 +1,23 @@
+/* Bespoke design system for the public site (untouched). */
 @import "../styles.css";
+
+/* Tailwind v4 — theme + utilities only. We deliberately skip `preflight` so
+   Tailwind's reset doesn't clobber the bespoke styles.css design; we just want
+   the utility classes available for ported components (e.g. NewsletterSignup). */
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Map Tailwind font tokens onto the same families styles.css uses, so shared
+   utilities (font-sans/-mono/-serif) and the component's `font-instrument`
+   render in the same typefaces. */
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-instrument-serif: "Instrument Serif", ui-serif, Georgia, serif;
+}
+
+.font-instrument {
+  font-family: "Instrument Serif", ui-serif, Georgia, serif;
+}

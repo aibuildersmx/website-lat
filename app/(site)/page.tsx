@@ -2,6 +2,7 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GlassAura } from "@/components/glass-aura";
+import { NewsletterSignup } from "@/components/newsletter-signup";
 
 const READER_LOGOS = [
   {
@@ -52,31 +53,8 @@ export default function Home() {
               Mantente al día con los cambios que importan en IA y tecnología. Tendencias,
               lanzamientos y oportunidades, curadas en una sola lectura semanal.
             </p>
-            {/* TODO(T8): replace with <NewsletterSignup /> (self-hosted subscribe action). */}
-            <form
-              className="hero-form"
-              action="https://aibuildersmx.beehiiv.com/"
-              method="GET"
-              target="_blank"
-            >
-              <label className="sr-only" htmlFor="hero-email">
-                Correo electrónico
-              </label>
-              <input
-                id="hero-email"
-                name="email"
-                type="email"
-                placeholder="tu@email.com"
-                required
-              />
-              <button type="submit">
-                <span>Suscribirme</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m22 2-7 20-4-9-9-4Z" />
-                  <path d="M22 2 11 13" />
-                </svg>
-              </button>
-            </form>
+            {/* Self-hosted signup → `subscribe` server action (writes to contacts). */}
+            <NewsletterSignup className="hero-signup" />
             <div className="hero-readers" aria-label="Prueba social">
               <div className="avatar-stack" aria-hidden="true">
                 <img className="avatar" src="/assets/avatars/reader-3.webp" alt="" />
