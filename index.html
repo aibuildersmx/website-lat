@@ -46,19 +46,118 @@
               </svg>
             </button>
           </form>
+          <div class="hero-readers" aria-label="Prueba social">
+            <div class="avatar-stack" aria-hidden="true">
+              <img class="avatar" src="./assets/avatars/reader-3.webp" alt="" />
+              <img class="avatar" src="./assets/avatars/reader-1.webp" alt="" />
+              <img class="avatar" src="./assets/avatars/reader-4.webp" alt="" />
+              <img class="avatar" src="./assets/avatars/reader-2.webp" alt="" />
+              <span class="avatar-more">+</span>
+            </div>
+            <p>Únete a más de <strong>3,000 lectores</strong></p>
+          </div>
         </div>
       </section>
 
-      <section class="proof-section" aria-label="Prueba social y beneficios">
-        <div class="section-wrap proof-band">
-          <p class="proof-lead">
-            Seguido por <strong>+3,000 lectores</strong> que siguen de cerca la IA en Latinoamérica.
-          </p>
-          <ul class="proof-list" aria-label="Beneficios del boletín">
-            <li>Lectura de 5 minutos</li>
-            <li>Una vez por semana</li>
-            <li>Señales útiles, sin ruido</li>
-          </ul>
+      <section class="readers-section" aria-labelledby="readers-title">
+        <div class="section-wrap readers-wrap">
+          <p id="readers-title">Lectores de equipos en</p>
+          <div class="reader-marquee">
+            <ul class="reader-logos" aria-label="Empresas donde trabajan lectores">
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Mercado_Libre_wordmark_%28Spanish_version%29.svg"
+                  alt="Mercado Libre"
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Nubank_logo_2021.svg"
+                  alt="Nubank"
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Rappi_logo.svg"
+                  alt="Rappi"
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Globant_Logo.svg"
+                  alt="Globant"
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Logo_de_Kavak.svg"
+                  alt="Kavak"
+                />
+              </li>
+              <li>
+                <img src="./assets/logos/cursor.svg" alt="Cursor" />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/XAI_Logo.svg"
+                  alt="xAI"
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/NVIDIA_logo.svg"
+                  alt="NVIDIA"
+                />
+              </li>
+            </ul>
+            <ul class="reader-logos" aria-hidden="true">
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Mercado_Libre_wordmark_%28Spanish_version%29.svg"
+                  alt=""
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Nubank_logo_2021.svg"
+                  alt=""
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Rappi_logo.svg"
+                  alt=""
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Globant_Logo.svg"
+                  alt=""
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Logo_de_Kavak.svg"
+                  alt=""
+                />
+              </li>
+              <li>
+                <img src="./assets/logos/cursor.svg" alt="" />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/XAI_Logo.svg"
+                  alt=""
+                />
+              </li>
+              <li>
+                <img
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/NVIDIA_logo.svg"
+                  alt=""
+                />
+              </li>
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -150,6 +249,9 @@
                   pedir simplificación enfocada y verificar con pruebas antes de tocar otra capa.
                 </p>
               </article>
+            </div>
+            <div class="issue-locked" aria-hidden="true">
+              <span>Más en la edición completa</span>
             </div>
           </article>
         </div>
@@ -260,18 +362,28 @@
 
         const root = document.documentElement;
         let frame = 0;
-        let nextX = window.innerWidth / 2;
-        let nextY = window.innerHeight * 0.22;
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight * 0.22;
+        let currentX = targetX;
+        let currentY = targetY;
 
         const updateGlassPosition = () => {
-          root.style.setProperty("--glass-x", `${nextX}px`);
-          root.style.setProperty("--glass-y", `${nextY}px`);
-          frame = 0;
+          currentX += (targetX - currentX) * 0.14;
+          currentY += (targetY - currentY) * 0.14;
+
+          root.style.setProperty("--glass-x", `${currentX}px`);
+          root.style.setProperty("--glass-y", `${currentY}px`);
+
+          if (Math.abs(targetX - currentX) > 0.4 || Math.abs(targetY - currentY) > 0.4) {
+            frame = window.requestAnimationFrame(updateGlassPosition);
+          } else {
+            frame = 0;
+          }
         };
 
         window.addEventListener("pointermove", (event) => {
-          nextX = event.clientX;
-          nextY = event.clientY;
+          targetX = event.clientX;
+          targetY = event.clientY;
           root.style.setProperty("--glass-opacity", "1");
 
           if (!frame) {
