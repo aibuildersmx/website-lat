@@ -5,6 +5,9 @@
   --faint: rgb(0 0 0 / 5%);
   --line: rgb(0 0 0 / 10%);
   --white: #fff;
+  --glass-x: 50vw;
+  --glass-y: 22vh;
+  --glass-opacity: 0;
   --serif: "Instrument Serif", ui-serif, Georgia, serif;
   --sans: "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "Geist Mono", "SFMono-Regular", Consolas, monospace;
@@ -21,6 +24,8 @@ html {
 }
 
 body {
+  position: relative;
+  isolation: isolate;
   margin: 0;
   min-height: 100%;
   background: var(--white);
@@ -28,6 +33,35 @@ body {
   font-family: var(--sans);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -18px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--glass-opacity);
+  background:
+    radial-gradient(
+      circle at calc(var(--glass-x) - 26px) var(--glass-y),
+      rgb(84 158 255 / 16%) 0 42px,
+      transparent 96px
+    ),
+    radial-gradient(
+      circle at calc(var(--glass-x) + 26px) var(--glass-y),
+      rgb(255 90 190 / 14%) 0 42px,
+      transparent 96px
+    );
+  filter: blur(18px);
+  backdrop-filter: blur(6px) saturate(1.08);
+  transition: opacity 220ms ease;
+}
+
+main,
+.site-footer {
+  position: relative;
+  z-index: 1;
 }
 
 a {
@@ -872,5 +906,11 @@ button:hover svg {
 
   .footer-copy {
     font-size: 14px;
+  }
+}
+
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  body::before {
+    display: none;
   }
 }

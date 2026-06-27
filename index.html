@@ -251,5 +251,38 @@
         </nav>
       </div>
     </footer>
+    <script>
+      (() => {
+        const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        if (!canHover || reduceMotion) return;
+
+        const root = document.documentElement;
+        let frame = 0;
+        let nextX = window.innerWidth / 2;
+        let nextY = window.innerHeight * 0.22;
+
+        const updateGlassPosition = () => {
+          root.style.setProperty("--glass-x", `${nextX}px`);
+          root.style.setProperty("--glass-y", `${nextY}px`);
+          frame = 0;
+        };
+
+        window.addEventListener("pointermove", (event) => {
+          nextX = event.clientX;
+          nextY = event.clientY;
+          root.style.setProperty("--glass-opacity", "1");
+
+          if (!frame) {
+            frame = window.requestAnimationFrame(updateGlassPosition);
+          }
+        });
+
+        document.addEventListener("pointerleave", () => {
+          root.style.setProperty("--glass-opacity", "0");
+        });
+      })();
+    </script>
   </body>
 </html>
