@@ -15,9 +15,33 @@
       href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (() => {
+        const localHosts = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+        if (window.location.protocol === "file:" || localHosts.has(window.location.hostname)) {
+          document.documentElement.classList.add("local-dev");
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <header class="site-header">
+      <nav class="pill-nav" aria-label="Navegación principal">
+        <a class="nav-home is-active" href="./index.html" aria-label="Home">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m3 10.5 9-7 9 7" />
+            <path d="M5 10v10h14V10" />
+            <path d="M9 20v-6h6v6" />
+          </svg>
+        </a>
+        <ul>
+          <li><a href="./newsletters.html">Ediciones anteriores</a></li>
+          <li><a href="./talks.html">Charlas virtuales</a></li>
+        </ul>
+      </nav>
+    </header>
+
     <main>
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-inner">
@@ -322,6 +346,22 @@
           </p>
         </div>
         <nav class="footer-links" aria-label="Enlaces de comunidad">
+          <a href="./newsletters.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+              <path d="M8 7h8" />
+              <path d="M8 11h8" />
+            </svg>
+            Archivo de newsletters
+          </a>
+          <a href="./talks.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23 7 16 12l7 5V7Z" />
+              <rect x="1" y="5" width="15" height="14" rx="2" />
+            </svg>
+            Charlas virtuales HowIUseAI
+          </a>
           <a href="https://aibuilders.mx" target="_blank" rel="noreferrer">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />

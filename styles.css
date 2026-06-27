@@ -65,6 +65,86 @@ main,
   z-index: 1;
 }
 
+.site-header {
+  position: fixed;
+  inset: 16px 0 auto;
+  z-index: 100;
+  display: none;
+  justify-content: center;
+  padding: 0 12px;
+  pointer-events: none;
+}
+
+.local-dev .site-header {
+  display: flex;
+}
+
+.pill-nav {
+  width: min(100%, 72rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 78%);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 8%);
+  backdrop-filter: blur(18px) saturate(1.08);
+  pointer-events: auto;
+}
+
+.pill-nav ul {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pill-nav a {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: rgb(0 0 0 / 62%);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.pill-nav a:not(.nav-home) {
+  padding: 0 16px;
+}
+
+.pill-nav a:hover,
+.pill-nav a.is-active {
+  background: rgb(0 0 0 / 6%);
+  color: var(--ink);
+}
+
+.nav-home {
+  width: 40px;
+  flex: 0 0 40px;
+}
+
+.nav-home svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 a {
   color: inherit;
   cursor: pointer;
@@ -87,7 +167,7 @@ button {
 
 .hero {
   position: relative;
-  padding: 104px 16px 96px;
+  padding: 132px 16px 96px;
 }
 
 .hero-inner {
@@ -732,6 +812,104 @@ button:hover svg {
   padding: 56px 16px;
 }
 
+.archive-main {
+  min-height: 100vh;
+  padding: 132px 16px 96px;
+}
+
+.archive-hero {
+  width: min(100%, 64rem);
+  margin: 0 auto 56px;
+  text-align: center;
+}
+
+.archive-hero h1 {
+  max-width: 780px;
+}
+
+.archive-copy {
+  max-width: 640px;
+  margin: 24px auto 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.45vw, 1.22rem);
+  line-height: 1.7;
+}
+
+.archive-grid {
+  width: min(100%, 72rem);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0 auto;
+}
+
+.archive-card {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: 0 22px 70px rgb(0 0 0 / 5%);
+}
+
+.archive-meta {
+  margin: 0 0 26px;
+  color: rgb(0 0 0 / 42%);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.archive-card h2 {
+  font-family: var(--sans);
+  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.archive-card p:not(.archive-meta) {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.archive-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.archive-link svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.archive-link.is-muted {
+  background: rgb(0 0 0 / 5%);
+  color: rgb(0 0 0 / 56%);
+}
+
 .footer-inner {
   width: min(100%, 72rem);
   display: flex;
@@ -814,6 +992,11 @@ button:hover svg {
 }
 
 @media (max-width: 1000px) {
+  .archive-grid {
+    grid-template-columns: 1fr;
+    max-width: 42rem;
+  }
+
   .sample-section {
     padding: 76px 16px;
   }
@@ -834,9 +1017,24 @@ button:hover svg {
 }
 
 @media (max-width: 820px) {
+  .pill-nav {
+    width: auto;
+  }
+
+  .pill-nav a:not(.nav-home) {
+    padding: 0 12px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+
   .hero {
-    padding-top: 72px;
+    padding-top: 112px;
     padding-bottom: 68px;
+  }
+
+  .archive-main {
+    padding-top: 112px;
+    padding-bottom: 72px;
   }
 
   .value-section {
@@ -868,10 +1066,57 @@ button:hover svg {
 }
 
 @media (max-width: 520px) {
+  .site-header {
+    top: 10px;
+    padding: 0 10px;
+  }
+
+  .pill-nav {
+    width: 100%;
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .pill-nav ul {
+    flex: 1;
+    justify-content: stretch;
+  }
+
+  .pill-nav li {
+    flex: 1;
+  }
+
+  .pill-nav a:not(.nav-home) {
+    width: 100%;
+    padding: 0 8px;
+    font-size: 9px;
+    letter-spacing: 0.03em;
+    text-align: center;
+  }
+
+  .nav-home {
+    width: 38px;
+    flex-basis: 38px;
+  }
+
   .hero {
     padding-inline: 18px;
-    padding-top: 56px;
+    padding-top: 104px;
     padding-bottom: 54px;
+  }
+
+  .archive-main {
+    padding: 104px 18px 64px;
+  }
+
+  .archive-hero {
+    margin-bottom: 36px;
+  }
+
+  .archive-card {
+    min-height: 0;
+    padding: 24px;
+    border-radius: 16px;
   }
 
   .brand-lockup {
