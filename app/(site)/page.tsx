@@ -25,6 +25,14 @@ const READER_LOGOS = [
     src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Logo_de_Kavak.svg",
     alt: "Kavak",
   },
+  {
+    src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Zillow_logo.svg",
+    alt: "Zillow",
+  },
+  {
+    src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Google_2015_logo.svg",
+    alt: "Google",
+  },
   { src: "/assets/logos/cursor.svg", alt: "Cursor" },
   {
     src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/XAI_Logo.svg",
