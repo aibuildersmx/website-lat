@@ -1,8 +1,21 @@
+"use client";
+
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
 
 type Section = "home" | "newsletters" | "talks";
 
+const localHosts = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+const subscribe = () => () => {};
+const getServerSnapshot = () => false;
+const getLocalSnapshot = () =>
+  window.location.protocol === "file:" || localHosts.has(window.location.hostname);
+
 export function SiteHeader({ active = "home" }: { active?: Section }) {
+  const isLocal = useSyncExternalStore(subscribe, getLocalSnapshot, getServerSnapshot);
+
+  if (!isLocal) return null;
+
   return (
     <header className="site-header">
       <nav className="pill-nav" aria-label="Navegación principal">
