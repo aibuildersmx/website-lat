@@ -66,9 +66,17 @@ export default function Home() {
             <div className="hero-readers" aria-label="Prueba social">
               <div className="avatar-stack" aria-hidden="true">
                 <img className="avatar" src="/assets/avatars/reader-3.webp" alt="" />
-                <img className="avatar" src="/assets/avatars/reader-1.webp" alt="" />
+                <img
+                  className="avatar avatar-soft-ring"
+                  src="/assets/avatars/reader-1.webp"
+                  alt=""
+                />
                 <img className="avatar" src="/assets/avatars/reader-4.webp" alt="" />
-                <img className="avatar" src="/assets/avatars/reader-2.webp" alt="" />
+                <img
+                  className="avatar avatar-offset-ring"
+                  src="/assets/avatars/reader-2.webp"
+                  alt=""
+                />
                 <span className="avatar-more">+</span>
               </div>
               <p>

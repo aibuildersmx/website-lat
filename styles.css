@@ -276,7 +276,19 @@ h1 {
   border: 2px solid var(--white);
   border-radius: 50%;
   object-fit: cover;
+  position: relative;
   box-shadow: 0 8px 20px rgb(0 0 0 / 8%);
+}
+
+.avatar-soft-ring {
+  transform: translateY(1px) scale(0.96);
+  filter: saturate(0.92) brightness(1.03);
+}
+
+.avatar-offset-ring {
+  transform: translateY(-1px);
+  filter: contrast(1.04) saturate(1.04);
+  box-shadow: 0 9px 20px rgb(0 0 0 / 9%);
 }
 
 .avatar-more {
