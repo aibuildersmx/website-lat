@@ -1,0 +1,154 @@
+{
+  "slug": "004",
+  "subject": "The Build Log · Issue 004 — Menos demo, más sistema",
+  "preview": "Deploy sin teatro, routing con costo visible y seis proyectos nuevos de la comunidad.",
+  "issueLabel": "Issue 004",
+  "date": "22-28 Jun 2026",
+  "readingTime": "7 min de lectura",
+  "title": "The Build Log",
+  "subtitle": "Lo que importa esta semana para builders de IA en México. Sin paja, sin hype. Solo lo que cambia cómo construyes.",
+  "stories": [
+    {
+      "eyebrow": "01 · Agentes",
+      "title": "Sail Research levantó $80M para infraestructura de agentes de largo aliento",
+      "href": "https://pulse2.com/sail-research-raises-80-million-to-build-infrastructure-for-long-horizon-ai-agents/",
+      "body": "La apuesta es clara: el siguiente cuello de botella no es generar una respuesta bonita, sino sostener trabajo que dura horas o días, conserva estado, se recupera de errores y deja rastro. Si estás armando agentes internos, empieza a pensar más en ejecución continua que en prompts sueltos."
+    },
+    {
+      "eyebrow": "02 · Seguridad",
+      "title": "AutoJack mostró cómo una página podía secuestrar un agente con acceso a localhost",
+      "href": "https://www.techradar.com/pro/security/microsoft-warns-ai-agents-are-being-autojack-ed-to-deliver-rce-payloads-by-browsing-untrusted-websites",
+      "body": "Microsoft documentó una cadena de fallas en una versión de desarrollo de AutoGen Studio. El punto para builders es más amplio: si un agente navega sitios no confiables y también habla con servicios locales privilegiados, el navegador se vuelve una superficie de ataque."
+    },
+    {
+      "eyebrow": "03 · Modelos",
+      "title": "Stanford HAI dice que la brecha EE. UU.-China en desempeño de modelos prácticamente se cerró",
+      "href": "https://hai.stanford.edu/ai-index/2026-ai-index-report",
+      "body": "La discusión de la comunidad sobre modelos chinos open source ya no suena lejana. Para equipos en LatAm, esto cambia la lectura de riesgo: acceso, costo, licencias y dependencia de proveedores estadounidenses empiezan a pesar tanto como el benchmark."
+    },
+    {
+      "eyebrow": "04 · Cómputo",
+      "title": "Google limitó el uso de Gemini de Meta por presión de capacidad",
+      "href": "https://www.channelnewsasia.com/business/google-limits-metas-use-its-gemini-ai-models-ft-reports-6216136",
+      "body": "La escasez de cómputo ya no es solo tema de startups esperando GPUs. También aparece entre gigantes que compran, rentan y construyen infraestructura a escala brutal. Para productos con IA, conviene diseñar fallback, caché y routing antes de que el proveedor falle."
+    },
+    {
+      "eyebrow": "05 · Interfaces",
+      "title": "Meta empujó una nueva línea de smart glasses desde $299",
+      "href": "https://www.meta.com/blog/introducing-meta-glasses-a-range-of-new-styles-from-meta-and-essilorluxottica-starting-at-299/",
+      "body": "El hardware todavía tiene fricción, pero el precio ya lo pone en zona de experimento masivo. Si la IA se mueve del chat a cámara, audio y contexto físico, muchas apps van a competir por el momento exacto en que el usuario ve, escucha o necesita actuar."
+    }
+  ],
+  "essay": {
+    "eyebrow": "",
+    "title": "",
+    "body": "",
+    "author": "",
+    "authorRole": "",
+    "linkText": "",
+    "linkHref": ""
+  },
+  "useCases": [
+    {
+      "icon": "rocket-launch",
+      "title": "Deployment sin teatro",
+      "body": "La conversación sobre CloudFront, S3, Vercel, Cloudflare Pages y SingleServer dejó una regla útil: si la app es estática o simple, no le metas arquitectura de empresa grande solo para sentir que está seria."
+    },
+    {
+      "icon": "squares-four",
+      "title": "Codex como taller de dashboards",
+      "body": "Varios builders están usando loops de Codex para pasar de historias de usuario a dashboards HTML entregables. La diferencia está en pedir ciclos completos: construir, probar, corregir y volver a revisar."
+    },
+    {
+      "icon": "arrows-split",
+      "title": "Routing de modelos con costo visible",
+      "body": "OpenRouter MCP prendió la discusión correcta. Darle a un agente la opción de elegir entre cientos de modelos suena bien, pero sin límites de latencia, precio y riesgo puede convertir cada tarea barata en una factura rara."
+    },
+    {
+      "icon": "ticket",
+      "title": "Contexto por ticket, no por caos",
+      "body": "La práctica de separar chats por ticket en Claude sirve porque baja el ruido y conserva intención. Si el agente no sabe cuál es el problema, el repo, la prueba y el criterio de cierre, solo está adivinando con mejor gramática."
+    }
+  ],
+  "projects": [
+    {
+      "eyebrow": "Salud · MVP",
+      "title": "Cuidado",
+      "author": "Esdras Josué",
+      "href": "https://cuidado-web-production.up.railway.app/cuidado",
+      "body": "Mini app MVP que ayuda a cuidadores de salud a organizar y registrar el progreso de pacientes: medicinas, horarios, reacciones adversas y tareas compartidas entre cuidadores, familia y médicos."
+    },
+    {
+      "eyebrow": "iPhone · Visión",
+      "title": "ScreenWho",
+      "author": "Daniel Figueroa",
+      "href": "https://apps.apple.com/mx/app/screenwho/id6781949885",
+      "body": "Un Shazam para actores: apunta la cámara a la TV o el cine y reconoce actores y personajes en tiempo real, con detección de rostros local en el dispositivo."
+    },
+    {
+      "eyebrow": "Dev tools · Claude Skills",
+      "title": "Gauntlet",
+      "author": "Jaime Ortega",
+      "href": "https://github.com/JaimeOrtegaxyz/gauntlet",
+      "body": "Proyecto generado con asistencia de Claude que usa Skills para presentar conclusiones. Todavía en desarrollo, pero un buen ejemplo de armar herramienta propia sobre el flujo de skills."
+    },
+    {
+      "eyebrow": "Media · Podcast IA",
+      "title": "Gol Gana",
+      "author": "chaps",
+      "href": "https://acir.dixo.com/acir?ref=0x957149b2a5689e10c41cb4b2c2fc7835d37a6b26-0x58F521068A39a5e675ACc7Edd7E269f576867691",
+      "body": "Podcast interactivo diario (10-15 min) con grupo ACIR: los usuarios responden trivia, predicen partidos del torneo y suben en un leaderboard con premios finales."
+    },
+    {
+      "eyebrow": "Datos · Curaduría",
+      "title": "Chidonomics",
+      "author": "Rodolfo",
+      "href": "https://chidonomics.com",
+      "body": "Plataforma de noticias económicas internacionales curadas para economistas y curiosos de las tendencias globales, con tipos de cambio y análisis de eventos relevantes."
+    },
+    {
+      "eyebrow": "Open data · Elecciones",
+      "title": "Agenticus",
+      "author": "Bto",
+      "href": "https://agenticus.mx",
+      "body": "Portal de seguimiento de encuestas electorales para las gubernaturas de 2027 en México, con intención de voto por estado a partir de datos de encuestas."
+    }
+  ],
+  "events": [
+    {
+      "day": "09",
+      "month": "Jul",
+      "label": "AIBM · Online · 9 Jul",
+      "title": "How I Use AI: Juan Martínez (ex-Cursor)",
+      "body": "Chat y Q&A en vivo con Juan Martínez, ex ingeniero de QA en Cursor y founder de un nuevo startup de IA. Contestará preguntas de la comunidad y compartirá cómo ha sido su viaje hasta Silicon Valley. Jueves 9 de julio, 5:30 PM CST.",
+      "href": "https://luma.com/3iyi3bsr"
+    },
+    {
+      "day": "29",
+      "month": "Jun",
+      "label": "San Francisco · 29 Jun-2 Jul",
+      "title": "AI Engineer World's Fair 2026",
+      "body": "Conferencia para engineers, founders e infra teams con tracks de agentes, evals, local AI, seguridad, context engineering y software factories.",
+      "href": "https://www.ai.engineer/worldsfair/2026"
+    }
+  ],
+  "community": {
+    "label": "Resumen de la semana",
+    "title": "Menos demo, más sistema",
+    "titleSuffix": "· deploy · routing · seguridad · distribución",
+    "body": "La semana giró alrededor de una idea bastante práctica: ya no basta con conectar un modelo y enseñar una demo. El valor aparece cuando decides dónde corre, cuánto cuesta, qué puede tocar, cómo se revisa y cómo llega a usuarios reales.",
+    "stats": [
+      "Si el deploy simple funciona, úsalo antes de armar infraestructura de más.",
+      "Si el agente elige modelo, también necesita límites de precio, latencia y permiso.",
+      "Si el producto necesita distribución, constrúyela desde el primer release."
+    ]
+  },
+  "jobs": [
+    {
+      "label": "Oportunidad",
+      "title": "Creador(a) de contenido en español sobre IA",
+      "meta": "Freelance · remoto · videos cortos diarios de IA · contacto por DM en la comunidad",
+      "href": "https://aibuilders.mx"
+    }
+  ]
+}
