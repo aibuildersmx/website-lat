@@ -23,6 +23,30 @@ describe("renderBuildLog", () => {
     expect(html).toContain(issue002.jobs[0].title);
   });
 
+  it("renders the community projects section with author credits and links", () => {
+    const withProjects = {
+      ...issue002,
+      projects: [
+        {
+          eyebrow: "Salud · MVP",
+          title: "Cuidado",
+          author: "Esdras Josué",
+          href: "https://cuidado-web-production.up.railway.app/cuidado",
+          body: "Mini app para coordinar cuidados de salud.",
+        },
+      ],
+    };
+    const out = renderBuildLog(withProjects);
+    expect(out).toContain("Proyectos de la comunidad");
+    expect(out).toContain("Cuidado");
+    expect(out).toContain("por Esdras Josué");
+    expect(out).toContain("https://cuidado-web-production.up.railway.app/cuidado");
+  });
+
+  it("omits the community projects section when there are no projects", () => {
+    expect(renderBuildLog(issue002)).not.toContain("Proyectos de la comunidad");
+  });
+
   it("includes the Resend unsubscribe token", () => {
     expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
   });

@@ -33,6 +33,17 @@ export interface UseCase {
   body: string;
 }
 
+// Community member projects/launches. Mirrors Aiby's `showcase_items` shape
+// (title, author_name, description, links, tags) so the weekly digest pulled
+// from the MCP (`list_showcase` / `get_weekly_digest`) maps in directly.
+export interface ShowcaseProject {
+  eyebrow: string; // "Salud · MVP" (derived from tags/domain)
+  title: string;
+  author: string; // builder credit — the whole point of the section
+  href: string; // primary link (empty → title renders unlinked)
+  body: string; // description
+}
+
 export interface EventItem {
   day: string; // "18"
   month: string; // "Jun"
@@ -69,6 +80,8 @@ export interface Issue {
   stories: Story[];
   essay: Essay;
   useCases: UseCase[];
+  projectsLabel?: string; // section heading for `projects` (default "Proyectos de la comunidad")
+  projects?: ShowcaseProject[];
   eventsLabel?: string; // section heading for `events` (default "Próximos eventos")
   events: EventItem[];
   community: Community;

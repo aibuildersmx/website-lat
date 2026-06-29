@@ -72,6 +72,7 @@ async function main() {
     return out;
   };
   issue.stories = issue.stories.map((s) => ({ ...s, href: wrap(s.href) ?? s.href }));
+  issue.projects = (issue.projects ?? []).map((p) => ({ ...p, href: wrap(p.href) ?? p.href }));
   issue.events = (issue.events ?? []).map((e) => ({ ...e, href: wrap(e.href) ?? e.href }));
   issue.jobs = (issue.jobs ?? []).map((j) => ({ ...j, href: wrap(j.href) ?? j.href }));
   if (issue.essay?.linkHref) issue.essay.linkHref = wrap(issue.essay.linkHref) ?? issue.essay.linkHref;

@@ -92,6 +92,30 @@ export function renderBuildLog(issue: Issue): string {
     )
     .join("");
 
+  const projects = (issue.projects ?? [])
+    .map(
+      (p) => `
+      <div style="padding:0 0 40px;border-bottom:1px solid ${LINE};margin-bottom:32px;">
+        ${eyebrow(p.eyebrow)}
+        <h3 style="margin:0;font-family:${SANS};font-size:24px;font-weight:600;line-height:1.25;">
+          ${
+            p.href
+              ? `<a href="${esc(p.href)}" style="color:${TEXT};text-decoration:none;">${esc(
+                  p.title,
+                )} ↗</a>`
+              : `<span style="color:${TEXT};">${esc(p.title)}</span>`
+          }
+        </h3>
+        <p style="margin:8px 0 0;color:${QUIET};font-family:${MONO};font-size:13px;letter-spacing:normal;text-transform:uppercase;">por ${esc(
+          p.author,
+        )}</p>
+        <p style="margin:14px 0 0;color:${MUTED};font-family:${SANS};font-size:17px;line-height:1.55;">${esc(
+          p.body,
+        )}</p>
+      </div>`,
+    )
+    .join("");
+
   const events = issue.events
     .map(
       (e) => `
@@ -187,6 +211,11 @@ export function renderBuildLog(issue: Issue): string {
     sections.push([
       "En qué estamos usando IA",
       `<tr><td style="padding-bottom:20px;">${useCases}</td></tr>`,
+    ]);
+  if (issue.projects?.length)
+    sections.push([
+      issue.projectsLabel?.trim() || "Proyectos de la comunidad",
+      `<tr><td>${projects}</td></tr>`,
     ]);
   if (issue.events.length)
     sections.push([
