@@ -18,12 +18,16 @@ export async function upsertSubscriber(email: string): Promise<void> {
       email,
       sources: [SOURCE],
       newsletterSubscribed: true,
+      newsletterSubscribedAt: sql`now()`,
+      newsletterUnsubscribedAt: null,
     })
     .onConflictDoUpdate({
       target: contacts.email,
       set: {
         sources: sql`(select array(select distinct e from unnest(${contacts.sources} || excluded.sources) e))`,
         newsletterSubscribed: true,
+        newsletterSubscribedAt: sql`case when ${contacts.newsletterSubscribed} then coalesce(${contacts.newsletterSubscribedAt}, now()) else now() end`,
+        newsletterUnsubscribedAt: null,
         updatedAt: sql`now()`,
       },
     });

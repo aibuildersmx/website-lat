@@ -14,7 +14,11 @@ import { verifyUnsub } from "@/lib/newsletter/unsubscribe";
 async function unsubscribe(contactId: string): Promise<void> {
   await db
     .update(contacts)
-    .set({ newsletterSubscribed: false, updatedAt: new Date() })
+    .set({
+      newsletterSubscribed: false,
+      newsletterUnsubscribedAt: new Date(),
+      updatedAt: new Date(),
+    })
     .where(eq(contacts.id, contactId));
 }
 

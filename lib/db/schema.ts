@@ -22,6 +22,8 @@ export const contacts = pgTable(
     tags: text("tags").array().notNull().default([]),
     isPremium: boolean("is_premium").notNull().default(false),
     newsletterSubscribed: boolean("newsletter_subscribed").notNull().default(true),
+    newsletterSubscribedAt: timestamp("newsletter_subscribed_at", { withTimezone: true }),
+    newsletterUnsubscribedAt: timestamp("newsletter_unsubscribed_at", { withTimezone: true }),
     metadata: jsonb("metadata").notNull().default({}),
     firstSeenAt: timestamp("first_seen_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -30,6 +32,9 @@ export const contacts = pgTable(
   (t) => ({
     sourcesIdx: index("contacts_sources_idx").using("gin", t.sources),
     tagsIdx: index("contacts_tags_idx").using("gin", t.tags),
+    newsletterSubscribedAtIdx: index("contacts_newsletter_subscribed_at_idx").on(
+      t.newsletterSubscribedAt,
+    ),
   }),
 );
 
