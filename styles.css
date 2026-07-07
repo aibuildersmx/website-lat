@@ -892,6 +892,7 @@ button:hover svg {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.55;
+  text-align: center;
   white-space: nowrap;
 }
 
