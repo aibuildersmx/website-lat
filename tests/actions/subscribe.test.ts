@@ -25,7 +25,55 @@ describe("subscribe", () => {
   it("subscribes a valid email", async () => {
     const { subscribe } = await import("@/lib/actions/subscribe");
     expect(await subscribe(fd({ email: "Foo@Bar.com" }))).toEqual({ ok: true });
-    expect(upsertSubscriber).toHaveBeenCalledWith("foo@bar.com"); // normalized
+    expect(upsertSubscriber).toHaveBeenCalledWith("foo@bar.com", {
+      source: undefined,
+      medium: undefined,
+      campaign: undefined,
+      content: undefined,
+      term: undefined,
+      referrer: undefined,
+      landingPage: undefined,
+    }); // normalized
+  });
+
+  it("passes signup attribution from UTM and referrer fields", async () => {
+    const { subscribe } = await import("@/lib/actions/subscribe");
+    expect(
+      await subscribe(
+        fd({
+          email: "a@b.com",
+          utm_source: "linkedin",
+          utm_medium: "paid-social",
+          utm_campaign: "launch",
+          utm_content: "hero",
+          utm_term: "ai builders",
+          attribution_referrer: "https://example.com/post",
+          attribution_landing_page: "https://aibuilders.mx/?utm_source=linkedin",
+        }),
+      ),
+    ).toEqual({ ok: true });
+
+    expect(upsertSubscriber).toHaveBeenCalledWith("a@b.com", {
+      source: "linkedin",
+      medium: "paid-social",
+      campaign: "launch",
+      content: "hero",
+      term: "ai builders",
+      referrer: "https://example.com/post",
+      landingPage: "https://aibuilders.mx/?utm_source=linkedin",
+    });
+  });
+
+  it("falls back to the referrer host when no source is tagged", async () => {
+    const { subscribe } = await import("@/lib/actions/subscribe");
+    expect(
+      await subscribe(fd({ email: "a@b.com", attribution_referrer: "https://www.partner.com/a" })),
+    ).toEqual({ ok: true });
+
+    expect(upsertSubscriber).toHaveBeenCalledWith(
+      "a@b.com",
+      expect.objectContaining({ source: "partner.com" }),
+    );
   });
 
   it("silently succeeds and writes nothing when the honeypot is filled", async () => {

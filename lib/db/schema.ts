@@ -25,6 +25,14 @@ export const contacts = pgTable(
     newsletterSubscribed: boolean("newsletter_subscribed").notNull().default(true),
     newsletterSubscribedAt: timestamp("newsletter_subscribed_at", { withTimezone: true }),
     newsletterUnsubscribedAt: timestamp("newsletter_unsubscribed_at", { withTimezone: true }),
+    attributionSource: text("attribution_source"),
+    attributionMedium: text("attribution_medium"),
+    attributionCampaign: text("attribution_campaign"),
+    attributionContent: text("attribution_content"),
+    attributionTerm: text("attribution_term"),
+    attributionReferrer: text("attribution_referrer"),
+    attributionLandingPage: text("attribution_landing_page"),
+    attributionCapturedAt: timestamp("attribution_captured_at", { withTimezone: true }),
     metadata: jsonb("metadata").notNull().default({}),
     firstSeenAt: timestamp("first_seen_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -36,6 +44,9 @@ export const contacts = pgTable(
     newsletterSubscribedAtIdx: index("contacts_newsletter_subscribed_at_idx").on(
       t.newsletterSubscribedAt,
     ),
+    attributionSourceIdx: index("contacts_attribution_source_idx").on(t.attributionSource),
+    attributionMediumIdx: index("contacts_attribution_medium_idx").on(t.attributionMedium),
+    attributionCampaignIdx: index("contacts_attribution_campaign_idx").on(t.attributionCampaign),
   }),
 );
 

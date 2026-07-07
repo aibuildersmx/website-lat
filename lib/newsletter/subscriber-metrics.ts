@@ -12,12 +12,49 @@ export interface SubscriberHistoryPoint {
   cumulativeSubscribers: number;
 }
 
+export interface SubscriberAttributionMetric {
+  label: string;
+  count: number;
+}
+
+export interface RecentAttributedSubscriber {
+  email: string;
+  subscribedAt: string | null;
+  source: string | null;
+  medium: string | null;
+  campaign: string | null;
+  referrer: string | null;
+  landingPage: string | null;
+}
+
 export interface SubscriberMetrics {
   totalContacts: number;
   currentSubscribers: number;
   unsubscribedContacts: number;
   windows: SubscriberWindowMetric[];
   history: SubscriberHistoryPoint[];
+  attribution: {
+    byChannel: SubscriberAttributionMetric[];
+    bySource: SubscriberAttributionMetric[];
+    byCampaign: SubscriberAttributionMetric[];
+    recent: RecentAttributedSubscriber[];
+  };
+}
+
+function channelSql() {
+  return sql<string>`
+    case
+      when attribution_medium ilike any(array['%paid%', '%cpc%', '%ppc%', '%ad%', '%ads%'])
+        then 'Paid ads'
+      when attribution_medium ilike any(array['%social%', '%ugc%'])
+        or attribution_source ilike any(array['%instagram%', '%linkedin%', '%twitter%', '%x.com%', '%facebook%', '%tiktok%', '%youtube%'])
+        then 'Social / UGC'
+      when attribution_medium ilike '%email%' then 'Email'
+      when attribution_referrer is not null then 'Referral'
+      when attribution_source is not null then 'Tagged'
+      else 'Direct / unknown'
+    end
+  `;
 }
 
 export async function subscriberMetrics(): Promise<SubscriberMetrics> {
@@ -64,6 +101,56 @@ export async function subscriberMetrics(): Promise<SubscriberMetrics> {
     order by period
   `);
 
+  const channelRows = await db.execute<{ label: string; count: number }>(sql`
+    select ${channelSql()} as label, count(*)::int as count
+    from contacts
+    where newsletter_subscribed_at is not null
+    group by 1
+    order by count desc, label asc
+    limit 8
+  `);
+
+  const sourceRows = await db.execute<{ label: string; count: number }>(sql`
+    select coalesce(nullif(attribution_source, ''), 'Direct / unknown') as label, count(*)::int as count
+    from contacts
+    where newsletter_subscribed_at is not null
+    group by 1
+    order by count desc, label asc
+    limit 8
+  `);
+
+  const campaignRows = await db.execute<{ label: string; count: number }>(sql`
+    select coalesce(nullif(attribution_campaign, ''), 'No campaign') as label, count(*)::int as count
+    from contacts
+    where newsletter_subscribed_at is not null
+    group by 1
+    order by count desc, label asc
+    limit 8
+  `);
+
+  const recentRows = await db.execute<{
+    email: string;
+    subscribed_at: string | null;
+    source: string | null;
+    medium: string | null;
+    campaign: string | null;
+    referrer: string | null;
+    landing_page: string | null;
+  }>(sql`
+    select
+      email,
+      newsletter_subscribed_at::text as subscribed_at,
+      attribution_source as source,
+      attribution_medium as medium,
+      attribution_campaign as campaign,
+      attribution_referrer as referrer,
+      attribution_landing_page as landing_page
+    from contacts
+    where newsletter_subscribed_at is not null
+    order by newsletter_subscribed_at desc nulls last, created_at desc
+    limit 12
+  `);
+
   return {
     totalContacts: summary?.total_contacts ?? 0,
     currentSubscribers: summary?.current_subscribers ?? 0,
@@ -80,5 +167,19 @@ export async function subscriberMetrics(): Promise<SubscriberMetrics> {
       newSubscribers: row.new_subscribers,
       cumulativeSubscribers: row.cumulative_subscribers,
     })),
+    attribution: {
+      byChannel: channelRows.map((row) => ({ label: row.label, count: row.count })),
+      bySource: sourceRows.map((row) => ({ label: row.label, count: row.count })),
+      byCampaign: campaignRows.map((row) => ({ label: row.label, count: row.count })),
+      recent: recentRows.map((row) => ({
+        email: row.email,
+        subscribedAt: row.subscribed_at,
+        source: row.source,
+        medium: row.medium,
+        campaign: row.campaign,
+        referrer: row.referrer,
+        landingPage: row.landing_page,
+      })),
+    },
   };
 }

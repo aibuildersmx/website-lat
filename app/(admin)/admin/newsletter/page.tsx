@@ -169,6 +169,67 @@ function SubscriberLineChart({
   );
 }
 
+function hostname(value: string | null) {
+  if (!value) return null;
+  try {
+    return new URL(value).hostname.replace(/^www\./, "");
+  } catch {
+    return value;
+  }
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "Sin fecha";
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function AttributionBreakdown({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: { label: string; count: number }[];
+}) {
+  const max = Math.max(1, ...rows.map((row) => row.count));
+
+  return (
+    <div className="rounded-xl border border-black/5 bg-stone-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+      <h3 className="text-sm font-medium text-gray-800 dark:text-gray-100">{title}</h3>
+      {rows.length === 0 ? (
+        <p className="mt-4 text-sm text-gray-400 dark:text-gray-500">Sin datos todavía.</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {rows.map((row) => (
+            <li key={row.label} className="grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate text-sm text-gray-600 dark:text-gray-300">
+                    {row.label}
+                  </span>
+                </div>
+                <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-white dark:bg-black/20">
+                  <span
+                    className="block h-full rounded-full bg-gray-800 dark:bg-gray-100"
+                    style={{ width: `${Math.max(5, (row.count / max) * 100)}%` }}
+                  />
+                </span>
+              </div>
+              <span className="text-right text-sm font-medium text-gray-800 dark:text-gray-100">
+                {row.count.toLocaleString("es-MX")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default async function NewsletterListPage() {
   const [issues, metrics] = await Promise.all([listIssues(), subscriberMetrics()]);
   const maxMonthlySubscribers = Math.max(
@@ -290,6 +351,75 @@ export default async function NewsletterListPage() {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+        </details>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-black/5 bg-white p-5 dark:border-white/10 dark:bg-neutral-900">
+        <div>
+          <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Attribution</p>
+          <h2 className="mt-1 text-lg font-medium text-gray-800 dark:text-gray-100">
+            Origen de suscriptores
+          </h2>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <AttributionBreakdown title="Canal" rows={metrics.attribution.byChannel} />
+          <AttributionBreakdown title="Fuente" rows={metrics.attribution.bySource} />
+          <AttributionBreakdown title="Campaña" rows={metrics.attribution.byCampaign} />
+        </div>
+
+        <details className="group mt-5 overflow-hidden rounded-xl border border-black/5 dark:border-white/10">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-stone-50 dark:text-gray-300 dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+            <span>Suscriptores recientes</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="group-open:hidden">Mostrar</span>
+              <span className="hidden group-open:inline">Ocultar</span>
+            </span>
+          </summary>
+          <div className="overflow-x-auto border-t border-black/5 dark:border-white/10">
+            {metrics.attribution.recent.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
+                Aún no hay suscriptores con fecha registrada.
+              </p>
+            ) : (
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-stone-50 text-xs font-medium text-gray-400 dark:bg-white/[0.03] dark:text-gray-500">
+                  <tr>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Fecha</th>
+                    <th className="px-4 py-3">Fuente</th>
+                    <th className="px-4 py-3">Medio</th>
+                    <th className="px-4 py-3">Campaña</th>
+                    <th className="px-4 py-3">Referrer</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/10">
+                  {metrics.attribution.recent.map((subscriber) => (
+                    <tr key={`${subscriber.email}-${subscriber.subscribedAt}`}>
+                      <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-800 dark:text-gray-100">
+                        {subscriber.email}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400">
+                        {formatDate(subscriber.subscribedAt)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400">
+                        {subscriber.source ?? "Direct / unknown"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400">
+                        {subscriber.medium ?? "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400">
+                        {subscriber.campaign ?? "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400">
+                        {hostname(subscriber.referrer) ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </details>

@@ -12,6 +12,26 @@ const ERROR_COPY: Record<string, string> = {
 };
 
 const SUCCESS_COPY = "¡Listo! Te avisaremos en el próximo número.";
+const ATTRIBUTION_FIELDS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "ref",
+] as const;
+
+function appendAttribution(formData: FormData) {
+  const params = new URLSearchParams(window.location.search);
+
+  for (const field of ATTRIBUTION_FIELDS) {
+    const value = params.get(field);
+    if (value) formData.set(field, value);
+  }
+
+  if (document.referrer) formData.set("attribution_referrer", document.referrer);
+  formData.set("attribution_landing_page", window.location.href);
+}
 
 // The hero pill signup: same bespoke `.hero-form` look as the original static
 // site, wired to the self-hosted `subscribe` server action (writes to contacts).
@@ -23,6 +43,7 @@ export function NewsletterSignup({ className }: { className?: string }) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    appendAttribution(formData);
     startTransition(async () => {
       const res = await subscribe(formData);
       if (res.ok) {

@@ -29,6 +29,13 @@
       "when": 1783463400000,
       "tag": "0003_virtual_talk_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783440798377,
+      "tag": "0004_daffy_ronan",
+      "breakpoints": true
     }
   ]
 }
