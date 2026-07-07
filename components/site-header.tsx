@@ -35,6 +35,11 @@ export function SiteHeader({ active = "home" }: { active?: Section }) {
               Charlas virtuales
             </Link>
           </li>
+          <li>
+            <a href="https://vacantes.lat" target="_blank" rel="noreferrer">
+              Vacantes
+            </a>
+          </li>
         </ul>
       </nav>
     </header>

@@ -879,21 +879,22 @@ button:hover svg {
 
 .archive-signup {
   width: min(100%, 640px);
-  margin: 22px auto 0;
+  margin: 18px auto 0;
 }
 
 .archive-signup p {
-  margin: 0;
+  max-width: 640px;
+  margin: 0 auto;
   color: var(--muted);
-  font-size: 15px;
-  line-height: 1.55;
+  font-size: clamp(1rem, 1.45vw, 1.22rem);
+  line-height: 1.7;
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .archive-signup .hero-form,
 .archive-signup .hero-form-status {
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 .archive-signup .hero-form {
@@ -1334,9 +1335,9 @@ button:hover svg {
 
   .pill-nav a:not(.nav-home) {
     width: 100%;
-    padding: 0 8px;
-    font-size: 9px;
-    letter-spacing: 0.03em;
+    padding: 0 5px;
+    font-size: 8px;
+    letter-spacing: 0;
     text-align: center;
   }
 

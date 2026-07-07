@@ -28,6 +28,14 @@ export function SiteFooter() {
             </svg>
             Charlas virtuales
           </Link>
+          <a href="https://vacantes.lat" target="_blank" rel="noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="2" y="7" width="20" height="14" rx="2" />
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              <path d="M2 13h20" />
+            </svg>
+            Vacantes
+          </a>
           <a href="https://aibuilders.mx" target="_blank" rel="noreferrer">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
