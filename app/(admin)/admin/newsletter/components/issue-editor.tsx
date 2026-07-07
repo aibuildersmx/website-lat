@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { Issue } from "@/lib/newsletter/types";
 import {
+  createIssueDraft,
   saveIssue,
   sendTest,
   sendIssue,
@@ -23,13 +24,16 @@ export function IssueEditor({
   status: initialStatus,
   initialProgress,
   engagement,
+  onIssueCreated,
 }: {
-  id: string;
+  id: string | null;
   initialData: Issue;
   status: string;
   initialProgress: IssueProgress;
   engagement?: IssueEngagement | null;
+  onIssueCreated?: (id: string) => void;
 }) {
+  const [issueId, setIssueId] = useState(id);
   const [issue, setIssue] = useState<Issue>(initialData);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [status, setStatus] = useState(initialStatus);
@@ -41,8 +45,18 @@ export function IssueEditor({
   const [isPending, startTransition] = useTransition();
 
   const firstRender = useRef(true);
+  const createPromise = useRef<Promise<string> | null>(null);
   const sent = status === "sent";
   const sending = status === "sending";
+
+  const ensureIssueId = useCallback(async (data: Issue): Promise<string> => {
+    if (issueId) return issueId;
+    createPromise.current ??= createIssueDraft(data);
+    const createdId = await createPromise.current;
+    setIssueId(createdId);
+    onIssueCreated?.(createdId);
+    return createdId;
+  }, [issueId, onIssueCreated]);
 
   // Debounced autosave whenever the issue changes (skip the first render).
   // "saving" is flagged in onChange (an event) — not synchronously in the
@@ -53,19 +67,21 @@ export function IssueEditor({
       return;
     }
     const t = setTimeout(async () => {
-      const res = await saveIssue(id, issue);
+      const idToSave = await ensureIssueId(issue);
+      const res = await saveIssue(idToSave, issue);
       setSaveState("error" in res ? "error" : "saved");
     }, 1000);
     return () => clearTimeout(t);
-  }, [id, issue]);
+  }, [issue, ensureIssueId]);
 
   // Poll send progress while the issue is draining the queue. Stops when no
   // recipients remain pending (the worker has finalized the issue to "sent").
   useEffect(() => {
     if (!sending) return;
+    if (!issueId) return;
     let active = true;
     const tick = async () => {
-      const p = await getIssueProgress(id);
+      const p = await getIssueProgress(issueId);
       if (!active) return;
       setProgress(p);
       if (p.pending === 0 && p.total > 0) setStatus("sent");
@@ -76,7 +92,7 @@ export function IssueEditor({
       active = false;
       clearInterval(interval);
     };
-  }, [sending, id]);
+  }, [sending, issueId]);
 
   function onIssueChange(next: Issue) {
     setSaveState("saving");
@@ -107,7 +123,8 @@ export function IssueEditor({
   async function onSendIssue() {
     if (!window.confirm("¿Enviar este issue a TODOS los contactos suscritos? No se puede deshacer.")) return;
     setMessage(null);
-    const res = await sendIssue(id);
+    const idToSend = await ensureIssueId(issue);
+    const res = await sendIssue(idToSend);
     if ("error" in res) {
       setMessage({ kind: "err", text: res.error });
     } else {
@@ -118,7 +135,8 @@ export function IssueEditor({
 
   async function onRetryFailed() {
     setMessage(null);
-    const res = await retryFailed(id);
+    if (!issueId) return;
+    const res = await retryFailed(issueId);
     if ("error" in res) {
       setMessage({ kind: "err", text: res.error });
     } else {

@@ -217,16 +217,28 @@ export async function createIssue(): Promise<void> {
   redirect(`${LIST_PATH}/${id}`);
 }
 
-export async function createIssueDraft(): Promise<string> {
+export async function getNewIssueDraftData(): Promise<Issue> {
   if (await gate()) redirect("/login");
   const slugs = await db
     .select({ slug: newsletterIssues.slug })
     .from(newsletterIssues);
-  const slug = nextSlug(slugs.map((r) => r.slug));
-  const data = emptyIssue(slug);
+  return emptyIssue(nextSlug(slugs.map((r) => r.slug)));
+}
+
+export async function createIssueDraft(data?: Issue): Promise<string> {
+  if (await gate()) redirect("/login");
+  const slugs = await db
+    .select({ slug: newsletterIssues.slug })
+    .from(newsletterIssues);
+  const existingSlugs = slugs.map((r) => r.slug);
+  const requestedSlug = data?.slug.trim();
+  const slug = requestedSlug && !existingSlugs.includes(requestedSlug)
+    ? requestedSlug
+    : nextSlug(existingSlugs);
+  const draft = data ? { ...data, slug } : emptyIssue(slug);
   const inserted = await db
     .insert(newsletterIssues)
-    .values({ slug, subject: data.subject, status: "draft", data })
+    .values({ slug, subject: draft.subject, status: "draft", data: draft })
     .returning({ id: newsletterIssues.id });
   revalidatePath(LIST_PATH);
   return inserted[0].id;
