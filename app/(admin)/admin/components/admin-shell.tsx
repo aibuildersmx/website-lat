@@ -17,7 +17,7 @@ const SHELL_COPY: Record<
     signOut: string;
     openMenu: string;
     closeMenu: string;
-    nav: { audience: string; newsletter: string; newIssue: string; talks: string; team: string };
+    nav: { audience: string; newsletter: string; composer: string; talks: string; team: string };
   }
 > = {
   es: {
@@ -28,7 +28,7 @@ const SHELL_COPY: Record<
     nav: {
       audience: "Audiencia",
       newsletter: "Newsletter",
-      newIssue: "Nuevo issue",
+      composer: "Composer",
       talks: "Charlas",
       team: "Equipo",
     },
@@ -41,7 +41,7 @@ const SHELL_COPY: Record<
     nav: {
       audience: "Audience",
       newsletter: "Newsletter",
-      newIssue: "New issue",
+      composer: "Composer",
       talks: "Talks",
       team: "Team",
     },
@@ -144,31 +144,41 @@ type NavItem = {
   section: string;
   icon: typeof Home;
   exact?: boolean;
+  activeFor?: (pathname: string) => boolean;
 };
 
 const NAV: NavItem[] = [
   { href: "/admin/audience", label: "audience", section: "The Build Log", icon: Users },
-  { href: "/admin/newsletter", label: "newsletter", section: "The Build Log", icon: Mail },
+  {
+    href: "/admin/newsletter",
+    label: "newsletter",
+    section: "The Build Log",
+    icon: Mail,
+    exact: true,
+  },
   {
     href: "/admin/newsletter/new",
-    label: "newIssue",
+    label: "composer",
     section: "The Build Log",
     icon: PlusCircle,
-    exact: true,
+    activeFor: (pathname) =>
+      pathname === "/admin/newsletter/new" ||
+      /^\/admin\/newsletter\/[^/]+$/.test(pathname),
   },
   { href: "/admin/talks", label: "talks", section: "HowIUseAI", icon: CalendarDays },
   { href: "/admin/team", label: "team", section: "Admin", icon: Users },
 ];
 
-function isActive(pathname: string, href: string, exact?: boolean): boolean {
-  if (exact) return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
+function isActive(pathname: string, item: NavItem): boolean {
+  if (item.activeFor) return item.activeFor(pathname);
+  if (item.exact) return pathname === item.href;
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 function navLabel(label: string, copy: (typeof SHELL_COPY)[AdminLanguage]): string {
   if (label === "audience") return copy.nav.audience;
   if (label === "newsletter") return copy.nav.newsletter;
-  if (label === "newIssue") return copy.nav.newIssue;
+  if (label === "composer") return copy.nav.composer;
   if (label === "talks") return copy.nav.talks;
   if (label === "team") return copy.nav.team;
   return label;
@@ -224,7 +234,7 @@ export function AdminShell({
           </p>
           <ul className="flex flex-col gap-1">
             {section.items.map((item) => {
-              const active = isActive(pathname, item.href, item.exact);
+              const active = isActive(pathname, item);
               const Icon = item.icon;
               const label = navLabel(item.label, copy);
               const className = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
