@@ -29,7 +29,7 @@ export default async function Newsletters() {
           </p>
         </section>
 
-        <section className="archive-grid" aria-label="Ediciones anteriores">
+        <section className="newsletter-list" aria-label="Ediciones anteriores">
           {issues.length === 0 ? (
             <article className="archive-card">
               <p className="archive-meta">The Build Log</p>
@@ -42,11 +42,13 @@ export default async function Newsletters() {
             </article>
           ) : (
             issues.map((issue) => (
-              <article className="archive-card" key={issue.slug}>
-                <p className="archive-meta">
-                  {issue.issueLabel} · {issue.date} · {issue.readingTime}
-                </p>
-                <h2>{issue.title}</h2>
+              <article className="newsletter-row" key={issue.slug}>
+                <div className="newsletter-row-main">
+                  <p className="archive-meta">
+                    {issue.issueLabel} · {issue.date} · {issue.readingTime}
+                  </p>
+                  <h2>{issue.title}</h2>
+                </div>
                 <p>{issue.subtitle}</p>
               </article>
             ))
