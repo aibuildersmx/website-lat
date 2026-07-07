@@ -126,11 +126,17 @@ export default async function NewsletterListPage() {
           </p>
         ) : (
           <ul className="divide-y divide-black/5 dark:divide-white/10">
-            {issues.map((issue) => (
+            {issues.map((issue) => {
+              const href =
+                issue.status === "sent"
+                  ? `/admin/newsletter/sent/${issue.id}`
+                  : `/admin/newsletter/${issue.id}`;
+
+              return (
               <li key={issue.id}>
                 <div className="grid gap-4 px-6 py-4 transition hover:bg-stone-50 sm:grid-cols-[1fr_auto_auto] sm:items-center dark:hover:bg-white/5">
                   <div className="min-w-0">
-                    <Link href={`/admin/newsletter/${issue.id}`} className="block min-w-0">
+                    <Link href={href} className="block min-w-0">
                       <p className="truncate text-lg font-medium text-gray-800 transition hover:text-black dark:text-gray-100 dark:hover:text-white">
                         {issue.subject || (
                           <span className="text-gray-300 dark:text-gray-600">
@@ -153,7 +159,8 @@ export default async function NewsletterListPage() {
                   <StatusDot status={issue.status} language={language} />
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>

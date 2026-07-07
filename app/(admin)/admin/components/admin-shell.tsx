@@ -154,7 +154,9 @@ const NAV: NavItem[] = [
     label: "newsletter",
     section: "The Build Log",
     icon: Mail,
-    exact: true,
+    activeFor: (pathname) =>
+      pathname === "/admin/newsletter" ||
+      /^\/admin\/newsletter\/sent\/[^/]+$/.test(pathname),
   },
   {
     href: "/admin/newsletter/new",
