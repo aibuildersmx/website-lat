@@ -5,6 +5,7 @@ import {
   ADMIN_LANGUAGE_COOKIE,
   normalizeAdminLanguage,
 } from "@/lib/admin/language";
+import { createIssue } from "@/lib/actions/newsletter";
 import { AdminShell } from "./components/admin-shell";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const language = normalizeAdminLanguage(cookieStore.get(ADMIN_LANGUAGE_COOKIE)?.value);
 
   return (
-    <AdminShell email={user.email} language={language} signOutAction={signOut}>
+    <AdminShell
+      email={user.email}
+      language={language}
+      signOutAction={signOut}
+      createIssueAction={createIssue}
+    >
       {children}
     </AdminShell>
   );
