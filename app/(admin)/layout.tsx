@@ -5,7 +5,8 @@ import { adminFontVariables } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "Admin · AI Builders",
-  description: "Panel de administración de AI Builders México.",
+  description: "Panel de administración de AI Builders Latam.",
+  icons: { icon: "/favicon.svg" },
   robots: { index: false, follow: false },
 };
 

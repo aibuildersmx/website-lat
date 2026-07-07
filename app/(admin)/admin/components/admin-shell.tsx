@@ -110,8 +110,8 @@ function isActive(pathname: string, href: string, exact?: boolean): boolean {
 function Logo() {
   return (
     <Image
-      src="/AIBM-logo-dark.svg"
-      alt="AI Builders México"
+      src="/AIBL-logo-dark.svg"
+      alt="AI Builders Latam"
       width={393}
       height={95}
       unoptimized

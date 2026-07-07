@@ -37,8 +37,8 @@ export default function LoginPage() {
         <div className="mb-10 text-center">
           <Link href="/">
             <Image
-              src="/aibm-logo.svg"
-              alt="AI Builders Mexico"
+              src="/aibl-logo.svg"
+              alt="AI Builders Latam"
               width={393}
               height={95}
               className="mx-auto h-6 w-auto brightness-0 dark:invert"

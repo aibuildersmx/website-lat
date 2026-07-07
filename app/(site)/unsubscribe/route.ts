@@ -80,7 +80,7 @@ function shell(title: string, inner: string): NextResponse {
   .home a:hover{color:var(--ink);}
 </style></head>
 <body><div class="card">
-  <img class="logo" src="/AIBM-logo-light-bg.svg" alt="AI Builders MX" width="120" height="26">
+  <img class="logo" src="/AIBL-logo-light-bg.svg" alt="AI Builders Latam" width="120" height="26">
   ${inner}
 </div></body></html>`;
   return new NextResponse(html, {

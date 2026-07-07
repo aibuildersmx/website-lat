@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 type Section = "home" | "newsletters" | "talks";
 
@@ -11,11 +12,14 @@ export function SiteHeader({ active = "home" }: { active?: Section }) {
           href="/"
           aria-label="Home"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m3 10.5 9-7 9 7" />
-            <path d="M5 10v10h14V10" />
-            <path d="M9 20v-6h6v6" />
-          </svg>
+          <Image
+            src="/AIBL-logo-light-bg.svg"
+            alt=""
+            width={393}
+            height={95}
+            className="nav-home-logo"
+            unoptimized
+          />
         </Link>
         <ul>
           <li>
