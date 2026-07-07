@@ -15,6 +15,13 @@
       "when": 1783378193356,
       "tag": "0001_messy_angel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783391927603,
+      "tag": "0002_fantastic_starjammers",
+      "breakpoints": true
     }
   ]
 }

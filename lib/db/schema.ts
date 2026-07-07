@@ -89,6 +89,28 @@ export const newsletterIssues = pgTable("newsletter_issues", {
 export type NewsletterIssueRow = typeof newsletterIssues.$inferSelect;
 export type NewNewsletterIssueRow = typeof newsletterIssues.$inferInsert;
 
+export const virtualTalks = pgTable(
+  "virtual_talks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull(),
+    body: text("body").notNull().default(""),
+    meta: text("meta").notNull().default("Virtual Talk"),
+    href: text("href").notNull(),
+    position: integer("position").notNull().default(0),
+    published: boolean("published").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    hrefIdx: uniqueIndex("virtual_talks_href_idx").on(t.href),
+    positionIdx: index("virtual_talks_position_idx").on(t.position),
+  }),
+);
+
+export type VirtualTalkRow = typeof virtualTalks.$inferSelect;
+export type NewVirtualTalkRow = typeof virtualTalks.$inferInsert;
+
 // One row per (issue, contact) send attempt. The unique (issueId, contactId)
 // index is the idempotency anchor: re-enqueuing a send is a no-op, and a retried
 // batch skips rows already marked "sent".

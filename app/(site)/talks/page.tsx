@@ -1,31 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { listPublishedVirtualTalks } from "@/lib/virtual-talks";
 
 export const metadata: Metadata = {
   title: "Charlas virtuales — AI Builders Latam",
   description: "Archivo de HowIUseAI Virtual Talks para la comunidad de AI Builders Latam.",
 };
 
-const TALKS = [
-  {
-    meta: "Virtual Talk · Producto",
-    title: "Cómo equipos de producto usan IA para acelerar discovery",
-    body: "Una conversación sobre investigación, síntesis de feedback, prototipos rápidos y decisiones de producto asistidas por modelos.",
-  },
-  {
-    meta: "Virtual Talk · Ingeniería",
-    title: "Workflows con agentes para construir y refactorizar software",
-    body: "Demos prácticas de cómo convertir contexto, pruebas y revisión en ciclos de desarrollo más claros con herramientas de IA.",
-  },
-  {
-    meta: "Virtual Talk · Operaciones",
-    title: "Automatizaciones que sí sobreviven al trabajo diario",
-    body: "Casos de uso para reporting, soporte, análisis y operaciones internas sin caer en demos frágiles que nadie mantiene.",
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function Talks() {
+export default async function Talks() {
+  const talks = await listPublishedVirtualTalks();
+
   return (
     <>
       <SiteHeader active="talks" />
@@ -41,14 +28,25 @@ export default function Talks() {
         </section>
 
         <section className="archive-grid" aria-label="HowIUseAI Virtual Talks anteriores">
-          {TALKS.map((talk) => (
-            <article className="archive-card" key={talk.title}>
-              <p className="archive-meta">{talk.meta}</p>
-              <h2>{talk.title}</h2>
-              <p>{talk.body}</p>
-              <span className="archive-link is-muted">Grabación próximamente</span>
+          {talks.length === 0 ? (
+            <article className="archive-card">
+              <p className="archive-meta">HowIUseAI</p>
+              <h2>Próximamente</h2>
+              <p>Las charlas aparecerán aquí cuando estén publicadas desde el dashboard.</p>
+              <span className="archive-link is-muted">Próximamente</span>
             </article>
-          ))}
+          ) : (
+            talks.map((talk) => (
+              <article className="archive-card" key={talk.id}>
+                <p className="archive-meta">{talk.meta}</p>
+                <h2>{talk.title}</h2>
+                <p>{talk.body}</p>
+                <a className="archive-link" href={talk.href} target="_blank" rel="noreferrer">
+                  Ver en Luma
+                </a>
+              </article>
+            ))
+          )}
         </section>
       </main>
 
