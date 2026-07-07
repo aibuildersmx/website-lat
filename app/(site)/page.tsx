@@ -3,6 +3,9 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GlassAura } from "@/components/glass-aura";
 import { NewsletterSignup } from "@/components/newsletter-signup";
+import { subscriberMetrics } from "@/lib/newsletter/subscriber-metrics";
+
+export const dynamic = "force-dynamic";
 
 const READER_LOGOS = [
   {
@@ -44,7 +47,10 @@ const READER_LOGOS = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const metrics = await subscriberMetrics();
+  const subscriberCount = metrics.currentSubscribers.toLocaleString("es-MX");
+
   return (
     <>
       <SiteHeader active="home" />
@@ -80,7 +86,7 @@ export default function Home() {
                 <span className="avatar-more">+</span>
               </div>
               <p>
-                Únete a más de <strong>3,000 lectores</strong>
+                Únete a <strong>{subscriberCount} lectores</strong>
               </p>
             </div>
           </div>

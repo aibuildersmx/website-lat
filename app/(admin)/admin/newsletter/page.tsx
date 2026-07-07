@@ -252,38 +252,47 @@ export default async function NewsletterListPage() {
 
         <SubscriberLineChart history={metrics.history} />
 
-        <div className="mt-6 overflow-hidden rounded-xl border border-black/5 dark:border-white/10">
-          {metrics.history.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
-              Aún no hay suscripciones con fecha registrada.
-            </p>
-          ) : (
-            <ul className="divide-y divide-black/5 dark:divide-white/10">
-              {metrics.history.map((point) => (
-                <li
-                  key={point.period}
-                  className="grid grid-cols-[7rem_1fr_6rem] items-center gap-4 px-4 py-3 text-sm"
-                >
-                  <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                    {point.period}
-                  </span>
-                  <span className="h-2 overflow-hidden rounded-full bg-stone-100 dark:bg-white/10">
-                    <span
-                      className="block h-full rounded-full bg-gray-800 dark:bg-gray-100"
-                      style={{
-                        width: `${Math.max(4, (point.newSubscribers / maxMonthlySubscribers) * 100)}%`,
-                      }}
-                    />
-                  </span>
-                  <span className="text-right text-gray-500 dark:text-gray-400">
-                    +{point.newSubscribers.toLocaleString("es-MX")} /{" "}
-                    {point.cumulativeSubscribers.toLocaleString("es-MX")}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <details className="group mt-6 overflow-hidden rounded-xl border border-black/5 dark:border-white/10">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-stone-50 dark:text-gray-300 dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+            <span>Detalle mensual</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="group-open:hidden">Mostrar</span>
+              <span className="hidden group-open:inline">Ocultar</span>
+            </span>
+          </summary>
+          <div className="border-t border-black/5 dark:border-white/10">
+            {metrics.history.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
+                Aún no hay suscripciones con fecha registrada.
+              </p>
+            ) : (
+              <ul className="divide-y divide-black/5 dark:divide-white/10">
+                {metrics.history.map((point) => (
+                  <li
+                    key={point.period}
+                    className="grid grid-cols-[7rem_1fr_6rem] items-center gap-4 px-4 py-3 text-sm"
+                  >
+                    <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                      {point.period}
+                    </span>
+                    <span className="h-2 overflow-hidden rounded-full bg-stone-100 dark:bg-white/10">
+                      <span
+                        className="block h-full rounded-full bg-gray-800 dark:bg-gray-100"
+                        style={{
+                          width: `${Math.max(4, (point.newSubscribers / maxMonthlySubscribers) * 100)}%`,
+                        }}
+                      />
+                    </span>
+                    <span className="text-right text-gray-500 dark:text-gray-400">
+                      +{point.newSubscribers.toLocaleString("es-MX")} /{" "}
+                      {point.cumulativeSubscribers.toLocaleString("es-MX")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </details>
       </section>
 
       <section className="mt-4 rounded-2xl border border-black/5 bg-white p-5 dark:border-white/10 dark:bg-neutral-900">
