@@ -55,11 +55,7 @@ export function BulkSubscriberImport() {
   const [fileName, setFileName] = useState("");
 
   return (
-    <form
-      action={action}
-      encType="multipart/form-data"
-      className="mt-4 grid gap-4 lg:grid-cols-[1fr_18rem]"
-    >
+    <form action={action} className="mt-4 grid gap-4 lg:grid-cols-[1fr_18rem]">
       <div className="grid gap-3">
         <textarea
           name="emails"
