@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { Issue } from "@/lib/newsletter/types";
 import {
   createIssueDraft,
+  deleteDraftIssue,
   saveIssue,
   sendTest,
   sendIssue,
@@ -48,6 +49,7 @@ export function IssueEditor({
   const createPromise = useRef<Promise<string> | null>(null);
   const sent = status === "sent";
   const sending = status === "sending";
+  const draft = status === "draft";
 
   const ensureIssueId = useCallback(async (data: Issue): Promise<string> => {
     if (issueId) return issueId;
@@ -145,6 +147,16 @@ export function IssueEditor({
     }
   }
 
+  async function onDeleteDraft() {
+    if (!issueId || !draft) return;
+    if (!window.confirm("¿Eliminar este borrador? Esta acción no se puede deshacer.")) return;
+
+    const formData = new FormData();
+    formData.set("id", issueId);
+    await deleteDraftIssue(formData);
+    window.location.href = "/admin/newsletter";
+  }
+
   const saveText =
     saveState === "saving"
       ? "Guardando…"
@@ -220,6 +232,15 @@ export function IssueEditor({
               className="h-10 rounded-full border border-red-500/30 px-4 font-mono text-[11px] font-bold uppercase tracking-normal text-red-600 transition hover:border-red-500/60 hover:bg-red-500/5"
             >
               Reintentar {progress.failed} fallidos
+            </button>
+          )}
+          {draft && issueId && (
+            <button
+              type="button"
+              onClick={onDeleteDraft}
+              className="h-10 rounded-full border border-red-500/30 px-4 font-mono text-[11px] font-bold uppercase tracking-normal text-red-600 transition hover:border-red-500/60 hover:bg-red-500/5 dark:text-red-400"
+            >
+              Eliminar borrador
             </button>
           )}
           <button
