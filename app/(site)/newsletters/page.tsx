@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GlassAura } from "@/components/glass-aura";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -73,6 +74,7 @@ export default async function Newsletters() {
       </main>
 
       <SiteFooter />
+      <GlassAura />
     </>
   );
 }
