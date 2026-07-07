@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Home, Mail, Menu, Users, X, ChevronUp } from "lucide-react";
+import { CalendarDays, Home, Mail, Menu, PlusCircle, Users, X, ChevronUp } from "lucide-react";
 import type { AdminLanguage } from "@/lib/admin/language";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageToggle } from "./language-toggle";
@@ -17,7 +17,7 @@ const SHELL_COPY: Record<
     signOut: string;
     openMenu: string;
     closeMenu: string;
-    nav: { talks: string; team: string };
+    nav: { audience: string; newsletter: string; newIssue: string; talks: string; team: string };
   }
 > = {
   es: {
@@ -26,6 +26,9 @@ const SHELL_COPY: Record<
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",
     nav: {
+      audience: "Audiencia",
+      newsletter: "Newsletter",
+      newIssue: "Nuevo issue",
       talks: "Charlas",
       team: "Equipo",
     },
@@ -36,6 +39,9 @@ const SHELL_COPY: Record<
     openMenu: "Open menu",
     closeMenu: "Close menu",
     nav: {
+      audience: "Audience",
+      newsletter: "Newsletter",
+      newIssue: "New issue",
       talks: "Talks",
       team: "Team",
     },
@@ -133,7 +139,15 @@ function AccountFooter({
 // (every logged-in user is an admin). When role-based gating lands, add an
 // optional `requires` predicate here and filter against the user's role.
 const NAV: { href: string; label: string; section: string; icon: typeof Home; exact?: boolean }[] = [
-  { href: "/admin/newsletter", label: "Newsletter", section: "The Build Log", icon: Mail },
+  { href: "/admin/audience", label: "audience", section: "The Build Log", icon: Users },
+  { href: "/admin/newsletter", label: "newsletter", section: "The Build Log", icon: Mail },
+  {
+    href: "/admin/newsletter/new",
+    label: "newIssue",
+    section: "The Build Log",
+    icon: PlusCircle,
+    exact: true,
+  },
   { href: "/admin/talks", label: "talks", section: "HowIUseAI", icon: CalendarDays },
   { href: "/admin/team", label: "team", section: "Admin", icon: Users },
 ];
@@ -141,6 +155,15 @@ const NAV: { href: string; label: string; section: string; icon: typeof Home; ex
 function isActive(pathname: string, href: string, exact?: boolean): boolean {
   if (exact) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function navLabel(label: string, copy: (typeof SHELL_COPY)[AdminLanguage]): string {
+  if (label === "audience") return copy.nav.audience;
+  if (label === "newsletter") return copy.nav.newsletter;
+  if (label === "newIssue") return copy.nav.newIssue;
+  if (label === "talks") return copy.nav.talks;
+  if (label === "team") return copy.nav.team;
+  return label;
 }
 
 // Wordmark SVG is white artwork: invert it to black on light backgrounds,
@@ -195,12 +218,7 @@ export function AdminShell({
             {section.items.map((item) => {
               const active = isActive(pathname, item.href, item.exact);
               const Icon = item.icon;
-              const label =
-                item.label === "talks"
-                  ? copy.nav.talks
-                  : item.label === "team"
-                    ? copy.nav.team
-                    : item.label;
+              const label = navLabel(item.label, copy);
               return (
                 <li key={item.href}>
                   <Link

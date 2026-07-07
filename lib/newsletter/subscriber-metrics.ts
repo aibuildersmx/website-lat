@@ -62,6 +62,28 @@ export interface SubscriberMetrics {
   };
 }
 
+export interface AudienceSubscriberSearchResult {
+  email: string;
+  name: string | null;
+  newsletterSubscribed: boolean;
+  subscribedAt: string | null;
+  unsubscribedAt: string | null;
+  source: string | null;
+  medium: string | null;
+  campaign: string | null;
+  referrer: string | null;
+  landingPage: string | null;
+  sources: string[];
+  tags: string[];
+}
+
+export interface AudienceSubscriberSearch {
+  query: string;
+  total: number;
+  limit: number;
+  subscribers: AudienceSubscriberSearchResult[];
+}
+
 const PERSONAL_EMAIL_DOMAINS = [
   "gmail.com",
   "googlemail.com",
@@ -155,6 +177,91 @@ function channelSql() {
       else 'Direct / unknown'
     end
   `;
+}
+
+function normalizeSearchQuery(query: string): string {
+  return query.trim().replace(/\s+/g, " ").slice(0, 160);
+}
+
+function subscriberSearchWhere(pattern: string) {
+  return sql`
+    where email ilike ${pattern}
+      or coalesce(name, '') ilike ${pattern}
+      or ${domainSql()} ilike ${pattern}
+      or coalesce(attribution_source, '') ilike ${pattern}
+      or coalesce(attribution_medium, '') ilike ${pattern}
+      or coalesce(attribution_campaign, '') ilike ${pattern}
+      or coalesce(attribution_referrer, '') ilike ${pattern}
+      or coalesce(attribution_landing_page, '') ilike ${pattern}
+      or array_to_string(sources, ' ') ilike ${pattern}
+      or array_to_string(tags, ' ') ilike ${pattern}
+  `;
+}
+
+export async function searchAudienceSubscribers(
+  query: string,
+  limit = 50,
+): Promise<AudienceSubscriberSearch> {
+  const normalized = normalizeSearchQuery(query);
+  const safeLimit = Math.min(Math.max(limit, 1), 100);
+  const where = normalized ? subscriberSearchWhere(`%${normalized}%`) : sql``;
+  const [{ total } = { total: 0 }] = await db.execute<{ total: number }>(sql`
+    select count(*)::int as total
+    from contacts
+    ${where}
+  `);
+  const rows = await db.execute<{
+    email: string;
+    name: string | null;
+    newsletter_subscribed: boolean;
+    subscribed_at: string | null;
+    unsubscribed_at: string | null;
+    source: string | null;
+    medium: string | null;
+    campaign: string | null;
+    referrer: string | null;
+    landing_page: string | null;
+    sources: string[];
+    tags: string[];
+  }>(sql`
+    select
+      email,
+      name,
+      newsletter_subscribed,
+      newsletter_subscribed_at::text as subscribed_at,
+      newsletter_unsubscribed_at::text as unsubscribed_at,
+      attribution_source as source,
+      attribution_medium as medium,
+      attribution_campaign as campaign,
+      attribution_referrer as referrer,
+      attribution_landing_page as landing_page,
+      sources,
+      tags
+    from contacts
+    ${where}
+    order by newsletter_subscribed desc, newsletter_subscribed_at desc nulls last, created_at desc
+    limit ${safeLimit}
+  `);
+
+  return {
+    query: normalized,
+    total,
+    limit: safeLimit,
+    subscribers: rows.map((row) => ({
+      email: row.email,
+      name: row.name,
+      newsletterSubscribed: row.newsletter_subscribed,
+      subscribedAt: row.subscribed_at,
+      unsubscribedAt: row.unsubscribed_at,
+      source: row.source,
+      medium: row.medium,
+      campaign: row.campaign,
+      referrer: row.referrer,
+      landingPage: row.landing_page,
+      sources: row.sources,
+      tags: row.tags,
+    })),
+  };
 }
 
 export async function subscriberMetrics(): Promise<SubscriberMetrics> {

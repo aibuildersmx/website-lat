@@ -28,6 +28,7 @@ import { getBoss, SEND_BATCH_QUEUE } from "@/lib/queue/boss";
 import { normalizeAdminLanguage } from "@/lib/admin/language";
 
 const LIST_PATH = "/admin/newsletter";
+const AUDIENCE_PATH = "/admin/audience";
 const BULK_IMPORT_SOURCE = "admin-bulk-import";
 const MAX_BULK_IMPORT_EMAILS = 10_000;
 
@@ -211,6 +212,13 @@ function nextSlug(existing: string[]): string {
 
 export async function createIssue(): Promise<void> {
   if (await gate()) return;
+  const id = await createIssueDraft();
+  revalidatePath(LIST_PATH);
+  redirect(`${LIST_PATH}/${id}`);
+}
+
+export async function createIssueDraft(): Promise<string> {
+  if (await gate()) redirect("/login");
   const slugs = await db
     .select({ slug: newsletterIssues.slug })
     .from(newsletterIssues);
@@ -221,7 +229,7 @@ export async function createIssue(): Promise<void> {
     .values({ slug, subject: data.subject, status: "draft", data })
     .returning({ id: newsletterIssues.id });
   revalidatePath(LIST_PATH);
-  redirect(`${LIST_PATH}/${inserted[0].id}`);
+  return inserted[0].id;
 }
 
 export async function toggleIssueArchiveVisibility(formData: FormData): Promise<void> {
@@ -306,7 +314,7 @@ export async function bulkImportSubscribers(
 
   const insertedCount = inserted.length;
   const skippedCount = parsed.emails.length - insertedCount;
-  revalidatePath(LIST_PATH);
+  revalidatePath(AUDIENCE_PATH);
 
   return {
     ok: true,
