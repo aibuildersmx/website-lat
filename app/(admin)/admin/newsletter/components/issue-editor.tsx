@@ -157,11 +157,13 @@ export function IssueEditor({
   return (
     <div>
       {/* Toolbar */}
-      <div className="sticky top-0 z-10 -mx-4 -mt-10 mb-8 flex flex-wrap items-center gap-3 border-b border-black/5 bg-stone-100/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:-mt-12 sm:px-6 dark:border-white/10 dark:bg-neutral-950/90">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-medium text-gray-800 dark:text-gray-100">Issue {issue.slug}</span>
+      <div className="sticky top-0 z-10 -mx-4 -mt-10 mb-8 flex flex-wrap items-center gap-4 border-b border-black/5 bg-stone-100/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:-mt-12 sm:px-6 dark:border-white/10 dark:bg-neutral-950/95">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="truncate text-xl font-medium text-gray-800 dark:text-gray-100">
+            Issue {issue.slug}
+          </span>
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+            className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium ${
               sent
                 ? "bg-green-500/10 text-green-700 dark:text-green-400"
                 : sending
@@ -176,17 +178,18 @@ export function IssueEditor({
             />
             {sent ? "Enviado" : sending ? "Enviando…" : "Borrador"}
           </span>
+          {saveText && (
+            <span className="shrink-0 text-sm font-medium text-gray-400 dark:text-gray-500">
+              {saveText}
+            </span>
+          )}
         </div>
 
-        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
-          {saveText}
-        </span>
-
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => setShowEmail(true)}
-            className="rounded-full border border-black/10 px-3 py-1.5 font-sans text-xs font-bold uppercase tracking-normal text-gray-600 transition hover:border-black/30 dark:border-white/15 dark:text-gray-300 dark:hover:border-white/40"
+            className="h-10 rounded-full border border-black/10 px-4 font-mono text-[11px] font-bold uppercase tracking-normal text-gray-600 transition hover:border-black/30 hover:bg-black/5 dark:border-white/15 dark:text-gray-300 dark:hover:border-white/40 dark:hover:bg-white/5"
           >
             Ver email real
           </button>
@@ -195,12 +198,12 @@ export function IssueEditor({
             value={testEmail}
             onChange={(e) => setTestEmail(e.target.value)}
             placeholder="tu@correo.com"
-            className="w-40 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none focus:border-black/40 dark:border-white/15 dark:bg-neutral-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-white/40"
+            className="h-10 w-48 rounded-full border border-black/10 bg-white px-4 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-black/40 dark:border-white/15 dark:bg-neutral-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-white/40"
           />
           <button
             type="button"
             onClick={onSendTest}
-            className="rounded-full border border-black/10 px-3 py-1.5 font-sans text-xs font-bold uppercase tracking-normal text-gray-600 transition hover:border-black/30 dark:border-white/15 dark:text-gray-300 dark:hover:border-white/40"
+            className="h-10 rounded-full border border-black/10 px-4 font-mono text-[11px] font-bold uppercase tracking-normal text-gray-600 transition hover:border-black/30 hover:bg-black/5 dark:border-white/15 dark:text-gray-300 dark:hover:border-white/40 dark:hover:bg-white/5"
           >
             Enviar prueba
           </button>
@@ -214,7 +217,7 @@ export function IssueEditor({
             <button
               type="button"
               onClick={onRetryFailed}
-              className="rounded-full border border-red-500/30 px-3 py-1.5 font-sans text-xs font-bold uppercase tracking-normal text-red-600 transition hover:border-red-500/60"
+              className="h-10 rounded-full border border-red-500/30 px-4 font-mono text-[11px] font-bold uppercase tracking-normal text-red-600 transition hover:border-red-500/60 hover:bg-red-500/5"
             >
               Reintentar {progress.failed} fallidos
             </button>
@@ -223,7 +226,7 @@ export function IssueEditor({
             type="button"
             onClick={onSendIssue}
             disabled={sent || sending}
-            className="rounded-full bg-gray-900 px-4 py-1.5 font-sans text-xs font-bold uppercase tracking-normal text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+            className="h-10 rounded-full bg-gray-900 px-5 font-mono text-[11px] font-bold uppercase tracking-normal text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-gray-200"
           >
             {sent ? "Enviado" : sending ? "Enviando…" : "Enviar newsletter"}
           </button>
