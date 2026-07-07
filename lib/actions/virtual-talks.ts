@@ -15,11 +15,15 @@ async function gate(): Promise<boolean> {
 }
 
 function isMissingTable(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  if ("code" in error && (error as { code?: string }).code === "42P01") return true;
+
+  const cause = "cause" in error ? (error as { cause?: unknown }).cause : null;
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === "42P01"
+    typeof cause === "object" &&
+    cause !== null &&
+    "code" in cause &&
+    (cause as { code?: string }).code === "42P01"
   );
 }
 
@@ -40,14 +44,13 @@ export async function listVirtualTalksForAdmin(): Promise<VirtualTalkCard[]> {
       .select({
         id: virtualTalks.id,
         title: virtualTalks.title,
-        body: virtualTalks.body,
-        meta: virtualTalks.meta,
+        eventDate: virtualTalks.eventDate,
         href: virtualTalks.href,
         position: virtualTalks.position,
         published: virtualTalks.published,
       })
       .from(virtualTalks)
-      .orderBy(asc(virtualTalks.position), asc(virtualTalks.createdAt));
+      .orderBy(desc(virtualTalks.eventDate), desc(virtualTalks.createdAt));
   } catch (error) {
     if (isMissingTable(error)) return [];
     throw error;
@@ -59,7 +62,8 @@ export async function createVirtualTalk(formData: FormData): Promise<void> {
 
   const title = clean(formData.get("title"));
   const href = clean(formData.get("href"));
-  if (!title || !href) return;
+  const eventDate = clean(formData.get("eventDate"));
+  if (!title || !href || !eventDate) return;
 
   const [last] = await db
     .select({ position: virtualTalks.position })
@@ -72,8 +76,7 @@ export async function createVirtualTalk(formData: FormData): Promise<void> {
     .values({
       title,
       href,
-      meta: clean(formData.get("meta")) || "Virtual Talk",
-      body: clean(formData.get("body")),
+      eventDate,
       position: (last?.position ?? 0) + 10,
       published: true,
     })
@@ -88,15 +91,15 @@ export async function updateVirtualTalk(formData: FormData): Promise<void> {
   const id = clean(formData.get("id"));
   const title = clean(formData.get("title"));
   const href = clean(formData.get("href"));
-  if (!id || !title || !href) return;
+  const eventDate = clean(formData.get("eventDate"));
+  if (!id || !title || !href || !eventDate) return;
 
   await db
     .update(virtualTalks)
     .set({
       title,
       href,
-      meta: clean(formData.get("meta")) || "Virtual Talk",
-      body: clean(formData.get("body")),
+      eventDate,
       updatedAt: new Date(),
     })
     .where(eq(virtualTalks.id, id));

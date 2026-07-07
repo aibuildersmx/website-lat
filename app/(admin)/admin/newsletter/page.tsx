@@ -316,6 +316,7 @@ export default async function NewsletterListPage() {
                     </Link>
                     <p className="mt-0.5 text-xs font-medium text-gray-400 dark:text-gray-500">
                       Issue {issue.slug}
+                      {issue.date ? ` · ${issue.date}` : ""}
                     </p>
                   </div>
                   <ArchiveToggle

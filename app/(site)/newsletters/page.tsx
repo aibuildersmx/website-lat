@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { NewsletterSignup } from "@/components/newsletter-signup";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { listPublishedIssues } from "@/lib/newsletter/archive";
 
@@ -11,6 +13,14 @@ export const metadata: Metadata = {
 
 // Reads sent issues from the DB on each request.
 export const dynamic = "force-dynamic";
+
+function readableArchiveMeta(issue: {
+  issueLabel: string;
+  date: string;
+  readingTime: string;
+}) {
+  return `${issue.issueLabel} ${issue.date} ${issue.readingTime}`;
+}
 
 export default async function Newsletters() {
   const issues = await listPublishedIssues();
@@ -27,6 +37,9 @@ export default async function Newsletters() {
             Revisa las ediciones anteriores para entender qué cambió en IA, qué señales importaron y
             qué herramientas empezaron a aparecer en el radar de builders en Latinoamérica.
           </p>
+          <div className="archive-signup">
+            <NewsletterSignup className="archive-signup-form" />
+          </div>
         </section>
 
         <section className="newsletter-list" aria-label="Ediciones anteriores">
@@ -42,34 +55,24 @@ export default async function Newsletters() {
             </article>
           ) : (
             issues.map((issue) => (
-              <article className="newsletter-row" key={issue.slug}>
-                <div className="newsletter-row-main">
-                  <p className="archive-meta">
-                    {issue.issueLabel} · {issue.date} · {issue.readingTime}
-                  </p>
-                  <h2>{issue.title}</h2>
-                </div>
-                <p>{issue.subtitle}</p>
-              </article>
+              <Link
+                href={`/newsletters/${issue.slug}`}
+                className="newsletter-row"
+                key={issue.slug}
+                aria-label={readableArchiveMeta(issue)}
+              >
+                <span className="archive-meta" aria-hidden="true">
+                  <span>{issue.issueLabel}</span>
+                  <span>{issue.readingTime}</span>
+                  <span>{issue.date}</span>
+                </span>
+              </Link>
             ))
           )}
         </section>
       </main>
 
-      <footer className="site-footer">
-        <div className="footer-inner">
-          <div>
-            <p className="footer-brand">AI Builders Latam</p>
-            <p className="footer-copy">
-              Archivo editorial de The Build Log. Las ediciones completas se irán publicando aquí.
-            </p>
-          </div>
-          <nav className="footer-links" aria-label="Enlaces">
-            <Link href="/">Home</Link>
-            <Link href="/talks">Charlas virtuales HowIUseAI</Link>
-          </nav>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

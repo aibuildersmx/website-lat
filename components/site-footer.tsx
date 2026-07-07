@@ -26,7 +26,7 @@ export function SiteFooter() {
               <path d="M23 7 16 12l7 5V7Z" />
               <rect x="1" y="5" width="15" height="14" rx="2" />
             </svg>
-            Charlas virtuales HowIUseAI
+            Charlas virtuales
           </Link>
           <a href="https://aibuilders.mx" target="_blank" rel="noreferrer">
             <svg viewBox="0 0 24 24" aria-hidden="true">

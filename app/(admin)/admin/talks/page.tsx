@@ -3,7 +3,6 @@ import {
   createVirtualTalk,
   deleteVirtualTalk,
   listVirtualTalksForAdmin,
-  moveVirtualTalk,
   toggleVirtualTalkPublished,
   updateVirtualTalk,
 } from "@/lib/actions/virtual-talks";
@@ -15,12 +14,14 @@ function Field({
   name,
   defaultValue,
   placeholder,
+  type = "text",
   textarea = false,
 }: {
   label: string;
   name: string;
   defaultValue?: string;
   placeholder?: string;
+  type?: string;
   textarea?: boolean;
 }) {
   const className =
@@ -41,6 +42,7 @@ function Field({
         />
       ) : (
         <input
+          type={type}
           name={name}
           defaultValue={defaultValue}
           placeholder={placeholder}
@@ -86,56 +88,61 @@ export default async function TalksAdminPage() {
 
       <section className="mt-8 rounded-2xl border border-black/5 bg-white p-5 dark:border-white/10 dark:bg-neutral-900">
         <h2 className="text-lg font-medium text-gray-800 dark:text-gray-100">Nueva charla</h2>
-        <form action={createVirtualTalk} className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <form
+          action={createVirtualTalk}
+          className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_11rem_auto] lg:items-end"
+        >
           <Field label="Titulo" name="title" placeholder="How I Use AI #8: ..." />
-          <Field label="Luma URL" name="href" placeholder="https://luma.com/..." />
-          <Field label="Meta" name="meta" placeholder="Virtual Talk · 09 Jul 2026" />
-          <Field label="Descripcion" name="body" placeholder="Resumen corto para la pagina publica" />
-          <div className="lg:col-span-2">
-            <PillButton tone="dark">Crear charla</PillButton>
-          </div>
+          <Field label="URL" name="href" placeholder="https://luma.com/..." />
+          <Field label="Fecha" name="eventDate" type="date" />
+          <PillButton tone="dark">Crear charla</PillButton>
         </form>
       </section>
 
       <section className="mt-6 overflow-hidden rounded-2xl border border-black/5 bg-white dark:border-white/10 dark:bg-neutral-900">
         {talks.length === 0 ? (
           <p className="px-6 py-16 text-center text-sm text-gray-400 dark:text-gray-500">
-            Aun no hay charlas. Agrega una con el formulario de arriba.
+            Aún no hay charlas. Agrega una con el formulario de arriba.
           </p>
         ) : (
           <ul className="divide-y divide-black/5 dark:divide-white/10">
             {talks.map((talk) => (
-              <li key={talk.id} className="p-5">
-                <form action={updateVirtualTalk} className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-                  <input type="hidden" name="id" value={talk.id} />
-                  <Field label="Titulo" name="title" defaultValue={talk.title} />
-                  <Field label="Luma URL" name="href" defaultValue={talk.href} />
-                  <Field label="Meta" name="meta" defaultValue={talk.meta} />
-                  <Field label="Descripcion" name="body" defaultValue={talk.body} textarea />
-                  <div className="flex flex-wrap items-center gap-2 lg:col-span-2">
-                    <PillButton tone="dark">Guardar</PillButton>
-                    <a
-                      href={talk.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full border border-black/10 px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-normal text-gray-600 transition hover:border-black/30 hover:bg-black/5 dark:border-white/15 dark:text-gray-300 dark:hover:border-white/40 dark:hover:bg-white/5"
-                    >
-                      Abrir Luma
-                    </a>
-                  </div>
-                </form>
+              <li key={talk.id} className="p-4">
+                <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_11rem_auto] xl:items-end">
+                  <form action={updateVirtualTalk} className="contents">
+                    <input type="hidden" name="id" value={talk.id} />
+                    <Field label="Titulo" name="title" defaultValue={talk.title} />
+                    <Field label="URL" name="href" defaultValue={talk.href} />
+                    <Field
+                      label="Fecha"
+                      name="eventDate"
+                      type="date"
+                      defaultValue={talk.eventDate}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <PillButton tone="dark">Guardar</PillButton>
+                      <a
+                        href={talk.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-black/10 px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-normal text-gray-600 transition hover:border-black/30 hover:bg-black/5 dark:border-white/15 dark:text-gray-300 dark:hover:border-white/40 dark:hover:bg-white/5"
+                      >
+                        Abrir URL
+                      </a>
+                    </div>
+                  </form>
+                </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <form action={moveVirtualTalk}>
-                    <input type="hidden" name="id" value={talk.id} />
-                    <input type="hidden" name="direction" value="up" />
-                    <PillButton>Subir</PillButton>
-                  </form>
-                  <form action={moveVirtualTalk}>
-                    <input type="hidden" name="id" value={talk.id} />
-                    <input type="hidden" name="direction" value="down" />
-                    <PillButton>Bajar</PillButton>
-                  </form>
+                  <span
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                      talk.published
+                        ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                        : "bg-black/5 text-gray-500 dark:bg-white/10 dark:text-gray-300"
+                    }`}
+                  >
+                    {talk.published ? "Publicado" : "Oculto"}
+                  </span>
                   <form action={toggleVirtualTalkPublished}>
                     <input type="hidden" name="id" value={talk.id} />
                     <input type="hidden" name="published" value={talk.published ? "false" : "true"} />
@@ -145,15 +152,6 @@ export default async function TalksAdminPage() {
                     <input type="hidden" name="id" value={talk.id} />
                     <PillButton tone="danger">Eliminar</PillButton>
                   </form>
-                  <span
-                    className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                      talk.published
-                        ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                        : "bg-black/5 text-gray-500 dark:bg-white/10 dark:text-gray-300"
-                    }`}
-                  >
-                    {talk.published ? "Publicado" : "Oculto"} · Orden {talk.position}
-                  </span>
                 </div>
               </li>
             ))}

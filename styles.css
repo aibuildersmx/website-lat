@@ -855,6 +855,7 @@ button:hover svg {
 
 .site-footer {
   background: var(--black);
+  box-shadow: 0 100vh 0 100vh var(--black);
   padding: 56px 16px;
 }
 
@@ -879,6 +880,50 @@ button:hover svg {
   color: var(--muted);
   font-size: clamp(1rem, 1.45vw, 1.22rem);
   line-height: 1.7;
+}
+
+.archive-signup {
+  width: min(100%, 430px);
+  margin: 22px auto 0;
+}
+
+.archive-signup p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: nowrap;
+}
+
+.archive-signup .hero-form,
+.archive-signup .hero-form-status {
+  margin-top: 12px;
+}
+
+.archive-signup .hero-form {
+  width: min(100%, 400px);
+  gap: 6px;
+  padding: 4px;
+  border-radius: 13px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 5%);
+}
+
+.archive-signup .hero-form input {
+  min-height: 42px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.archive-signup .hero-form button {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.archive-signup .hero-form button svg {
+  width: 15px;
+  height: 15px;
 }
 
 .archive-grid {
@@ -926,27 +971,129 @@ button:hover svg {
 }
 
 .newsletter-list {
-  width: min(100%, 72rem);
+  width: min(100%, 46rem);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   margin: 0 auto;
 }
 
 .newsletter-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
-  align-items: center;
-  gap: 28px;
-  min-height: 132px;
-  padding: 24px 28px;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 20px 24px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--white);
   box-shadow: 0 18px 56px rgb(0 0 0 / 4%);
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.newsletter-row:hover,
+.newsletter-row:focus-visible {
+  border-color: rgb(0 0 0 / 18%);
+  box-shadow: 0 20px 64px rgb(0 0 0 / 7%);
+  transform: translateY(-1px);
+  outline: none;
 }
 
 .newsletter-row .archive-meta {
-  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 9rem;
+  align-items: center;
+  gap: 28px;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.newsletter-row .archive-meta span {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.newsletter-row .archive-meta span:nth-child(2) {
+  justify-self: center;
+  text-align: center;
+}
+
+.newsletter-row .archive-meta span:last-child {
+  justify-self: end;
+  text-align: right;
+}
+
+.talks-row .archive-meta {
+  grid-template-columns: minmax(0, 1fr) 11rem 9rem;
+  gap: 18px;
+}
+
+.talks-row .archive-meta > span:first-child {
+  display: flex;
+  align-items: baseline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.talks-row-number {
+  flex: 0 0 auto;
+  margin-right: 14px;
+  color: rgb(0 0 0 / 34%);
+  font-variant-numeric: tabular-nums;
+}
+
+.talks-row-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.talks-row .archive-meta > span:nth-child(2) {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 16px;
+  border: 1px solid rgb(0 0 0 / 10%);
+  border-radius: 999px;
+  font-weight: 650;
+  color: var(--ink);
+  background: rgb(0 0 0 / 3%);
+}
+
+.talks-row .archive-meta > span:nth-child(2):empty {
+  visibility: hidden;
+}
+
+.talks-row .archive-meta > span:last-child {
+  justify-self: end;
+  text-align: right;
+}
+
+.talks-row.is-upcoming {
+  border-color: rgb(0 0 0 / 28%);
+  box-shadow: 0 22px 70px rgb(0 0 0 / 9%);
+}
+
+.talks-row.is-upcoming .archive-meta > span:first-child,
+.talks-row.is-upcoming .archive-meta > span:last-child {
+  color: var(--ink);
+}
+
+.talks-row.is-upcoming .archive-meta > span:nth-child(2) {
+  border-color: var(--ink);
+  color: var(--white);
+  background: var(--ink);
 }
 
 .newsletter-row h2 {
@@ -961,6 +1108,21 @@ button:hover svg {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.6;
+}
+
+.newsletter-detail {
+  min-height: 100vh;
+  padding-top: 96px;
+  background: var(--white);
+}
+
+.newsletter-frame {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 0;
+  background: var(--white);
 }
 
 .archive-link {
@@ -1085,11 +1247,6 @@ button:hover svg {
     max-width: 42rem;
   }
 
-  .newsletter-row {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
   .sample-section {
     padding: 76px 16px;
   }
@@ -1206,6 +1363,10 @@ button:hover svg {
     margin-bottom: 36px;
   }
 
+  .archive-signup p {
+    white-space: normal;
+  }
+
   .archive-card {
     min-height: 0;
     padding: 24px;
@@ -1213,9 +1374,73 @@ button:hover svg {
   }
 
   .newsletter-row {
+    width: 100%;
+    max-width: 100%;
     min-height: 0;
     padding: 22px;
     border-radius: 16px;
+  }
+
+  .newsletter-row .archive-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .talks-row .archive-meta > span:first-child {
+    width: 100%;
+  }
+
+  .talks-row .archive-meta > span:nth-child(2) {
+    justify-self: start;
+  }
+
+  .talks-row .archive-meta > span:last-child {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .talks-row .archive-meta {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px 16px;
+  }
+
+  .talks-row .archive-meta > span:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .talks-row .archive-meta > span:nth-child(2):empty {
+    display: none;
+  }
+
+  .talks-row .archive-meta > span:nth-child(2):empty + span {
+    grid-column: 1 / -1;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .talks-row-number {
+    margin-right: 10px;
+  }
+
+  .talks-row-title {
+    white-space: normal;
+    line-height: 1.28;
+  }
+
+  .talks-row .archive-meta > span:nth-child(2) {
+    min-height: 30px;
+    padding: 0 13px;
+    font-size: 13px;
+  }
+
+  .newsletter-detail {
+    padding-top: 82px;
+  }
+
+  .newsletter-frame {
+    min-height: 0;
   }
 
   .brand-lockup {

@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   boolean,
+  date,
   integer,
   jsonb,
   timestamp,
@@ -94,8 +95,7 @@ export const virtualTalks = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     title: text("title").notNull(),
-    body: text("body").notNull().default(""),
-    meta: text("meta").notNull().default("Virtual Talk"),
+    eventDate: date("event_date").notNull(),
     href: text("href").notNull(),
     position: integer("position").notNull().default(0),
     published: boolean("published").notNull().default(true),

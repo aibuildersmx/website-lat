@@ -12,6 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed-admin": "tsx scripts/auth/seed-admin.ts",
+    "db:seed-virtual-talks": "tsx scripts/virtual-talks/seed.ts",
     "newsletter:test-send": "tsx scripts/newsletter/test-send.ts"
   },
   "dependencies": {
