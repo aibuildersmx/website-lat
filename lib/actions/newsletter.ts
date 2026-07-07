@@ -48,6 +48,20 @@ function previewHtml(issue: Issue): string {
   );
 }
 
+async function uploadedText(value: FormDataEntryValue | null): Promise<string> {
+  if (
+    value &&
+    typeof value === "object" &&
+    "size" in value &&
+    "text" in value &&
+    typeof value.text === "function" &&
+    Number(value.size) > 0
+  ) {
+    return value.text();
+  }
+  return "";
+}
+
 export interface IssueListItem {
   id: string;
   slug: string;
@@ -132,11 +146,7 @@ export async function bulkImportSubscribers(
   }
 
   const pasted = String(formData.get("emails") ?? "");
-  const file = formData.get("file");
-  const uploaded =
-    file instanceof File && file.size > 0
-      ? await file.text()
-      : "";
+  const uploaded = await uploadedText(formData.get("file"));
   const parsed = parseBulkSubscriberEmails(`${pasted}\n${uploaded}`);
 
   if (parsed.emails.length === 0) {

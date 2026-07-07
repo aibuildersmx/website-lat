@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Upload } from "lucide-react";
 import { bulkImportSubscribers } from "@/lib/actions/newsletter";
 import {
@@ -52,9 +52,14 @@ export function BulkSubscriberImport() {
     bulkImportSubscribers,
     initialBulkImportState,
   );
+  const [fileName, setFileName] = useState("");
 
   return (
-    <form action={action} className="mt-4 grid gap-4 lg:grid-cols-[1fr_18rem]">
+    <form
+      action={action}
+      encType="multipart/form-data"
+      className="mt-4 grid gap-4 lg:grid-cols-[1fr_18rem]"
+    >
       <div className="grid gap-3">
         <textarea
           name="emails"
@@ -67,11 +72,12 @@ export function BulkSubscriberImport() {
       <div className="flex flex-col gap-3">
         <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-black/15 bg-stone-50 px-4 py-5 text-center text-sm text-gray-500 transition hover:border-gray-400 hover:bg-stone-100 dark:border-white/15 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:border-white/30 dark:hover:bg-white/[0.06]">
           <Upload className="h-5 w-5" aria-hidden="true" />
-          <span className="font-medium">CSV o TXT</span>
+          <span className="font-medium">{fileName || "CSV o TXT"}</span>
           <input
             name="file"
             type="file"
             accept=".csv,.txt,text/csv,text/plain"
+            onChange={(event) => setFileName(event.currentTarget.files?.[0]?.name ?? "")}
             className="sr-only"
           />
         </label>
