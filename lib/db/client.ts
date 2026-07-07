@@ -8,7 +8,18 @@ if (!connectionString) {
 }
 
 // `prepare: false` is recommended for the Railway/PgBouncer-style proxy.
-const queryClient = postgres(connectionString, { prepare: false });
+const globalForDb = globalThis as typeof globalThis & {
+  postgresClient?: ReturnType<typeof postgres>;
+};
+
+const queryClient =
+  globalForDb.postgresClient ??
+  postgres(connectionString, {
+    prepare: false,
+    max: Number(process.env.POSTGRES_MAX_CONNECTIONS ?? 5),
+  });
+
+globalForDb.postgresClient = queryClient;
 
 export const db = drizzle(queryClient, { schema });
 export type DB = typeof db;
