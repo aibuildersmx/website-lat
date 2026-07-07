@@ -5,7 +5,7 @@ import {
   type AdminLanguage,
   normalizeAdminLanguage,
 } from "@/lib/admin/language";
-import { createIssue, listIssues, toggleIssueArchiveVisibility } from "@/lib/actions/newsletter";
+import { listIssues, toggleIssueArchiveVisibility } from "@/lib/actions/newsletter";
 
 export const dynamic = "force-dynamic";
 
@@ -111,14 +111,12 @@ export default async function NewsletterListPage() {
             Newsletter
           </h1>
         </div>
-        <form action={createIssue}>
-          <button
-            type="submit"
-            className="cursor-pointer rounded-full bg-gray-900 px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-normal text-white transition hover:bg-gray-700 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-          >
-            {copy.newIssue}
-          </button>
-        </form>
+        <Link
+          href="/admin/newsletter/new"
+          className="cursor-pointer rounded-full bg-gray-900 px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-normal text-white transition hover:bg-gray-700 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+        >
+          {copy.newIssue}
+        </Link>
       </div>
 
       <div className="mt-8 overflow-hidden rounded-2xl border border-black/5 bg-white dark:border-white/10 dark:bg-neutral-900">
