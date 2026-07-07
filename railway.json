@@ -1,0 +1,6 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "deploy": {
+    "preDeployCommand": ["node_modules/.bin/drizzle-kit migrate"]
+  }
+}
