@@ -21,6 +21,14 @@ export function SiteFooter() {
             </svg>
             Archivo de newsletters
           </Link>
+          <Link href="/blog">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 5h16" />
+              <path d="M4 12h16" />
+              <path d="M4 19h10" />
+            </svg>
+            Blog
+          </Link>
           <Link href="/talks">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M23 7 16 12l7 5V7Z" />

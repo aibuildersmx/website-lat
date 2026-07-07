@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 
-type Section = "home" | "newsletters" | "talks";
+type Section = "home" | "newsletters" | "blog" | "talks";
 
 export function SiteHeader({ active = "home" }: { active?: Section }) {
   return (
@@ -27,12 +27,17 @@ export function SiteHeader({ active = "home" }: { active?: Section }) {
               className={active === "newsletters" ? "is-active" : undefined}
               href="/newsletters"
             >
-              Ediciones anteriores
+              Newsletter
+            </Link>
+          </li>
+          <li className="nav-blog-item">
+            <Link className={active === "blog" ? "is-active" : undefined} href="/blog">
+              Blog
             </Link>
           </li>
           <li>
             <Link className={active === "talks" ? "is-active" : undefined} href="/talks">
-              Charlas virtuales
+              Charlas
             </Link>
           </li>
           <li>

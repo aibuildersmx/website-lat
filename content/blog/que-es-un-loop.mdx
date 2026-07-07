@@ -1,0 +1,118 @@
+---
+title: "Un loop es solo un prompt que se escribe solo"
+description: "Todo mundo habla de loops como si fueran un paradigma nuevo que te debería dar miedo. No lo es. Es un prompt automático y muy probablemente ya escribiste uno sin darte cuenta."
+date: "2026-06-22"
+readTime: "6 min"
+author: "Ricardo Garcia"
+cover: "/images/blog/que-es-un-loop/cover.jpg"
+coverCredit:
+  label: "Eugene Golovesov / Unsplash"
+  url: "https://unsplash.com/photos/zUuJz_idfqM"
+tags:
+  - ai
+  - agentes
+  - loops
+  - automatizacion
+tocItems:
+  - { id: "ya-usas-loops", label: "Ya usas loops sin saberlo" }
+  - { id: "tipos", label: "Los 4 tipos de loop" }
+  - { id: "andamiaje", label: "Qué necesita para no quemarte dinero" }
+  - { id: "contratar", label: "Diséñalo como si contrataras a alguien" }
+  - { id: "cuidado", label: "Dónde se descarrila un goal loop" }
+  - { id: "cuando-no", label: "Cuándo NO hacer un loop" }
+---
+
+Hace unas semanas alguien soltó la frase que prendió toda la conversación: *ya eres obsoleto si sigues prompteando, deberías estar diseñando loops donde tus agentes se prompteen a sí mismos.* Y como siempre que algo suena así de definitivo, vinieron decenas de explicaciones, cada una con más diagramas de flujo y más "yo corro mil loops al día" que la anterior.
+
+La mayoría estaba más interesada en los likes que en los loops. Porque debajo de todo el ruido, la idea es bastante simple.
+
+Un loop es un prompt automático. Punto. Ese es el concepto completo. No es un paradigma nuevo ni una arquitectura completamente nueva que te deba dar miedo. Si alguna vez programaste a tu asistente de AI para que cada mañana te mande un resumen del día, felicidades: ya escribiste un loop.
+
+La pregunta interesante no es *qué es un loop*. Es **cuándo conviene entregarle el prompt al agente** en lugar de teclearlo tú cada mañana y qué necesita ese loop para trabajar sin vaciarte la cartera en el proceso.
+
+<SectionTitle id="ya-usas-loops">Ya usas loops y no lo sabías</SectionTitle>
+
+Los equipos de software llevan décadas programando tareas que se disparan solas: cada cierto intervalo, a una hora fija, o cuando pasa algo. Nada de eso es nuevo. Lo único que cambió es **qué corre cuando suena esa alarma**.
+
+Antes, la alarma disparaba un script de bash, un programita simple que hace exactamente lo que le dijiste.
+
+Hoy, esa misma alarma dispara un agente: algo que entiende contexto, decide qué hacer y se adapta.
+
+Esa es toda la diferencia. El cron de siempre, pero con cerebro del otro lado.
+
+La mayoría de nosotros seguimos usando AI de la forma más manual posible: abres el chat, escribes, esperas, te aburres, vuelves a escribir. 
+
+No tiene nada de malo, yo lo hago todo el día y tú probablemente también deberías. Un loop solo agarra ese trabajo de teclear y se lo pasa al agente para que lo haga sin ti.
+
+<SectionTitle id="tipos">Los 4 tipos de loop</SectionTitle>
+
+Hay cuatro formas de automatizar un prompt. La diferencia entre ellas es una sola cosa: **qué hace que el agente se despierte.**
+
+<CheckList items={[
+  { title: "Heartbeat: late cada cierto tiempo", description: "\"Cada 5 minutos, revisa si llegó un ticket nuevo y, si lo hay, atiéndelo.\" El agente despierta con cada pulso, busca trabajo y actúa. Como un velador que se da su ronda." },
+  { title: "Cron: corre a una hora fija", description: "\"Cada domingo a las 9 de la noche, arma el reporte de la semana.\" Mismo principio que el heartbeat, pero amarrado al reloj en lugar de a un intervalo." },
+  { title: "Hook: reacciona a un evento", description: "No mira el reloj: mira lo que pasa. Llega un correo, alguien sube un archivo, se abre una sesión — y el agente responde a ESO. Como el sensor que prende la luz cuando entras al cuarto." },
+  { title: "Goal: corre hasta lograr un objetivo", description: "El más nuevo. Le das una meta y el agente sigue trabajando hasta cumplirla o hasta toparse con pared. No sale del loop hasta que terminó. Como decirle a alguien \"no te levantes hasta que esto pase todas las pruebas\"." },
+]} />
+
+No tienes que memorizar los nombres. Lo que importa es notar que **el tipo de loop sale de la forma del trabajo.** Algo que hay que revisar cada rato pide un heartbeat o un cron. Algo que responde a un evento pide un hook. Algo de "trabaja hasta que esté listo" pide un goal.
+
+<SectionTitle id="andamiaje">Qué necesitas para no quemar tokens</SectionTitle>
+
+Aquí está la parte que la gente se salta y luego se lleva la sorpresa después cuando llega la cuenta mensual. Soltar un agente automático sin la base correcta es la forma más rápida de gastar mucho para producir poco.
+
+Un loop que de verdad funciona necesita tres cosas:
+
+<CheckList items={[
+  { title: "Memoria", description: "Que recuerde qué ya hizo. Sin memoria, cada vez que despierta empieza de cero, ciego y vuelve a hacer trabajo que ya estaba hecho. Puede ser algo tan simple como una lista de pendientes en un archivo." },
+  { title: "Herramientas conectadas", description: "Un agente sin acceso a tus cosas no tiene manos. Si quieres que revise tus PRs necesita GitHub; si quieres que te avise por Slack, necesita Slack conectado. Sin eso, el loop corre... y no puede tocar nada." },
+  { title: "Sub-agentes", description: "El agente principal no tiene que hacerlo todo él. Puede delegar pedazos a ayudantes especializados, sobre todo para revisar y validar y esperar a que le reporten. Un agente que orquesta a su propio equipito. Esto ayuda a conservar la ventana de contexto del agente principal." },
+]} />
+
+<Callout type="tip">
+  El error más caro es asumir que el agente "ya sabe". No sabe nada que no le hayas dado. Dale memoria, dale herramientas, y dale forma de delegar **(en ese orden)** antes de dejarlo correr solo.
+</Callout>
+
+Cuando juntas las tres, tienes un agente que arranca solo, recuerda en qué iba, alcanza las herramientas que necesita y reparte el trabajo pesado. Ahí lo tienes: un loop sano.
+
+<SectionTitle id="contratar">Diséñalo como si contrataras a alguien</SectionTitle>
+
+El mejor truco mental para esto no es pensar como programador. Es pensar como jefe.
+
+No estás configurando un flujo de trabajo. Estás **redactando el puesto de un empleado nuevo** y dándole su introducción.
+
+Piénsalo así. A un asistente le dirías: "cada viernes, revisa mi calendario, marca las juntas que se cancelaron, busca los pendientes que quedaron y mándame el resumen por mensaje." Sin saberlo, acabas de escribir un cron. A alguien de soporte le dirías: "cada vez que entre un caso nuevo, clasifícalo y respóndelo si es sencillo." Eso es un hook. Y a alguien metódico le dirías: "no me entregues esto hasta que pase todas las revisiones." Goal.
+
+<EmphasisBox variant="info">
+  Si sabes describirle el trabajo a una persona, sabes diseñar un loop. La única diferencia es que el empleado nunca se cansa y trabaja en el horario que tú pongas.
+</EmphasisBox>
+
+Y aquí un detalle bonito: los loops pueden tener loops. Un agente que orquesta puede arrancar varios ayudantes, y cada ayudante corre su propio loop con su propia meta. Un equipo de una persona se vuelve un equipo de muchas, en un horario que pusiste una sola vez.
+
+<SectionTitle id="cuidado">Dónde se descarrila un goal loop</SectionTitle>
+
+Los goals son los más poderosos de los cuatro, y por eso mismo los más fáciles de arruinar.
+
+El problema casi siempre es el mismo: **criterios de éxito vagos.** Si el agente no tiene cómo saber cuándo terminó, no termina. Sigue, y sigue, gastando tokens en versiones cada vez más marginales de lo mismo. Si no eres preciso sobre qué significa "listo", te vas a decepcionar y vas a gastar muchísimo para sacar muy poco.
+
+<Callout type="warning">
+  Trata la meta de un goal loop como los criterios de aceptación de una tarea: no está "hecho" porque el agente se sienta satisfecho. Está hecho cuando pasa pruebas concretas bajo condiciones concretas. Si tú no puedes medir el fin, el agente tampoco.
+</Callout>
+
+Dos señales de que un loop va a salir caro antes de salir útil: cuando el trabajo es amplísimo y sin punto de parada, y cuando la validación es de mentiritas: un "se ve bien" que aprueba cualquier cosa. Ponle un techo claro y una forma real de verificar, y el goal deja de ser un agujero negro de tokens.
+
+<SectionTitle id="cuando-no">Cuándo NO hacer un loop</SectionTitle>
+
+Te voy a ser sincero aquí: no todo merece un loop.
+
+Es una trampa fácil de caer. Montas veinte agentes corriendo a la vez y *se siente* increíblemente productivo: todo se mueve, nada está quieto, nunca te aburres. Pero hay un detalle incómodo: tú sigues siendo el único que revisa lo que producen. Arrancar un agente cuesta una frase; revisar bien su trabajo cuesta trabajo de verdad. Y de ti solo hay uno.
+
+<EmphasisBox variant="warning">
+  Estar ocupado no es lo mismo que producir. Puedes tener veinte loops corriendo y sentirte rebasado, y eso sigue sin ser veinte loops de trabajo realmente terminados. No caigas en la trampa de la falsa productividad. Muchas veces el que termina sin tokens eres tú.
+</EmphasisBox>
+
+Un loop se gana su costo de montarlo cuando el trabajo es repetitivo, se puede definir con claridad, y pasa lo suficientemente seguido como para que valga la pena. Revisar PRs cada mañana, armar el reporte semanal, resolver tickets cada hora, limpiar el inbox: candidatos perfectos.
+
+La pregunta única que hiciste una vez, la exploración a tientas, la tarea donde escribir los criterios tarda más que simplemente hacerla, ésas se quedan en el chat. 
+
+La meta no es tener la mayor cantidad de loops posible. Es detectar cuándo un agente programado hace mejor trabajo que tú reescribiendo el mismo prompt cada mañana.

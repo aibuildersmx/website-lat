@@ -1,0 +1,738 @@
+---
+title: "OpenClaw: La Guía Completa en Español"
+description: "Tu primer asistente AI personal — instalación, modelos, canales y todo lo que necesitas para tener un AI assistant 24/7 en tu bolsillo."
+date: "2026-03-05"
+readTime: "15 min"
+author: "Ricardo Garcia"
+tags:
+  - openclaw
+  - asistente-ai
+  - tutorial
+tocItems:
+  - { id: "que-es", label: "¿Qué es OpenClaw?" }
+  - { id: "instalacion", label: "Instalación" }
+  - { id: "modelos", label: "Proveedores y Modelos" }
+  - { id: "copilot", label: "GitHub Copilot" }
+  - { id: "anthropic", label: "Anthropic (Claude)" }
+  - { id: "codex", label: "OpenAI Codex (suscripción)" }
+  - { id: "canales", label: "Canales: Telegram y WhatsApp" }
+  - { id: "personalizacion", label: "Personalización" }
+  - { id: "skills", label: "Skills y ClawHub" }
+  - { id: "google", label: "Google (Email + Calendario)" }
+  - { id: "seguridad", label: "Seguridad" }
+  - { id: "vps", label: "VPS Recomendado" }
+  - { id: "comandos", label: "Comandos Útiles" }
+  - { id: "recursos", label: "Recursos" }
+---
+
+<SectionTitle id="que-es">¿Qué es OpenClaw?</SectionTitle>
+
+**OpenClaw** es un gateway open-source que conecta tus apps de mensajería — WhatsApp, Telegram, Discord, iMessage — con agentes AI como [Pi](https://github.com/badlogic/pi-mono). Tú corres un proceso en tu máquina (o un servidor) y se convierte en el puente entre tus chats y un asistente AI disponible 24/7.
+
+**¿En qué se diferencia de ChatGPT o Claude web?** OpenClaw vive en tu infraestructura. Tiene memoria persistente, se conecta a tus apps, y puedes personalizarlo completamente. Es tu asistente, no el de todos.
+
+**¿Qué necesitas?** Node 22+, una API key de tu proveedor favorito (o una cuenta de ChatGPT/Anthropic/GitHub Copilot), y 15 minutos.
+
+<SectionTitle id="instalacion">Instalación</SectionTitle>
+
+La forma más rápida es con el script de instalación. Detecta tu sistema, instala Node si falta, y lanza el wizard de configuración.
+
+<Terminal
+    title="~/openclaw-install"
+    className="my-6"
+    lines={[
+        { type: 'comment', text: '# macOS / Linux / WSL2' },
+        { type: 'command', text: 'curl -fsSL https://openclaw.ai/install.sh | bash' },
+        { type: 'output', text: '🦞 Installing OpenClaw...\n✓ Node 22 detected\n✓ openclaw@latest installed\n✓ Launching onboarding wizard...' },
+    ]}
+/>
+
+Si ya tienes Node 22+, también puedes instalar directo con npm:
+
+<Terminal
+    title="~/openclaw-npm"
+    className="my-6"
+    lines={[
+        { type: 'command', text: 'npm install -g openclaw@latest' },
+        { type: 'command', text: 'openclaw onboard --install-daemon', delay: 800 },
+        { type: 'output', text: '✓ Gateway configured\n✓ Daemon installed\n✓ Ready to chat!' },
+    ]}
+/>
+
+<Callout type="tip">
+    El wizard `openclaw onboard` te guía paso a paso: elige proveedor de modelo, configura canales (WhatsApp/Telegram), instala el daemon, y verifica que todo funciona.
+</Callout>
+
+<SectionTitle id="modelos">Proveedores y Modelos</SectionTitle>
+
+OpenClaw soporta **más de 20 proveedores** de modelos. Solo necesitas autenticarte con uno, elegir modelo, y listo. Los modelos se referencian como `proveedor/modelo`.
+
+Los más populares (abril 2026):
+
+| Proveedor       | Modelo ejemplo                              | Auth                               |
+| --------------- | ------------------------------------------- | ---------------------------------- |
+| GitHub Copilot  | `github-copilot/gpt-5-mini`                 | Device flow (desde $10/mes)        |
+| Anthropic       | `anthropic/claude-sonnet-4-6`               | API key (recomendado)              |
+| OpenAI          | `openai/gpt-5.4`                            | API key                            |
+| OpenAI Codex    | `openai-codex/gpt-5.4`                      | OAuth (suscripción ChatGPT)        |
+| OpenRouter      | `openrouter/anthropic/claude-sonnet-4-6`    | API key                            |
+| Ollama          | `ollama/llama3.3`                           | Local (sin auth)                   |
+
+<Callout type="info">
+    **Sobre los nombres:** Los modelos de Anthropic más recientes son **Claude Opus 4.7** (flagship, abril 2026), **Claude Sonnet 4.6** (febrero 2026) y **Claude Haiku 4.5**. Los de OpenAI son **GPT-5.5** / **GPT-5.5 Pro** (lanzados el 23 de abril de 2026), **GPT-5.4** y **GPT-5.4-mini**. Los modelos `claude-sonnet-4-0` y `claude-opus-4-0` (sin versión menor) se **deprecan el 15 de junio de 2026** — si los tienes hardcodeados en algún lado, actualiza.
+</Callout>
+
+<SectionTitle id="copilot">GitHub Copilot</SectionTitle>
+
+GitHub Copilot es una de las formas más accesibles de darle modelos a OpenClaw. Con el plan **Copilot Pro** ($10 USD/mes) obtienes **300 premium requests mensuales** y acceso a una lista enorme de modelos — incluyendo Claude, Gemini y GPT. Con **Pro+** ($39/mes) suben a 1,500 y desbloqueas los modelos Opus.
+
+<Callout type="warning">
+    **Heads-up (abril 2026):** GitHub **pausó los nuevos signups** a Copilot Pro, Pro+ y Student a partir del 20 de abril de 2026 mientras ajustan capacidad. Si ya tienes plan, sigue funcionando sin cambios. Si no alcanzaste a registrarte, revisa [el anuncio oficial](https://github.blog/news-insights/company-news/changes-to-github-copilot-individual-plans/) para saber cuándo reabren.
+</Callout>
+
+Lo interesante es el sistema de **multiplicadores**. Algunos modelos cuestan más premium requests que otros, y tres modelos son completamente **gratis** (multiplicador 0x) dentro de cualquier plan de pago:
+
+| Modelo                  | Multiplicador | Qué significa                                           |
+| ----------------------- | ------------- | ------------------------------------------------------- |
+| `GPT-5 mini`            | 0x ✨         | Incluido — no consume premium requests                  |
+| `GPT-4.1`               | 0x ✨         | Incluido — no consume premium requests                  |
+| `GPT-4o`                | 0x ✨         | Incluido — no consume premium requests                  |
+| `Claude Haiku 4.5`      | 0.33x         | 3 requests por el precio de 1 (≈900 con Pro)            |
+| `Gemini 3 Flash`        | 0.33x         | 3 requests por el precio de 1                           |
+| `Claude Sonnet 4.6`     | 1x            | 1 premium request cada una (300 con Pro)                |
+| `Gemini 3.1 Pro`        | 1x            | 1 premium request cada una                              |
+| `GPT-5.4` / `GPT-5.5`   | 1x            | 1 premium request cada una                              |
+| `Claude Opus 4.6`       | 3x            | 3 premium requests cada una — **solo Pro+ y superior**  |
+| `Claude Opus 4.7`       | 7.5x ⚡       | Promocional hasta 30 abril 2026 — **solo Pro+**         |
+
+**En la práctica:** con Copilot Pro por $10/mes puedes usar `GPT-5 mini` y `GPT-4.1` de forma **ilimitada** para el día a día de tu asistente — preguntas, tareas, automatizaciones. Son modelos excelentes para uso general. Y cuando necesites algo más fuerte (Claude Sonnet 4.6 para razonamiento complejo, o GPT-5.4/5.5 para tareas pesadas), tienes 300 premium requests para esos momentos.
+
+<Callout type="info">
+    **Cambio importante en Pro:** Los modelos **Claude Opus ya no están disponibles en el plan Pro** ($10/mes). Si quieres usar Opus 4.6 o 4.7 dentro de Copilot, necesitas **Pro+** ($39/mes). El *auto model selection* tiene **10% de descuento** en el multiplicador, y los premium requests extra se cobran a **$0.04 cada uno**.
+</Callout>
+
+Incluso puedes pedirle a tu agente que te ayude a configurar herramientas de desarrollo en tu VPS — usar **Claude Code**, **Cursor**, o el **Codex CLI** si los tienes instalados. El agente tiene acceso a tu terminal y puede ejecutar comandos por ti.
+
+<Callout type="warning">
+    **¿Y Copilot Free?** El plan gratuito de GitHub tiene acceso a algunos modelos, pero con solo **50 premium requests/mes** y sin modelos 0x (todo cuesta 1 request). Para OpenClaw como asistente 24/7 se queda muy corto. **Copilot Pro a $10/mes es la opción mínima recomendada** para usar este proveedor.
+</Callout>
+
+<Terminal
+    title="~/copilot-setup"
+    className="my-6"
+    lines={[
+        { type: 'comment', text: '# Inicia el device flow — abre un link en tu browser' },
+        { type: 'command', text: 'openclaw models auth login-github-copilot' },
+        { type: 'output', text: '→ Open https://github.com/login/device\n→ Enter code: ABCD-1234\n✓ Authenticated as @tuusuario\n✓ Copilot token stored' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# Usa GPT-5 mini como default (0x — ilimitado en Pro)' },
+        { type: 'command', text: 'openclaw models set github-copilot/gpt-5-mini', delay: 600 },
+        { type: 'output', text: '✓ Default model set to github-copilot/gpt-5-mini' },
+    ]}
+/>
+
+<Callout type="info">
+    El device flow funciona desde cualquier máquina — solo necesitas un browser para autorizar. El token se guarda local y OpenClaw lo renueva automáticamente. La disponibilidad de modelos depende de tu plan de Copilot.
+</Callout>
+
+<SectionTitle id="anthropic">Anthropic (Claude)</SectionTitle>
+
+Anthropic ofrece dos formas de autenticación. **A partir del 4 de abril de 2026** ya no son equivalentes en costo: la API key es el camino limpio, y la suscripción requiere activar *Extra Usage* que se cobra aparte a tarifas de API.
+
+<SubSection title="Opción A: API Key (recomendado sin discusión)">
+
+La forma más segura y estable — y desde abril 2026, también la más sencilla económicamente. Creas una API key en [console.anthropic.com](https://console.anthropic.com) y pagas por uso. Es el path recomendado por Anthropic y por OpenClaw.
+
+<Terminal
+    title="~/anthropic-api"
+    className="my-6"
+    lines={[
+        { type: 'command', text: 'openclaw onboard --anthropic-api-key "$ANTHROPIC_API_KEY"' },
+        { type: 'output', text: '✓ Anthropic API key configured\n✓ Default model: anthropic/claude-sonnet-4-6' },
+    ]}
+/>
+
+O en el config directamente:
+
+<CodeBlock
+    title="~/.openclaw/openclaw.json"
+    className="my-6"
+    language="json"
+    code={`{
+  env: { ANTHROPIC_API_KEY: "sk-ant-..." },
+  agents: {
+    defaults: {
+      model: { primary: "anthropic/claude-sonnet-4-6" }
+    }
+  }
+}`}
+/>
+
+**Modelos disponibles vía API (abril 2026):** `claude-opus-4-7` (flagship, para tareas complejas), `claude-sonnet-4-6` (default recomendado — equilibra velocidad e inteligencia), `claude-haiku-4-5` (rápido y barato, ideal para alto volumen).
+
+</SubSection>
+
+<SubSection title="Opción B: Setup Token (suscripción Claude) — ahora requiere Extra Usage">
+
+<Callout type="warning">
+    **Cambio de política importante (4 de abril de 2026):** Anthropic ya **no deja que la suscripción Claude (Pro o Max) se use en harnesses de terceros como OpenClaw**. Tu suscripción ahora solo cubre los productos *first-party* de Anthropic — **Claude.ai, Claude Code y Claude Cowork**. Para usar OpenClaw, Cline, Roo Code, aider o cualquier otro harness con tu login de Claude, tienes que activar **Extra Usage**, un pay-as-you-go que se cobra **aparte** de tu suscripción mensual y a **tarifas de API estándar**.
+
+    En la práctica: el "truco" de aprovechar tu Max 20x para tener un asistente 24/7 barato con OpenClaw **ya no existe**. Cualquier token que OpenClaw consuma con tu setup-token se factura al precio de la API.
+
+    Fuentes: [Manage extra usage for paid Claude plans](https://support.claude.com/en/articles/12429409-manage-extra-usage-for-paid-claude-plans) · [Tell HN: Anthropic no longer allowing Claude Code subscriptions to use OpenClaw](https://news.ycombinator.com/item?id=47633396).
+</Callout>
+
+**¿Qué pasa si lo intentas sin Extra Usage?** Las requests simplemente fallan. OpenClaw no tiene forma de darle la vuelta — es control del lado de Anthropic.
+
+**Para activar Extra Usage:**
+
+<StepList steps={[
+    'Entrar a claude.ai/settings/usage',
+    'Sección "Extra Usage" → click en "Enable"',
+    '(Opcional) Definir un tope mensual de gasto — recomendado si no quieres sorpresas',
+    '(Opcional) Configurar auto-reload o pre-comprar bundles (hay descuentos de hasta 30%)',
+]} />
+
+**Tarifas actuales (abril 2026)** para el path de suscripción + extra usage:
+
+| Modelo            | Input (por 1M tokens) | Output (por 1M tokens) |
+| ----------------- | --------------------- | ---------------------- |
+| `claude-opus-4-6` | $5                    | $25                    |
+| `claude-sonnet-4-6` | $3                  | $15                    |
+
+Nota: **Haiku no está disponible** por esta ruta — si lo quieres, necesitas una API key directa de Anthropic.
+
+Con Extra Usage activo, el setup-token sigue funcionando igual que antes:
+
+<Terminal
+    title="~/claude-setup-token"
+    className="my-6"
+    lines={[
+        { type: 'comment', text: '# En cualquier máquina con Claude Code instalado' },
+        { type: 'command', text: 'claude setup-token' },
+        { type: 'output', text: '→ Setup token generated (valid for 1 year)\n→ sk-ant-oat01-...' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# En tu máquina con OpenClaw' },
+        { type: 'command', text: 'openclaw models auth paste-token --provider anthropic', delay: 600 },
+        { type: 'output', text: '✓ Token stored for profile anthropic:default\n⚠️  Remember: usage bills to Extra Usage (pay-as-you-go)' },
+    ]}
+/>
+
+<Callout type="info">
+    **¿Entonces para qué sigue sirviendo el setup-token?** Principalmente para gente que ya tiene su setup montado y quiere centralizar el billing en la cuenta de su suscripción (un solo estado de cuenta) en lugar de llevar una API key aparte. Financieramente es casi equivalente a la API key. Si empiezas desde cero hoy, **ve directo a Opción A**.
+</Callout>
+
+</SubSection>
+
+<SectionTitle id="codex">OpenAI Codex (suscripción ChatGPT)</SectionTitle>
+
+Si pagas ChatGPT Plus/Pro/Business/Enterprise/Edu, puedes usar tu suscripción como proveedor en OpenClaw vía OAuth. A diferencia de Anthropic, **OpenAI sí soporta explícitamente** este uso de tu suscripción en herramientas externas — Codex viene incluido en todos los planes de ChatGPT (incluso Free y Go, con trial limitado).
+
+<Terminal
+    title="~/codex-setup"
+    className="my-6"
+    lines={[
+        { type: 'command', text: 'openclaw models auth login --provider openai-codex' },
+        { type: 'output', text: '→ Opening browser for ChatGPT auth...\n→ Waiting for callback on localhost:1455...\n✓ Authenticated\n✓ Tokens stored for openai-codex:default' },
+    ]}
+/>
+
+<Callout type="tip">
+    **¿VPS sin browser?** No hay problema. Corre el comando en tu VPS — te va a dar una URL con `localhost:1455`. Pégala en el browser de tu máquina local tal cual. Aunque diga localhost, el flow de OAuth completa y OpenClaw captura los tokens automáticamente. Después, corre `openclaw configure` en el VPS y te ayuda a validar que todo quedó bien.
+</Callout>
+
+**Modelos disponibles en Codex (abril 2026):**
+
+| Modelo                   | Disponible en         | Uso recomendado                                                   |
+| ------------------------ | --------------------- | ----------------------------------------------------------------- |
+| `gpt-5.5` / `gpt-5.5-pro`| Plus / Pro / Business | Recién lanzados (23 abril 2026) — lo más inteligente para código  |
+| `gpt-5.4`                | Plus y superior       | Flagship estable — coding, razonamiento y computer-use            |
+| `gpt-5.4-mini`           | Plus y superior       | Rápido y eficiente — para subagents o tareas rutinarias           |
+| `gpt-5.3-codex`          | Plus y superior       | Estándar de industria para software engineering                   |
+| `gpt-5.3-codex-spark`    | Solo Pro ($100+/mes)  | Research preview — iteración casi en tiempo real                  |
+
+Config para usar Codex:
+
+<CodeBlock
+    title="~/.openclaw/openclaw.json"
+    className="my-6"
+    language="json"
+    code={`{
+  agents: {
+    defaults: {
+      model: { primary: "openai-codex/gpt-5.4" }
+    }
+  }
+}`}
+/>
+
+<Callout type="info">
+    **¿Plus ($20/mes) o Pro ($100+/mes)?** Para un asistente personal con OpenClaw, **Plus es más que suficiente** — te da `gpt-5.4` y `gpt-5.3-codex` con límites generosos. Pro tiene sentido si planeas correr loops agénticos agresivos (cron cada 30 seg, batches grandes) o necesitas `gpt-5.5-pro` / `gpt-5.3-codex-spark`. Si tu flujo es "pregunta, espera respuesta, siguiente", Plus te sobra.
+</Callout>
+
+<SectionTitle id="canales">Canales: Telegram y WhatsApp</SectionTitle>
+
+OpenClaw soporta **WhatsApp, Telegram, Discord, iMessage, Slack, Signal** y más. Los dos más populares para asistentes personales son Telegram y WhatsApp.
+
+<SubSection title="Telegram (recomendado)">
+
+**Telegram es el canal más fácil de configurar** y el que recomendamos para empezar. Tu bot vive en una cuenta separada (no usa tu número personal como WhatsApp), y el setup toma menos de 5 minutos.
+
+**Paso 1 — Crea tu bot con @BotFather:**
+
+<StepList steps={[
+    'Abre Telegram y busca @BotFather (el bot oficial de Telegram para crear bots — verificado con palomita azul)',
+    'Manda /newbot',
+    'BotFather te pide un nombre para tu bot — es el nombre que se muestra (ej: "Mi Asistente AI")',
+    'Después te pide un username — debe terminar en "bot" (ej: mi_asistente_bot). Este es el @ de tu bot',
+    'BotFather te responde con un token tipo 123456789:ABCdef... — cópialo y guárdalo, es tu llave de acceso',
+]} />
+
+<Callout type="tip">
+    **Comandos útiles de BotFather:** `/setdescription` para agregar una bio a tu bot, `/setuserpic` para ponerle foto de perfil, y `/setprivacy` → Disable si quieres que el bot vea todos los mensajes en grupos (no solo cuando lo mencionan).
+</Callout>
+
+**Paso 2 — Configura el token en OpenClaw:**
+
+<CodeBlock
+    title="~/.openclaw/openclaw.json"
+    className="my-6"
+    language="json"
+    code={`{
+  channels: {
+    telegram: {
+      enabled: true,
+      botToken: "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+      dmPolicy: "pairing",
+      groups: { "*": { requireMention: true } }
+    }
+  }
+}`}
+/>
+
+También puedes ponerlo como variable de entorno en vez de en el config: `TELEGRAM_BOT_TOKEN=123456789:ABCdef...`
+
+**Paso 3 — Arranca el gateway y aprueba tu primer mensaje:**
+
+<Terminal
+    title="~/telegram-start"
+    className="my-6"
+    lines={[
+        { type: 'command', text: 'openclaw gateway' },
+        { type: 'output', text: '🦞 Gateway running on port 18789\n✓ Telegram channel active' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# Ahora abre Telegram y manda un DM a tu bot' },
+        { type: 'comment', text: '# El bot te responde con un código de pairing' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# En otra terminal, aprueba el código:' },
+        { type: 'command', text: 'openclaw pairing approve telegram ABC123', delay: 600 },
+        { type: 'output', text: '✓ Approved — you can now chat with the bot' },
+    ]}
+/>
+
+El **pairing** es un mecanismo de seguridad: la primera vez que alguien le escribe al bot, le pide un código que tú apruebas desde la terminal. Después de aprobado, ya pueden chatear libremente. Los códigos expiran después de 1 hora.
+
+<Callout type="info">
+    Si quieres que **solo tú** puedas hablar con el bot (sin pairing para nadie más), cambia a `dmPolicy: "allowlist"` y agrega tu Telegram user ID en `allowFrom`. Para encontrar tu ID: manda un mensaje al bot, corre `openclaw logs --follow` y busca `from.id`.
+</Callout>
+
+</SubSection>
+
+<SubSection title="WhatsApp">
+
+WhatsApp se conecta vía QR code, similar a WhatsApp Web:
+
+<Terminal
+    title="~/whatsapp-setup"
+    className="my-6"
+    lines={[
+        { type: 'command', text: 'openclaw channels login whatsapp' },
+        { type: 'output', text: '→ Scan this QR code with WhatsApp:\n\n  ▄▄▄▄▄▄▄  ▄▄▄  ▄▄▄▄▄▄▄\n  █ ▄▄▄ █  █▀█  █ ▄▄▄ █\n  █ ███ █ ▄▀ ▄  █ ███ █\n  ▀▀▀▀▀▀▀ ▀ ▀ ▀ ▀▀▀▀▀▀▀\n\n✓ WhatsApp connected' },
+    ]}
+/>
+
+<Callout type="security">
+    **Esto es crítico:** WhatsApp usa tu número de teléfono real. Por default, el bot usa `dmPolicy: "pairing"` — cualquier persona que te escriba verá un mensaje de pairing con un código. Eso se ve raro y confuso para tus contactos.
+
+    La solución: usa **`dmPolicy: "allowlist"`** y agrega **solo tu número**. Así el bot ignora completamente a cualquier otra persona — ni siquiera les responde.
+</Callout>
+
+<CodeBlock
+    title="~/.openclaw/openclaw.json — WhatsApp seguro"
+    className="my-6"
+    language="json"
+    code={`{
+  channels: {
+    whatsapp: {
+      dmPolicy: "allowlist",
+      allowFrom: ["+525512345678"],  // ← tu número, nadie más
+      groups: {
+        "*": { requireMention: true }
+      }
+    }
+  }
+}`}
+/>
+
+Con esta configuración, solo tú puedes hablar con el bot. Todos los demás mensajes se ignoran silenciosamente — sin códigos raros, sin respuestas accidentales a tus contactos.
+
+</SubSection>
+
+<SectionTitle id="personalizacion">Personalización</SectionTitle>
+
+Cuando el agente arranca por primera vez, OpenClaw hace un **bootstrapping** — un ritual de primera vez donde te hace preguntas para configurar la identidad del asistente. Esto crea archivos en el workspace (`~/.openclaw/workspace`):
+
+| Archivo          | Propósito                                                        |
+| ---------------- | ---------------------------------------------------------------- |
+| `AGENTS.md`      | Configuración general del agente                                 |
+| `IDENTITY.md`    | Nombre, criatura/avatar, emoji, misión                           |
+| `SOUL.md`        | Personalidad, tono, humor, límites                               |
+| `USER.md`        | Contexto sobre ti — nombre, timezone, proyectos                  |
+| `BOOTSTRAP.md`   | Se elimina después del primer setup (trigger del ritual)         |
+
+Estos archivos son **markdown puro** — edítalos cuando quieras para cambiar la personalidad, agregarle contexto, o ajustar el tono. El agente los lee cada vez que inicia una sesión.
+
+<Callout type="tip">
+    La personalización es lo que hace a OpenClaw diferente. Tu asistente puede ser serio para trabajo, casual para uso personal, o tener personalidad propia. Experimenta editando `SOUL.md` y ve cómo cambia.
+</Callout>
+
+<SectionTitle id="skills">Skills y ClawHub</SectionTitle>
+
+Los **Skills** son paquetes modulares que le enseñan al agente cómo usar herramientas. Cada skill es una carpeta con un `SKILL.md` que contiene instrucciones en YAML + markdown. OpenClaw incluye skills bundleados y puedes agregar más.
+
+[ClawHub](https://clawhub.com) es el marketplace de skills. Desde ahí puedes instalar skills de búsqueda web, generación de imágenes, herramientas de código, y más.
+
+<Terminal
+    title="~/skills"
+    className="my-6"
+    lines={[
+        { type: 'comment', text: '# Instalar un skill desde ClawHub' },
+        { type: 'command', text: 'clawhub install brave-search' },
+        { type: 'output', text: '✓ Installed brave-search → ~/.openclaw/skills/' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# Actualizar todos los skills instalados' },
+        { type: 'command', text: 'clawhub update --all', delay: 500 },
+        { type: 'output', text: '✓ 3 skills updated' },
+    ]}
+/>
+
+Skills se cargan de 3 lugares (en orden de prioridad): `workspace/skills` → `~/.openclaw/skills` → bundleados. Los que tú instales siempre ganan sobre los defaults.
+
+<Callout type="security">
+    Trata skills de terceros como **código no confiable**. Léelos antes de habilitarlos. Para inputs riesgosos, usa sandboxed runs.
+</Callout>
+
+<SectionTitle id="google">Integración Google (Email + Calendario)</SectionTitle>
+
+La integración con Google es el punto más polémico de OpenClaw. Todos los videos lo confirman: es la parte más difícil del setup y muchos influencers la saltan por completo. La buena noticia: hay diferentes niveles de complejidad dependiendo de qué necesitas.
+
+<SubSection title="📧 Email — Gmail con IMAP (Beginner Friendly)">
+
+**No necesitas Google Cloud Console.** Solo un App Password de Gmail. Setup en 5 minutos.
+
+<StepList steps={[
+    'Ir a myaccount.google.com/apppasswords',
+    'Crear un App Password para "Mail"',
+    'Instalar el skill de email (ver terminal abajo)',
+    'Crear archivo .env con las credenciales IMAP/SMTP',
+    'Listo — OpenClaw puede leer y enviar correos',
+]} />
+
+<Terminal
+    title="~/email-skill"
+    className="my-6"
+    lines={[
+        { type: 'command', text: 'npx clawhub install imap-smtp-email' },
+        { type: 'output', text: '✓ Installed imap-smtp-email → ~/.openclaw/skills/' },
+    ]}
+/>
+
+<CodeBlock
+    title="~/.openclaw/skills/imap-smtp-email/.env"
+    className="my-6"
+    language="ini"
+    code={`IMAP_HOST=imap.gmail.com
+IMAP_PORT=993
+IMAP_USER=tu-email@gmail.com
+IMAP_PASS=tu-app-password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu-email@gmail.com
+SMTP_PASS=tu-app-password`}
+/>
+
+<Callout type="tip">
+    **Tip de seguridad:** Crea una cuenta Gmail dedicada para el bot, no uses tu cuenta personal. Si algo sale mal, solo se compromete esa cuenta throwaway.
+</Callout>
+
+**Fuente:** Video ["How to Install and Use OpenClaw Skills"](https://youtu.be/hXEKgSnD1Gs) — paso 3 del tutorial.
+
+</SubSection>
+
+<SubSection title="📅 Calendario — La verdad sin filtro">
+
+**Google no te la pone fácil.** Después de investigar videos, blogs y docs, la realidad es clara:
+
+<EmphasisBox>
+    Para acceder a Google Calendar por API (leer O escribir) siempre necesitas pasar por Google Cloud Console + OAuth. No hay atajo.
+</EmphasisBox>
+
+La pregunta no es "¿puedo evitar OAuth?" sino "¿sobre qué cuenta lo configuro?"
+
+</SubSection>
+
+<SubSection title="La estrategia segura: Cuenta dedicada + compartir calendario">
+
+Este es el approach más inteligente. El bot tiene **su propia cuenta de Google**. Nunca tocas OAuth con tu cuenta personal. (Del video ["Master OpenClaw in 30 min"](https://youtu.be/ji_Sd4si7jo).)
+
+<StepList
+    variant="success"
+    counter="check"
+    steps={[
+        'Crear cuenta Gmail dedicada para el bot (ej: mi-bot@gmail.com)',
+        'Configurar gws CLI con la cuenta del bot (ver nuestra guía de Google Workspace CLI)',
+        'Desde TU cuenta personal de Google Calendar: Settings → seleccionar tu calendario',
+        '"Share with specific people" → agregar mi-bot@gmail.com → permiso: "See all event details" (read-only)',
+        'El bot ahora ve tu agenda cuando consulta desde su propia cuenta',
+    ]}
+/>
+
+**¿Cómo funciona en la práctica?**
+
+| Tú dices                             | OpenClaw hace                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| "¿Qué tengo mañana?"                 | Consulta Calendar API con la cuenta del bot → ve tu calendario compartido → responde               |
+| "Agéndame gym a las 7am el jueves"   | Crea el evento en el calendario del bot, te agrega como attendee → te llega invitación             |
+
+<Callout type="security">
+    **¿Por qué es seguro?** Si algo sale mal, solo se compromete la cuenta throwaway. Tu cuenta personal nunca toca OAuth ni API keys. Es como compartir calendario con un colega — mismo permiso, mismo mecanismo. Puedes revocar el acceso en cualquier momento quitando el share.
+</Callout>
+
+**¿Necesitas más que email y calendario?** Con la misma estrategia de cuenta dedicada + `gws` CLI puedes darle acceso a tu bot a **Drive** (buscar y subir archivos), **Sheets** (leer y escribir datos), **Docs**, **Gmail avanzado** (búsquedas, labels, drafts), y prácticamente cualquier API de Google Workspace.
+
+Eso sí — cada servicio adicional requiere habilitar su API en Google Cloud Console y agregar los OAuth scopes correspondientes. Es un setup de una sola vez, pero sí es más complejo que el IMAP de arriba. La buena noticia: con `gws` CLI todo se maneja desde un solo comando y viene con 100+ skills pre-hechos para que tu agente sepa usarlos.
+
+Cubrimos todo ese proceso paso a paso en nuestra [guía de Google Workspace CLI](/blog/integracion-google) — autenticación, OAuth, comandos, MCP server para Claude/VS Code, y troubleshooting.
+
+</SubSection>
+
+<SectionTitle id="seguridad">Seguridad</SectionTitle>
+
+Las reglas de oro para correr un asistente AI:
+
+<SecurityList items={[
+    { title: 'Nunca en tu máquina principal', description: 'Usa un VPS dedicado (como Contabo, desde ~€4.50/mes). Si algo sale mal, solo se compromete ese ambiente — no tu laptop.' },
+    { title: 'Cuentas dedicadas para el bot', description: 'Crea una cuenta Gmail, GitHub, etc. exclusiva para el bot. Nunca le des acceso a tu email principal o cuentas bancarias.' },
+    { title: 'Usa el modelo más fuerte disponible', description: 'OpenClaw recomienda los modelos de última generación. Los modelos más débiles son más fáciles de manipular con prompt injection.' },
+    { title: 'Revisa permisos periódicamente', description: 'Revisa qué skills están activos, qué herramientas tiene habilitadas, y limita con tools.deny lo que no necesites.' },
+]} />
+
+<SectionTitle id="vps">VPS Recomendado: Contabo</SectionTitle>
+
+OpenClaw necesita correr 24/7 en algún lugar. Puedes usar tu laptop, pero se apaga cuando la cierras. Lo ideal es un **VPS** (servidor virtual) dedicado. Nuestro favorito: [Contabo](https://contabo.com/en/vps-server/).
+
+**¿Por qué Contabo?** Tienen la mejor relación precio-rendimiento que hemos encontrado. El plan más barato te da más RAM y almacenamiento que servidores que cuestan el triple en otros providers. Además, Contabo tiene [instalación 1-click de OpenClaw](https://contabo.com/en/openclaw-hosting/) — seleccionas OpenClaw como app, pones tu contraseña, y te conectas por SSH a un servidor listo para configurar.
+
+<SubSection title="Plan recomendado: Cloud VPS 10">
+
+| Spec               | Cloud VPS 10                       |
+| ------------------ | ---------------------------------- |
+| CPU                | 4 vCPU Cores                       |
+| RAM                | 8 GB                               |
+| Almacenamiento     | 75 GB NVMe (o 150 GB SSD)          |
+| Tráfico            | Ilimitado (200 Mbit/s)             |
+| Precio (EU)        | **€4.50/mes (~$5 USD)**            |
+| Precio (US Central)| **€5.45/mes (~$6 USD)**            |
+
+Para contexto: 8 GB de RAM y 4 cores es **más que suficiente** para correr OpenClaw + gateway + múltiples canales. La mayoría de la computación la hacen los modelos AI en la nube — tu VPS solo orquesta las llamadas.
+
+</SubSection>
+
+<SubSection title="Ubicación: ¿Europa o Estados Unidos?">
+
+Los servidores en **Europa (Alemania)** no tienen costo adicional de ubicación. Los de **Estados Unidos** tienen un surcharge de ~€0.95/mes (US Central) a ~€1.40/mes (US East) — nada grave.
+
+**¿Importa la latencia?** Para un chatbot por WhatsApp/Telegram, no realmente. La diferencia entre EU y US es ~100-200ms adicionales, pero el cuello de botella siempre es la API del modelo AI (que tarda 1-5 segundos). Esos 200ms extra son imperceptibles en la conversación.
+
+Elige EU si quieres el precio más bajo. Elige US si quieres latencia ligeramente menor hacia APIs en Estados Unidos (OpenAI, Anthropic). Ambas opciones funcionan perfecto.
+
+</SubSection>
+
+<SubSection title="Setup con 1-Click de OpenClaw">
+
+Contabo tiene una imagen pre-configurada de OpenClaw. El proceso:
+
+<StepList steps={[
+    'Comprar un Cloud VPS en contabo.com',
+    'En el panel de control → tu VPS → Quick Action (⋮) → Reinstall',
+    'Pestaña "Application Installation" → seleccionar OpenClaw',
+    'Poner contraseña de admin → Install',
+    'Conectar por SSH: ssh root@tu-ip',
+    'El wizard de onboarding arranca automático (o corre openclaw onboard)',
+]} />
+
+<Terminal
+    title="~/contabo-ssh"
+    className="my-6"
+    lines={[
+        { type: 'comment', text: '# Conéctate a tu VPS' },
+        { type: 'command', text: 'ssh root@tu-servidor-ip' },
+        { type: 'output', text: '🦞 Welcome to OpenClaw!\n\nStarting onboarding wizard...' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# Si no arranca automático:' },
+        { type: 'command', text: 'openclaw onboard', delay: 600 },
+        { type: 'output', text: '→ Select your AI provider...\n→ Configure channels...\n✓ Gateway running!' },
+    ]}
+/>
+
+Guía completa de Contabo: [What is OpenClaw and how do I use it on Contabo?](https://help.contabo.com/en/support/solutions/articles/103000390037-what-is-openclaw-and-how-do-i-use-it-on-contabo-)
+
+</SubSection>
+
+<SubSection title="Asegura tu VPS (5 minutos extra)">
+
+Contabo te entrega el servidor con acceso SSH por **contraseña**. Esto funciona y es razonablemente seguro si tu contraseña es larga y random (30+ caracteres). Pero hay un riesgo: los ataques de **brute force** — bots que prueban miles de contraseñas por minuto contra tu puerto 22.
+
+Con 3 pasos extra tu servidor queda mucho más protegido: **SSH keys** (eliminas el riesgo de adivinar contraseñas), **Fail2Ban** (banea IPs que fallen login), y **UFW** (firewall que cierra todo excepto SSH).
+
+<Callout type="info">
+    **No tienes que hacer esto hoy.** Tu password de Contabo funciona bien para empezar. Pero cuando tengas 10 minutos, regresa aquí y hazlo. Es una sola vez.
+</Callout>
+
+**Paso 1 — Genera tu SSH key** (en tu Mac/PC, no en el servidor):
+
+<Terminal
+    title="~/tu-mac"
+    className="my-6"
+    lines={[
+        { type: 'comment', text: '# Genera una key Ed25519 (la más segura y moderna)' },
+        { type: 'command', text: 'ssh-keygen -t ed25519 -C "mi-openclaw-vps"' },
+        { type: 'output', text: 'Generating public/private ed25519 key pair.\nEnter file: ~/.ssh/id_ed25519\nEnter passphrase: ********\n✓ Your public key: ~/.ssh/id_ed25519.pub' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# Copia la key al servidor (te pide la contraseña de root una última vez)' },
+        { type: 'command', text: 'ssh-copy-id root@tu-servidor-ip', delay: 600 },
+        { type: 'output', text: '✓ Key added. Try: ssh root@tu-servidor-ip' },
+    ]}
+/>
+
+**Paso 2 — Instala Fail2Ban y activa UFW** (ya conectado al servidor):
+
+<Terminal
+    title="root@vps"
+    className="my-6"
+    lines={[
+        { type: 'comment', text: '# Instala Fail2Ban (banea IPs después de 5 intentos fallidos)' },
+        { type: 'command', text: 'apt update && apt install -y fail2ban' },
+        { type: 'output', text: '✓ fail2ban installed' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# Activa con config default (protege SSH automáticamente)' },
+        { type: 'command', text: 'systemctl enable --now fail2ban', delay: 400 },
+        { type: 'output', text: '✓ fail2ban active' },
+        { type: 'empty', text: '' },
+        { type: 'comment', text: '# Firewall: permite SSH y bloquea todo lo demás' },
+        { type: 'command', text: 'ufw allow OpenSSH && ufw --force enable', delay: 400 },
+        { type: 'output', text: '✓ Firewall active. Rules:\n  22/tcp  ALLOW  Anywhere' },
+    ]}
+/>
+
+**Paso 3 (opcional) — Desactiva login por contraseña:**
+
+<Terminal
+    title="root@vps"
+    className="my-6"
+    lines={[
+        { type: 'comment', text: '# Solo si ya verificaste que tu SSH key funciona!' },
+        { type: 'command', text: 'sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config' },
+        { type: 'command', text: 'systemctl restart sshd', delay: 300 },
+        { type: 'output', text: '✓ Password auth disabled — only keys accepted' },
+    ]}
+/>
+
+<Callout type="security">
+    **⚠️ No desactives password auth hasta que hayas verificado que tu SSH key funciona.** Abre una segunda terminal, intenta `ssh root@tu-ip`, y confirma que entras sin contraseña. Si desactivas passwords y tu key no funciona, te quedas fuera del servidor.
+</Callout>
+
+Con esto tu VPS queda con: firewall activo (solo puerto 22 abierto), IPs baneadas automáticamente después de intentos fallidos, y acceso solo por SSH key. Es el estándar de la industria y toma 5 minutos.
+
+**¿Quieres profundizar?** La guía de Contabo para SSH keys: [How to use SSH keys with your server](https://contabo.com/blog/how-to-use-ssh-keys-with-your-server/). Para Fail2Ban + UFW a detalle: [DigitalOcean — Protect SSH with Fail2Ban](https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-20-04).
+
+</SubSection>
+
+<SectionTitle id="comandos">Comandos Útiles</SectionTitle>
+
+Referencia rápida de los comandos que más vas a usar en el día a día:
+
+<CommandReference groups={[
+    {
+        category: 'Diagnóstico',
+        icon: 'stethoscope',
+        commands: [
+            { cmd: 'openclaw doctor', desc: 'Checa todo y ofrece fixes automáticos' },
+            { cmd: 'openclaw status --all', desc: 'Diagnóstico completo (copy-pasteable para soporte)' },
+            { cmd: 'openclaw logs --follow', desc: 'Logs en tiempo real' },
+        ],
+    },
+    {
+        category: 'Gateway',
+        icon: 'settings',
+        commands: [
+            { cmd: 'openclaw gateway restart', desc: 'Reinicia el servicio' },
+            { cmd: 'openclaw gateway status', desc: 'Estado + probe RPC' },
+            { cmd: 'openclaw gateway install', desc: 'Instala como servicio del sistema' },
+        ],
+    },
+    {
+        category: 'Modelos',
+        icon: 'bot',
+        commands: [
+            { cmd: 'openclaw models', desc: 'Modelo activo + estado de auth' },
+            { cmd: 'openclaw models list --all', desc: 'Todos los modelos disponibles' },
+            { cmd: 'openclaw models set <modelo>', desc: 'Cambia modelo principal' },
+            { cmd: 'openclaw models scan', desc: 'Descubre modelos de tus providers' },
+            { cmd: 'openclaw models status --probe', desc: 'Prueba live de auth' },
+        ],
+    },
+    {
+        category: 'Canales',
+        icon: 'message',
+        commands: [
+            { cmd: 'openclaw channels status --probe', desc: 'Salud de canales' },
+            { cmd: 'openclaw pairing approve <channel> <code>', desc: 'Aprobar pairing' },
+        ],
+    },
+    {
+        category: 'Seguridad',
+        icon: 'lock',
+        commands: [
+            { cmd: 'openclaw security audit', desc: 'Audita config por vulnerabilidades' },
+            { cmd: 'openclaw security audit --fix', desc: 'Aplica defaults seguros automáticamente' },
+        ],
+    },
+    {
+        category: 'Skills y memoria',
+        icon: 'brain',
+        commands: [
+            { cmd: 'openclaw skills check', desc: 'Cuáles están ready' },
+            { cmd: 'openclaw memory search "query"', desc: 'Búsqueda semántica en tu memoria' },
+        ],
+    },
+]} />
+
+<Callout type="tip">
+    Tip: `openclaw doctor` es tu mejor amigo. Si algo no funciona, córrelo primero — detecta problemas de config, auth, gateway y ofrece arreglarlos en automático.
+</Callout>
+
+<SectionTitle id="recursos">Recursos</SectionTitle>
+
+<ResourceLinks items={[
+    { label: 'Docs oficiales', url: 'https://docs.openclaw.ai', desc: 'Documentación completa de OpenClaw' },
+    { label: 'GitHub', url: 'https://github.com/openclaw/openclaw', desc: 'Código fuente, issues, contribuir' },
+    { label: 'ClawHub', url: 'https://clawhub.com', desc: 'Marketplace de skills' },
+    { label: 'Discord', url: 'https://discord.com/invite/clawd', desc: 'Comunidad, soporte, showcase' },
+    { label: 'Contabo VPS', url: 'https://contabo.com/en/vps-server/', desc: 'VPS desde €4.50/mes — con 1-click install de OpenClaw' },
+    { label: 'Google Workspace CLI', url: '/blog/integracion-google', desc: 'Nuestra guía para conectar AI con Gmail, Calendar y Drive' },
+]} />
+
+---
+
+**¿Dudas?** Pregunta en el [Discord de OpenClaw](https://discord.com/invite/clawd) o en la comunidad de [AI Builders MX](https://chat.whatsapp.com/E7oCGyITLkX1aqFexJbbHm). Esta guía se actualiza conforme salen nuevas versiones.

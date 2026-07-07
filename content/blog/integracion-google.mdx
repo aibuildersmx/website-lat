@@ -1,0 +1,325 @@
+---
+title: "Google Workspace CLI — Conecta AI con Google"
+description: "La nueva gws CLI: un solo comando para Drive, Gmail, Calendar, Sheets y todas las APIs de Workspace. Qué resuelve, qué no, y cómo empezar."
+date: "2026-03-05"
+readTime: "10 min"
+author: "Ricardo Garcia"
+tags:
+  - google-workspace
+  - gws
+  - tutorial
+tocItems:
+  - { id: "problema", label: "El Problema" }
+  - { id: "que-es-gws", label: "¿Qué es gws?" }
+  - { id: "instalacion", label: "Instalación" }
+  - { id: "auth", label: "Autenticación" }
+  - { id: "comandos", label: "Comandos Esenciales" }
+  - { id: "mcp", label: "MCP Server" }
+  - { id: "skills", label: "Agent Skills" }
+  - { id: "verdad", label: "La Verdad Sin Filtro" }
+  - { id: "recursos", label: "Recursos" }
+---
+
+<SectionTitle id="problema">El Problema</SectionTitle>
+
+Todos quieren que su AI lea emails, agende reuniones y busque archivos en Drive. Nadie te dice lo difícil que es conectarlo. Google es el servicio más usado del mundo, pero su sistema de autenticación (OAuth + Google Cloud Console) es la parte más compleja de cualquier setup de asistente AI.
+
+Cada video de YouTube lo confirma: la integración con Google es la parte donde la gente se pierde. Todos los influencers o la saltan o la simplifican tanto que no sirve el tutorial.
+
+Ahora hay una herramienta nueva que no elimina esa complejidad — pero la organiza mucho mejor.
+
+<SectionTitle id="que-es-gws">¿Qué es gws?</SectionTitle>
+
+`gws` es un CLI open-source que cubre **todas** las APIs de Google Workspace con un solo comando. Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin — todo. Salió el 2 de marzo 2026 y ya tiene 9,400+ estrellas en GitHub.
+
+Lo interesante es que **no tiene una lista fija de comandos**. Lee el Discovery Service de Google en runtime y construye su interfaz dinámicamente. Cuando Google agrega un endpoint nuevo, `gws` lo detecta automáticamente.
+
+<Callout type="warning">
+    **Esto NO es un producto oficialmente soportado por Google.** Vive bajo la org `googleworkspace` en GitHub, pero el propio repo aclara que no tiene soporte oficial. Es open-source (Apache-2.0), pre-v1.0, y con breaking changes esperados.
+</Callout>
+
+**Para humanos:** no más `curl` contra REST docs. `gws` te da `--help` en cada recurso, `--dry-run` para preview, y auto-paginación.
+
+**Para agentes AI:** todo el output es JSON estructurado. Viene con 100+ skills pre-hechos y un MCP server para conectar con Claude Desktop, Gemini CLI o VS Code.
+
+<SectionTitle id="instalacion">Instalación</SectionTitle>
+
+Requisitos: Node.js 18+ y un proyecto en Google Cloud (más sobre eso en la sección de auth).
+
+<CodeBlock
+    title="Instalación"
+    className="my-6"
+    language="bash"
+    code={`npm install -g @googleworkspace/cli`}
+/>
+
+También puedes descargar binarios pre-compilados desde [GitHub Releases](https://github.com/googleworkspace/cli/releases) o compilar desde fuente con Rust:
+
+<CodeBlock
+    className="my-6"
+    language="bash"
+    code={`cargo install --path .`}
+/>
+
+<SectionTitle id="auth">Autenticación (la parte difícil)</SectionTitle>
+
+Seamos honestos: la autenticación con Google siempre es compleja. `gws` ofrece varias formas, pero todas requieren un **proyecto en Google Cloud**.
+
+<SubSection title="Camino rápido: gws auth setup (requiere gcloud)">
+
+Si tienes `gcloud` CLI instalado y autenticado, este comando automatiza todo — crea el proyecto, habilita APIs, configura OAuth y te logea:
+
+<CodeBlock
+    className="my-6"
+    language="bash"
+    code={`gws auth setup     # crea proyecto, habilita APIs, configura OAuth
+gws auth login     # login subsecuente`}
+/>
+
+Las credenciales se encriptan en reposo (AES-256-GCM) con la llave en tu OS keyring.
+
+</SubSection>
+
+<SubSection title="Camino manual: Google Cloud Console">
+
+Si no tienes `gcloud`, el setup manual es:
+
+<StepList steps={[
+    'Ir a Google Cloud Console → crear proyecto nuevo',
+    'Ir a OAuth consent screen → tipo External (testing mode está bien)',
+    'Agregar tu cuenta como Test User (sin esto, login falla con "Access blocked")',
+    'Crear OAuth Client → tipo Desktop app → descargar JSON',
+    'Guardar el JSON en ~/.config/gws/client_secret.json',
+    'Ejecutar gws auth login',
+]} />
+
+<Callout type="warning">
+    **Scopes en testing mode:** Apps no verificadas (testing) están limitadas a ~25 OAuth scopes. El preset "recommended" incluye 85+ y va a fallar. Selecciona solo los servicios que necesitas:
+
+    `gws auth login --scopes drive,gmail,calendar`
+</Callout>
+
+</SubSection>
+
+<SubSection title="Nuestra recomendación: Cuenta dedicada del bot">
+
+El approach más inteligente y seguro: el bot tiene **su propia cuenta de Google**. Nunca tocas OAuth con tu cuenta personal.
+
+<StepList
+    variant="success"
+    counter="check"
+    steps={[
+        'Crea una cuenta Gmail dedicada (ej: mi-bot@gmail.com)',
+        'Configura el proyecto GCP y gws auth sobre esa cuenta',
+        'Desde TU cuenta de Calendar: Settings → Share with mi-bot@gmail.com → "See all event details"',
+        'El bot consulta tu calendario desde su propia cuenta compartida',
+        'Si algo sale mal, solo se compromete la cuenta throwaway',
+    ]}
+/>
+
+</SubSection>
+
+<SubSection title="Múltiples cuentas">
+
+<CodeBlock
+    className="my-6"
+    language="bash"
+    code={`gws auth login --account work@corp.com
+gws auth login --account personal@gmail.com
+
+gws auth list                                    # ver cuentas
+gws auth default work@corp.com                   # default
+gws --account personal@gmail.com drive files list # override temporal`}
+/>
+
+</SubSection>
+
+<SubSection title="Headless / CI">
+
+Para servidores sin browser, exporta credenciales desde una máquina con browser:
+
+<CodeBlock
+    className="my-6"
+    language="bash"
+    code={`# Máquina con browser
+gws auth export --unmasked > credentials.json
+
+# Servidor
+export GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE=/path/to/credentials.json
+gws drive files list   # funciona directo`}
+/>
+
+</SubSection>
+
+<SectionTitle id="comandos">Comandos Esenciales</SectionTitle>
+
+<CodeBlock
+    title="Drive"
+    className="my-6"
+    language="bash"
+    code={`# Listar archivos
+gws drive files list --params '{"pageSize": 10}'
+
+# Subir archivo
+gws drive files create --json '{"name": "report.pdf"}' --upload ./report.pdf
+
+# Paginar todo
+gws drive files list --params '{"pageSize": 100}' --page-all | jq -r '.files[].name'`}
+/>
+
+<CodeBlock
+    title="Gmail"
+    className="my-6"
+    language="bash"
+    code={`# Listar mensajes
+gws gmail users messages list --params '{"userId": "me", "maxResults": 5}'
+
+# Leer un mensaje
+gws gmail users messages get --params '{"userId": "me", "id": "MSG_ID"}'`}
+/>
+
+<CodeBlock
+    title="Calendar"
+    className="my-6"
+    language="bash"
+    code={`# Eventos de hoy
+gws calendar events list --params '{"calendarId": "primary", "timeMin": "2026-03-05T00:00:00Z", "maxResults": 10}'`}
+/>
+
+<CodeBlock
+    title="Sheets"
+    className="my-6"
+    language="bash"
+    code={`# Crear spreadsheet
+gws sheets spreadsheets create --json '{"properties": {"title": "Q1 Budget"}}'
+
+# Leer celdas (¡single quotes para escapar el !)
+gws sheets spreadsheets values get \\
+  --params '{"spreadsheetId": "ID", "range": "Sheet1!A1:C10"}'
+
+# Agregar filas
+gws sheets spreadsheets values append \\
+  --params '{"spreadsheetId": "ID", "range": "Sheet1!A1", "valueInputOption": "USER_ENTERED"}' \\
+  --json '{"values": [["Name", "Score"], ["Alice", 95]]}'`}
+/>
+
+<CodeBlock
+    title="Utilidades"
+    className="my-6"
+    language="bash"
+    code={`# Ver schema de cualquier método
+gws schema drive.files.list
+
+# Dry run (preview sin ejecutar)
+gws chat spaces messages create \\
+  --params '{"parent": "spaces/xyz"}' \\
+  --json '{"text": "Deploy complete."}' \\
+  --dry-run`}
+/>
+
+<SectionTitle id="mcp">MCP Server</SectionTitle>
+
+`gws mcp` levanta un servidor [Model Context Protocol](https://modelcontextprotocol.io/) sobre stdio. Esto le permite a cualquier cliente MCP-compatible — Claude Desktop, Gemini CLI, VS Code — llamar las APIs de Google como herramientas estructuradas.
+
+<CodeBlock
+    className="my-6"
+    language="bash"
+    code={`# Exponer Drive, Gmail y Calendar como tools
+gws mcp -s drive,gmail,calendar`}
+/>
+
+Configuración en tu cliente MCP:
+
+<CodeBlock
+    title="mcp-config.json"
+    className="my-6"
+    language="json"
+    code={`{
+  "mcpServers": {
+    "gws": {
+      "command": "gws",
+      "args": ["mcp", "-s", "drive,gmail,calendar"]
+    }
+  }
+}`}
+/>
+
+<Callout type="tip">
+    Cada servicio agrega ~10-80 herramientas. Mantén la lista solo con lo que realmente necesitas para no rebasar el límite de tools del cliente (normalmente 50-100).
+</Callout>
+
+<SectionTitle id="skills">Agent Skills para OpenClaw</SectionTitle>
+
+El repo incluye 100+ Agent Skills (`SKILL.md` files) — uno por cada API soportada, más workflows de alto nivel y 50 recetas curadas para Gmail, Drive, Docs, Calendar y Sheets.
+
+<CodeBlock
+    title="Instalar skills"
+    className="my-6"
+    language="bash"
+    code={`# Todos de golpe
+npx skills add https://github.com/googleworkspace/cli
+
+# Solo los que necesitas
+npx skills add https://github.com/googleworkspace/cli/tree/main/skills/gws-drive
+npx skills add https://github.com/googleworkspace/cli/tree/main/skills/gws-gmail`}
+/>
+
+<CodeBlock
+    title="Setup con OpenClaw"
+    className="my-6"
+    language="bash"
+    code={`# Symlink (se mantiene sincronizado con el repo)
+ln -s $(pwd)/skills/gws-* ~/.openclaw/skills/
+
+# O copiar skills específicos
+cp -r skills/gws-drive skills/gws-gmail ~/.openclaw/skills/`}
+/>
+
+El skill `gws-shared` incluye un bloque `install` para que OpenClaw auto-instale la CLI vía npm si `gws` no está en el PATH.
+
+<SectionTitle id="verdad">La Verdad Sin Filtro</SectionTitle>
+
+**Lo que `gws` sí resuelve:**
+
+- Un solo CLI para todas las APIs (en vez de curl contra 20 REST endpoints diferentes)
+- Output JSON estructurado para humanos y agentes
+- `--help` en cada recurso, `--dry-run` para preview
+- Auto-paginación, subida multipart, soporte multi-cuenta
+- MCP server listo para Claude, Gemini, VS Code
+- 100+ skills pre-hechos para agentes AI
+
+**Lo que `gws` NO resuelve:**
+
+<EmphasisBox>
+    Google Cloud Console sigue siendo necesario. OAuth consent screen + credenciales + test users sigue siendo complejo. `gws auth setup` simplifica el proceso pero requiere `gcloud` CLI. Apps no verificadas tienen límite de ~25 scopes. No es un producto oficial de Google.
+</EmphasisBox>
+
+<Callout type="info">
+    **El mensaje clave:** La `gws` CLI es el mejor wrapper que existe hoy para Google Workspace, pero no elimina la complejidad de Google — la organiza mejor. Empieza con pocos scopes, usa una cuenta dedicada del bot, y escala desde ahí.
+</Callout>
+
+<SubSection title="Troubleshooting común">
+
+<TroubleshootList items={[
+    { error: '"Access blocked" o 403 al login', fix: 'Tu app está en testing mode y no te agregaste como test user. OAuth consent screen → Test users → Add users.' },
+    { error: '"Google hasn\'t verified this app"', fix: 'Normal en testing mode. Click Advanced → Continue. Seguro para uso personal.' },
+    { error: 'Demasiados scopes', fix: 'Usa --scopes drive,gmail,calendar en vez del preset recommended.' },
+    { error: 'accessNotConfigured (403)', fix: 'La API no está habilitada en tu proyecto GCP. Sigue el link enable_url del error o corre gws auth setup.' },
+    { error: 'redirect_uri_mismatch', fix: 'El OAuth client no es tipo Desktop app. Recréalo en Credentials como Desktop app.' },
+]} />
+
+</SubSection>
+
+<SectionTitle id="recursos">Recursos</SectionTitle>
+
+<ResourceLinks items={[
+    { label: 'gws GitHub', url: 'https://github.com/googleworkspace/cli', desc: 'Repo oficial — README, issues, releases' },
+    { label: 'npm package', url: 'https://www.npmjs.com/package/@googleworkspace/cli', desc: '@googleworkspace/cli' },
+    { label: 'Google Cloud Console', url: 'https://console.cloud.google.com', desc: 'Crear proyectos, habilitar APIs, gestionar OAuth' },
+    { label: 'Skills Index', url: 'https://github.com/googleworkspace/cli/blob/main/docs/skills.md', desc: 'Lista completa de los 100+ skills incluidos' },
+    { label: 'OpenClaw Guía', url: '/blog/guia-openclaw', desc: 'Nuestra guía básica para empezar con OpenClaw' },
+]} />
+
+---
+
+**¿Quieres la guía básica primero?** Revisa [OpenClaw: La Guía Completa en Español](/blog/guia-openclaw) para instalar tu asistente AI antes de conectarlo con Google.
