@@ -286,7 +286,20 @@ export interface IssueEngagement extends EngagementSummary {
 
 export async function getIssueEngagement(id: string): Promise<IssueEngagement> {
   const empty: IssueEngagement = {
-    sent: 0, opens: 0, clicks: 0, openRate: 0, clickRate: 0, hasData: false, topLinks: [],
+    sent: 0,
+    opens: 0,
+    clicks: 0,
+    unsubscribes: 0,
+    bounces: 0,
+    complaints: 0,
+    newSubscribers: 0,
+    openRate: 0,
+    clickRate: 0,
+    unsubscribeRate: 0,
+    bounceRate: 0,
+    complaintRate: 0,
+    hasData: false,
+    topLinks: [],
   };
   if (await gate()) return empty;
   const [summary, topLinks] = await Promise.all([

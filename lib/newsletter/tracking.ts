@@ -62,7 +62,7 @@ export function stripTracking(html: string): string {
 export async function logEvent(e: {
   issueId: string;
   contactId: string;
-  type: "open" | "click";
+  type: "open" | "click" | "unsubscribe" | "delivered" | "bounce" | "complaint";
   url?: string | null;
   userAgent?: string | null;
 }): Promise<void> {

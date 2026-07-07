@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { contacts } from "@/lib/db/schema";
 import { verifyUnsub } from "@/lib/newsletter/unsubscribe";
+import { logEvent } from "@/lib/newsletter/tracking";
 
 // Self-hosted unsubscribe endpoint (replaces Resend Audiences).
 //   GET  -> confirmation page. Does NOT unsubscribe — a bare visit (or a Gmail/
@@ -93,9 +94,10 @@ function shell(title: string, inner: string): NextResponse {
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const c = req.nextUrl.searchParams.get("c") ?? "";
+  const i = req.nextUrl.searchParams.get("i") ?? "";
   const t = req.nextUrl.searchParams.get("t") ?? "";
 
-  if (!verifyUnsub(c, t)) {
+  if (!verifyUnsub(c, t, i || null)) {
     return shell(
       "Enlace inválido",
       `<p class="eyebrow">The Build Log</p>
@@ -108,7 +110,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const email = await contactEmail(c);
   const where = email ? ` en <span class="em">${esc(email)}</span>` : "";
-  const action = `/unsubscribe?c=${encodeURIComponent(c)}&t=${encodeURIComponent(t)}`;
+  const issue = i ? `&i=${encodeURIComponent(i)}` : "";
+  const action = `/unsubscribe?c=${encodeURIComponent(c)}${issue}&t=${encodeURIComponent(t)}`;
 
   return shell(
     "¿Cancelar suscripción?",
@@ -126,11 +129,20 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const c = req.nextUrl.searchParams.get("c") ?? "";
+  const i = req.nextUrl.searchParams.get("i") ?? "";
   const t = req.nextUrl.searchParams.get("t") ?? "";
-  if (!verifyUnsub(c, t)) {
+  if (!verifyUnsub(c, t, i || null)) {
     return new NextResponse(null, { status: 400 });
   }
   await unsubscribe(c);
+  if (i) {
+    await logEvent({
+      issueId: i,
+      contactId: c,
+      type: "unsubscribe",
+      userAgent: req.headers.get("user-agent"),
+    });
+  }
   return shell(
     "Suscripción cancelada",
     `<p class="eyebrow">The Build Log</p>

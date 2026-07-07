@@ -17,6 +17,120 @@ function StatusDot({ status }: { status: string }) {
   );
 }
 
+function SubscriberLineChart({
+  history,
+}: {
+  history: { period: string; newSubscribers: number; cumulativeSubscribers: number }[];
+}) {
+  if (history.length === 0) return null;
+
+  const width = 720;
+  const height = 220;
+  const padding = { top: 18, right: 24, bottom: 38, left: 54 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const max = Math.max(1, ...history.map((point) => point.cumulativeSubscribers));
+  const min = Math.min(...history.map((point) => point.cumulativeSubscribers));
+  const span = Math.max(1, max - min);
+
+  const xFor = (index: number) =>
+    padding.left + (history.length === 1 ? chartWidth : (index / (history.length - 1)) * chartWidth);
+  const yFor = (value: number) => padding.top + chartHeight - ((value - min) / span) * chartHeight;
+  const points = history.map((point, index) => ({
+    ...point,
+    x: xFor(index),
+    y: yFor(point.cumulativeSubscribers),
+  }));
+  const path = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
+    .join(" ");
+  const latest = history[history.length - 1];
+  const ticks = [max, Math.round(min + span / 2), min];
+  const labels = Array.from(
+    new Set([history[0], history[Math.floor((history.length - 1) / 2)], latest]),
+  );
+
+  return (
+    <div className="mt-6 rounded-xl border border-black/5 bg-stone-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Cumulativo</p>
+          <p className="mt-1 text-2xl font-medium text-gray-800 dark:text-gray-100">
+            {latest.cumulativeSubscribers.toLocaleString("es-MX")}
+          </p>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          +{latest.newSubscribers.toLocaleString("es-MX")} en {latest.period}
+        </p>
+      </div>
+
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="Crecimiento acumulado de suscriptores por mes"
+        className="mt-4 h-56 w-full overflow-visible"
+      >
+        {ticks.map((tick) => {
+          const y = yFor(tick);
+          return (
+            <g key={tick}>
+              <line
+                x1={padding.left}
+                x2={width - padding.right}
+                y1={y}
+                y2={y}
+                className="stroke-black/5 dark:stroke-white/10"
+              />
+              <text
+                x={padding.left - 12}
+                y={y + 4}
+                textAnchor="end"
+                className="fill-gray-400 text-[11px]"
+              >
+                {tick.toLocaleString("es-MX")}
+              </text>
+            </g>
+          );
+        })}
+        <path
+          d={`${path} L ${points[points.length - 1].x.toFixed(1)} ${height - padding.bottom} L ${points[0].x.toFixed(1)} ${height - padding.bottom} Z`}
+          className="fill-gray-800/5 dark:fill-white/5"
+        />
+        <path
+          d={path}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-gray-800 dark:text-gray-100"
+        />
+        {points.map((point) => (
+          <circle
+            key={point.period}
+            cx={point.x}
+            cy={point.y}
+            r={point === points[points.length - 1] ? 4 : 2.5}
+            className="fill-white stroke-gray-800 dark:fill-neutral-900 dark:stroke-gray-100"
+            strokeWidth="2"
+          />
+        ))}
+        {labels.map((point) => (
+          <text
+            key={point.period}
+            x={xFor(history.indexOf(point))}
+            y={height - 12}
+            textAnchor="middle"
+            className="fill-gray-400 text-[11px]"
+          >
+            {point.period}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 export default async function NewsletterListPage() {
   const [issues, metrics] = await Promise.all([listIssues(), subscriberMetrics()]);
   const maxMonthlySubscribers = Math.max(
@@ -97,6 +211,8 @@ export default async function NewsletterListPage() {
             ))}
           </div>
         </div>
+
+        <SubscriberLineChart history={metrics.history} />
 
         <div className="mt-6 overflow-hidden rounded-xl border border-black/5 dark:border-white/10">
           {metrics.history.length === 0 ? (

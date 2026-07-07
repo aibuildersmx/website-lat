@@ -58,9 +58,9 @@ export async function processSendBatch(
       from,
       to: [r.email],
       subject: issue.subject,
-      html: injectTracking(injectUnsubscribe(html, r.contactId), r.contactId, issueId),
+      html: injectTracking(injectUnsubscribe(html, r.contactId, issueId), r.contactId, issueId),
       replyTo,
-      headers: unsubscribeHeaders(r.contactId),
+      headers: unsubscribeHeaders(r.contactId, issueId),
     })),
   );
   if (res.error) {

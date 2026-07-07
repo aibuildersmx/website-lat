@@ -12,12 +12,11 @@
    utilities (font-sans/-mono/-serif) and the component's `font-instrument`
    render in the same typefaces. */
 @theme {
-  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono", "SFMono-Regular", Consolas, monospace;
-  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
-  --font-instrument-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-instrument-serif);
 }
 
 .font-instrument {
-  font-family: "Instrument Serif", ui-serif, Georgia, serif;
+  font-family: var(--font-instrument-serif);
 }

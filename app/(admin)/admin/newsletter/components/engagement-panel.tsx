@@ -58,6 +58,26 @@ export function EngagementPanel({ data }: { data: IssueEngagement }) {
               value={pct(data.openRate)}
               detail={`${data.opens.toLocaleString("es-MX")} personas`}
             />
+            <Metric
+              label="Bajas"
+              value={pct(data.unsubscribeRate)}
+              detail={`${data.unsubscribes.toLocaleString("es-MX")} personas`}
+            />
+            <Metric
+              label="Nuevos suscriptores"
+              value={data.newSubscribers.toLocaleString("es-MX")}
+              detail="hasta el siguiente issue"
+            />
+            <Metric
+              label="Rebotes"
+              value={pct(data.bounceRate)}
+              detail={`${data.bounces.toLocaleString("es-MX")} eventos`}
+            />
+            <Metric
+              label="Spam"
+              value={pct(data.complaintRate)}
+              detail={`${data.complaints.toLocaleString("es-MX")} quejas`}
+            />
           </div>
 
           {data.topLinks.length > 0 && (

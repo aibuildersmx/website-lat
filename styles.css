@@ -8,9 +8,9 @@
   --glass-x: 50vw;
   --glass-y: 22vh;
   --glass-opacity: 0;
-  --serif: "Instrument Serif", ui-serif, Georgia, serif;
-  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --mono: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  --serif: var(--font-instrument-serif);
+  --sans: var(--font-geist-sans);
+  --mono: var(--font-geist-mono);
 }
 
 * {
