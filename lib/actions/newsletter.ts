@@ -263,6 +263,19 @@ export async function toggleIssueArchiveVisibility(formData: FormData): Promise<
   revalidatePath("/newsletters");
 }
 
+export async function deleteDraftIssue(formData: FormData): Promise<void> {
+  if (await gate()) return;
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  await db
+    .delete(newsletterIssues)
+    .where(and(eq(newsletterIssues.id, id), eq(newsletterIssues.status, "draft")));
+
+  revalidatePath(LIST_PATH);
+}
+
 export async function bulkImportSubscribers(
   _previousState: BulkImportState,
   formData: FormData,

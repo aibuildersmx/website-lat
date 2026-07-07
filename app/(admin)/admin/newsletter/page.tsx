@@ -5,7 +5,11 @@ import {
   type AdminLanguage,
   normalizeAdminLanguage,
 } from "@/lib/admin/language";
-import { listIssues, toggleIssueArchiveVisibility } from "@/lib/actions/newsletter";
+import {
+  deleteDraftIssue,
+  listIssues,
+  toggleIssueArchiveVisibility,
+} from "@/lib/actions/newsletter";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +20,7 @@ const COPY = {
       sent: "Enviado",
       sending: "Enviando...",
       draft: "Borrador",
+      deleteDraft: "Eliminar borrador",
       unpublished: "No publicado",
       visibleArchive: "Visible en archivo",
       hiddenArchive: "Oculto del archivo",
@@ -31,6 +36,7 @@ const COPY = {
       sent: "Sent",
       sending: "Sending...",
       draft: "Draft",
+      deleteDraft: "Delete draft",
       unpublished: "Unpublished",
       visibleArchive: "Visible in archive",
       hiddenArchive: "Hidden from archive",
@@ -97,6 +103,31 @@ function ArchiveToggle({
   );
 }
 
+function DraftDeleteButton({
+  id,
+  status,
+  language,
+}: {
+  id: string;
+  status: string;
+  language: AdminLanguage;
+}) {
+  if (status !== "draft") return null;
+  const copy = COPY[language];
+
+  return (
+    <form action={deleteDraftIssue}>
+      <input type="hidden" name="id" value={id} />
+      <button
+        type="submit"
+        className="rounded-full border border-red-500/20 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-500/40 hover:bg-red-500/5 dark:text-red-400"
+      >
+        {copy.status.deleteDraft}
+      </button>
+    </form>
+  );
+}
+
 export default async function NewsletterListPage() {
   const [issues, cookieStore] = await Promise.all([listIssues(), cookies()]);
   const language = normalizeAdminLanguage(cookieStore.get(ADMIN_LANGUAGE_COOKIE)?.value);
@@ -150,12 +181,15 @@ export default async function NewsletterListPage() {
                       {issue.date ? ` · ${issue.date}` : ""}
                     </p>
                   </div>
-                  <ArchiveToggle
-                    id={issue.id}
-                    status={issue.status}
-                    archivePublished={issue.archivePublished}
-                    language={language}
-                  />
+                  <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
+                    <ArchiveToggle
+                      id={issue.id}
+                      status={issue.status}
+                      archivePublished={issue.archivePublished}
+                      language={language}
+                    />
+                    <DraftDeleteButton id={issue.id} status={issue.status} language={language} />
+                  </div>
                   <StatusDot status={issue.status} language={language} />
                 </div>
               </li>
