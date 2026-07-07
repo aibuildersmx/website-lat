@@ -1,0 +1,101 @@
+---
+title: "Título del post — cámbiame"
+description: "Una o dos frases que resumen el post y hacen que valga la pena abrirlo. Esta copia aparece debajo del título y en el og:description."
+date: "2026-04-23"
+readTime: "5 min"
+author: "Tu Nombre"
+# cover: "/images/blog/mi-slug/cover.jpg"   # Opcional — imagen OG + thumbnail
+# tags:                                      # Opcional — strings cortos, kebab-case
+#   - mi-tag
+#   - otro-tag
+# draft: true                                # Descomenta para ocultar del índice
+tocItems:
+  - { id: "intro", label: "Introducción" }
+  - { id: "problema", label: "El problema" }
+  - { id: "solucion", label: "La solución" }
+  - { id: "conclusion", label: "Conclusión" }
+---
+
+{/*
+  Este template sirve como punto de partida para un post nuevo.
+
+  1. Copia este archivo a `content/blog/<slug>.mdx` (kebab-case, sin prefijo `_`).
+  2. Edita la frontmatter con los valores reales. Campos documentados en
+     `docs/blog/frontmatter.md`.
+  3. Cada <SectionTitle id="..."> del cuerpo debe existir en `tocItems`.
+  4. Antes de reclamar "listo", corre `pnpm run build` para cazar errores.
+  5. Las imágenes del post viven en `public/images/blog/<slug>/`.
+
+  Referencia completa de componentes disponibles:
+  → `docs/blog/components.md`
+*/}
+
+Un párrafo corto de apertura (lead). No pongas un `# Título` aquí — el título
+sale de la frontmatter. Arranca directo con una idea que invite a seguir
+leyendo.
+
+<SectionTitle id="intro">Introducción</SectionTitle>
+
+Contextualiza el post. ¿Qué asumes del lector? ¿Por qué ahora? Mantén esta
+sección breve — 2–4 párrafos máximo.
+
+<Callout type="info">
+  Usa **callouts** para marcar aclaraciones o pro-tips que no caben en el flujo
+  principal. Quita este ejemplo cuando no lo necesites.
+</Callout>
+
+<SectionTitle id="problema">El problema</SectionTitle>
+
+Describe el problema concreto que vas a resolver. Muestra código, pantallas o
+comandos reales — evita abstracciones hasta que el lector sepa _por qué_
+importan.
+
+```bash
+# Las fences con lenguaje se renderizan como <CodeBlock> automáticamente.
+pnpm install
+pnpm dev
+```
+
+<SectionTitle id="solucion">La solución</SectionTitle>
+
+Aquí va el cuerpo técnico. Algunos ejemplos de patrones útiles — borra los
+que no necesites:
+
+<SubSection title="Una sub-sección con h3">
+  Para dividir una sección larga sin meter más entradas en el TOC. Si el
+  sub-tema merece su propia entrada en el TOC, usa `<SectionTitle>` con un `id`
+  en la frontmatter en vez de `<SubSection>`.
+</SubSection>
+
+<StepList steps={[
+  "Primer paso — algo corto y accionable.",
+  "Segundo paso — idealmente verificable.",
+  "Tercer paso — cierre que deja al lector funcionando.",
+]} />
+
+<CheckList items={[
+  { title: "Bullet positivo", description: "Algo que sí viene incluido o ganaste." },
+  { title: "Otro bullet", description: "Usa esto cuando el ✓ aporte señal." },
+]} />
+
+{/* Descomenta y ajusta cuando tengas una captura real:
+<PostImage
+  src="/images/blog/mi-slug/paso-2.png"
+  alt="Captura explicando el paso 2"
+  width={800}
+  height={500}
+  caption="Opcional: texto debajo de la imagen."
+/>
+*/}
+
+<SectionTitle id="conclusion">Conclusión</SectionTitle>
+
+Cierra con 1–2 párrafos: qué aprendió el lector, hacia dónde ir después, y (si
+aplica) un CTA. Evita "en conclusión" como apertura — entra directo.
+
+{/* Descomenta si el post cierra con recursos externos:
+<ResourceLinks items={[
+  { label: "Docs oficiales", url: "https://example.com", desc: "Referencia de API" },
+  { label: "Guía relacionada", url: "/blog/otra-guia", desc: "Post interno" },
+]} />
+*/}

@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GlassAura } from "@/components/glass-aura";
@@ -178,51 +179,92 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="sample-section" aria-labelledby="sample-title">
-          <div className="section-wrap sample-layout">
-            <div className="sample-intro">
-              <h2 id="sample-title">Así se lee una edición.</h2>
+        <section className="ecosystem-section" aria-labelledby="ecosystem-title">
+          <div className="section-wrap ecosystem-layout">
+            <div className="ecosystem-intro">
+              <p className="section-label">Más que un newsletter</p>
+              <h2 id="ecosystem-title">De señal a acción.</h2>
               <p>
-                Un formato editorial para revisar rápido qué cambió, por qué importa y qué vale la
-                pena probar. Sin resúmenes eternos ni listas infladas.
+                AI Builders Latam conecta lectura, conversaciones y oportunidades para que no solo
+                sigas la ola de IA: puedas construir, aprender y moverte con ella.
               </p>
             </div>
 
-            <article className="issue-preview" aria-label="Muestra de The Build Log">
-              <p className="issue-brand">AI Builders Latam</p>
-              <h3>The Build Log</h3>
-              <p className="issue-subtitle">
-                Lo que importa esta semana para quienes construyen con IA. Solo señal, cero ruido.
-              </p>
-              <p className="issue-meta">Issue 003 · 22 jun 2026 · 8 min de lectura</p>
+            <div className="ecosystem-grid" aria-label="Recursos de AI Builders Latam">
+              <article className="ecosystem-card">
+                <div className="ecosystem-card-top">
+                  <span className="ecosystem-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 6h16" />
+                      <path d="M4 12h16" />
+                      <path d="M4 18h10" />
+                    </svg>
+                  </span>
+                  <p className="ecosystem-kicker">Blog</p>
+                </div>
+                <h3>Guías y criterio para construir mejor.</h3>
+                <p>
+                  Lee notas prácticas sobre agentes, flujos de trabajo, herramientas y aprendizajes
+                  reales de la comunidad.
+                </p>
+                <Link className="ecosystem-cta" href="/blog">
+                  Leer el blog
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </Link>
+              </article>
 
-              <div className="issue-section">
-                <p className="issue-count">01 / 05</p>
-                <h4>Esta semana en IA</h4>
+              <article className="ecosystem-card">
+                <div className="ecosystem-card-top">
+                  <span className="ecosystem-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M23 7 16 12l7 5V7Z" />
+                      <rect x="1" y="5" width="15" height="14" rx="2" />
+                    </svg>
+                  </span>
+                  <p className="ecosystem-kicker">Charlas</p>
+                </div>
+                <h3>Charlas virtuales con builders de IA.</h3>
+                <p>
+                  Únete a sesiones online con builders de producto, ingeniería, automatización,
+                  contenido y estrategia.
+                </p>
+                <Link className="ecosystem-cta" href="/talks">
+                  Ver charlas
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </Link>
+              </article>
 
-                <article className="issue-entry">
-                  <p className="issue-tag">01 · Codex</p>
-                  <h5>Ahora puedes enseñarle a Codex por demostración</h5>
-                  <p>
-                    Greg Brockman mostró que Codex aprende flujos de trabajo viéndote hacerlos una
-                    vez y los vuelve pasos reutilizables. Dejas de explicar tarea por tarea y
-                    empiezas a entrenar al agente como a alguien nuevo en el equipo.
-                  </p>
-                </article>
-
-                <article className="issue-entry">
-                  <p className="issue-tag">02 · Ciclos</p>
-                  <h5>El ciclo de refactor que está circulando entre quienes construyen</h5>
-                  <p>
-                    Una rutina corta para limpiar código generado por IA: congelar comportamiento,
-                    pedir simplificación enfocada y verificar con pruebas antes de tocar otra capa.
-                  </p>
-                </article>
-              </div>
-              <div className="issue-locked" aria-hidden="true">
-                <span>Más en la edición completa</span>
-              </div>
-            </article>
+              <article className="ecosystem-card">
+                <div className="ecosystem-card-top">
+                  <span className="ecosystem-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <rect x="2" y="7" width="20" height="14" rx="2" />
+                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                      <path d="M2 13h20" />
+                    </svg>
+                  </span>
+                  <p className="ecosystem-kicker">Vacantes</p>
+                </div>
+                <h3>Oportunidades para trabajar en Latinoamérica.</h3>
+                <p>
+                  Encuentra roles remotos, híbridos y presenciales en equipos que están
+                  construyendo desde la región.
+                </p>
+                <a className="ecosystem-cta" href="https://vacantes.lat" target="_blank" rel="noreferrer">
+                  Explorar vacantes
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </a>
+              </article>
+            </div>
           </div>
         </section>
 
