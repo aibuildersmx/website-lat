@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { contacts, newsletterEvents, newsletterIssues, newsletterSends } from "@/lib/db/schema";
 
@@ -62,22 +62,23 @@ export async function engagementSummary(issueId: string): Promise<EngagementSumm
 
   let newSubscribers = 0;
   if (issue?.sentAt) {
+    const sentAt = issue.sentAt.toISOString();
     const [nextIssue] = await db
       .select({ sentAt: newsletterIssues.sentAt })
       .from(newsletterIssues)
-      .where(gt(newsletterIssues.sentAt, issue.sentAt))
+      .where(sql`${newsletterIssues.sentAt} > ${sentAt}::timestamptz`)
       .orderBy(asc(newsletterIssues.sentAt))
       .limit(1);
 
     const upperBound = nextIssue?.sentAt
-      ? sql`and ${contacts.newsletterSubscribedAt} < ${nextIssue.sentAt}`
+      ? sql`and ${contacts.newsletterSubscribedAt} < ${nextIssue.sentAt.toISOString()}::timestamptz`
       : sql``;
     const [row] = await db
       .select({
         newSubscribers: sql<number>`count(*)::int`,
       })
       .from(contacts)
-      .where(sql`${contacts.newsletterSubscribedAt} >= ${issue.sentAt} ${upperBound}`);
+      .where(sql`${contacts.newsletterSubscribedAt} >= ${sentAt}::timestamptz ${upperBound}`);
     newSubscribers = row.newSubscribers;
   }
 

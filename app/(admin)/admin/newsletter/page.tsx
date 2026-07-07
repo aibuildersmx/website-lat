@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listIssues, createIssue } from "@/lib/actions/newsletter";
 import { subscriberMetrics } from "@/lib/newsletter/subscriber-metrics";
+import { BulkSubscriberImport } from "./components/bulk-subscriber-import";
 
 export const dynamic = "force-dynamic";
 
@@ -246,6 +247,16 @@ export default async function NewsletterListPage() {
             </ul>
           )}
         </div>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-black/5 bg-white p-5 dark:border-white/10 dark:bg-neutral-900">
+        <div>
+          <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Audiencia</p>
+          <h2 className="mt-1 text-lg font-medium text-gray-800 dark:text-gray-100">
+            Importar suscriptores
+          </h2>
+        </div>
+        <BulkSubscriberImport />
       </section>
 
       <div className="mt-10 overflow-hidden rounded-2xl border border-black/5 bg-white dark:border-white/10 dark:bg-neutral-900">

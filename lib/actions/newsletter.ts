@@ -14,6 +14,11 @@ import { subscribedRecipients, chunk } from "@/lib/newsletter/recipients";
 import { injectUnsubscribe, siteUrl } from "@/lib/newsletter/unsubscribe";
 import { stripTracking } from "@/lib/newsletter/tracking";
 import {
+  initialBulkImportState,
+  parseBulkSubscriberEmails,
+  type BulkImportState,
+} from "@/lib/newsletter/bulk-import";
+import {
   engagementSummary,
   topClickedLinks,
   type EngagementSummary,
@@ -22,6 +27,8 @@ import {
 import { getBoss, SEND_BATCH_QUEUE } from "@/lib/queue/boss";
 
 const LIST_PATH = "/admin/newsletter";
+const BULK_IMPORT_SOURCE = "admin-bulk-import";
+const MAX_BULK_IMPORT_EMAILS = 10_000;
 
 type ActionError = { error: string };
 type ActionOk = { ok: true; message?: string };
@@ -114,6 +121,73 @@ export async function createIssue(): Promise<void> {
     .returning({ id: newsletterIssues.id });
   revalidatePath(LIST_PATH);
   redirect(`${LIST_PATH}/${inserted[0].id}`);
+}
+
+export async function bulkImportSubscribers(
+  _previousState: BulkImportState,
+  formData: FormData,
+): Promise<BulkImportState> {
+  if (await gate()) {
+    return { ...initialBulkImportState, message: "No autorizado." };
+  }
+
+  const pasted = String(formData.get("emails") ?? "");
+  const file = formData.get("file");
+  const uploaded =
+    file instanceof File && file.size > 0
+      ? await file.text()
+      : "";
+  const parsed = parseBulkSubscriberEmails(`${pasted}\n${uploaded}`);
+
+  if (parsed.emails.length === 0) {
+    return {
+      ...initialBulkImportState,
+      ...parsed,
+      uniqueCount: 0,
+      message: "No encontramos correos válidos para importar.",
+    };
+  }
+
+  if (parsed.emails.length > MAX_BULK_IMPORT_EMAILS) {
+    return {
+      ...initialBulkImportState,
+      ...parsed,
+      uniqueCount: parsed.emails.length,
+      message: `Máximo ${MAX_BULK_IMPORT_EMAILS.toLocaleString("es-MX")} correos únicos por importación.`,
+    };
+  }
+
+  const inserted = await db
+    .insert(contacts)
+    .values(
+      parsed.emails.map((email) => ({
+        email,
+        sources: [BULK_IMPORT_SOURCE],
+        newsletterSubscribed: true,
+        newsletterSubscribedAt: sql`now()`,
+      })),
+    )
+    .onConflictDoNothing({ target: contacts.email })
+    .returning({ email: contacts.email });
+
+  const insertedCount = inserted.length;
+  const skippedCount = parsed.emails.length - insertedCount;
+  revalidatePath(LIST_PATH);
+
+  return {
+    ok: true,
+    message:
+      insertedCount === 0
+        ? "No se agregaron contactos nuevos; todos ya existían."
+        : `Se agregaron ${insertedCount.toLocaleString("es-MX")} contactos nuevos.`,
+    inputCount: parsed.inputCount,
+    uniqueCount: parsed.emails.length,
+    insertedCount,
+    skippedCount,
+    duplicateInputCount: parsed.duplicateInputCount,
+    invalidCount: parsed.invalidCount,
+    invalidSamples: parsed.invalidSamples,
+  };
 }
 
 export async function saveIssue(
