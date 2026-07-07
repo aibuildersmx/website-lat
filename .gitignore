@@ -53,3 +53,4 @@ Thumbs.db
 # Newsletter local secrets
 scripts/newsletter/.env
 .impeccable/
+.omx/
