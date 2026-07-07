@@ -144,18 +144,17 @@ type NavItem = {
   section: string;
   icon: typeof Home;
   exact?: boolean;
-  action?: "createIssue";
 };
 
 const NAV: NavItem[] = [
   { href: "/admin/audience", label: "audience", section: "The Build Log", icon: Users },
   { href: "/admin/newsletter", label: "newsletter", section: "The Build Log", icon: Mail },
   {
-    href: "#",
+    href: "/admin/newsletter/new",
     label: "newIssue",
     section: "The Build Log",
     icon: PlusCircle,
-    action: "createIssue",
+    exact: true,
   },
   { href: "/admin/talks", label: "talks", section: "HowIUseAI", icon: CalendarDays },
   { href: "/admin/team", label: "team", section: "Admin", icon: Users },
@@ -194,13 +193,11 @@ export function AdminShell({
   email,
   language,
   signOutAction,
-  createIssueAction,
   children,
 }: {
   email: string;
   language: AdminLanguage;
   signOutAction: () => void;
-  createIssueAction: () => void;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -235,22 +232,6 @@ export function AdminShell({
                   ? "bg-black text-white dark:bg-white dark:text-black"
                   : "text-gray-600 hover:bg-black/5 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
               }`;
-              if (item.action === "createIssue") {
-                return (
-                  <li key={item.label}>
-                    <form action={createIssueAction}>
-                      <button
-                        type="submit"
-                        onClick={() => setOpen(false)}
-                        className={`${className} w-full cursor-pointer text-left`}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                        {label}
-                      </button>
-                    </form>
-                  </li>
-                );
-              }
               return (
                 <li key={item.href}>
                   <Link

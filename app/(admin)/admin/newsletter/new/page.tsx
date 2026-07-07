@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
+import { NewIssueCreator } from "./new-issue-creator";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewNewsletterIssuePage() {
-  redirect("/admin/newsletter");
+  return <NewIssueCreator />;
 }
