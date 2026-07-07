@@ -25,6 +25,7 @@ import {
   type LinkClicks,
 } from "@/lib/newsletter/engagement";
 import { getBoss, SEND_BATCH_QUEUE } from "@/lib/queue/boss";
+import { normalizeAdminLanguage } from "@/lib/admin/language";
 
 const LIST_PATH = "/admin/newsletter";
 const BULK_IMPORT_SOURCE = "admin-bulk-import";
@@ -246,8 +247,26 @@ export async function bulkImportSubscribers(
   _previousState: BulkImportState,
   formData: FormData,
 ): Promise<BulkImportState> {
+  const language = normalizeAdminLanguage(String(formData.get("admin_language") ?? ""));
+  const bulkCopy =
+    language === "en"
+      ? {
+          unauthorized: "Unauthorized.",
+          noValid: "No valid emails found to import.",
+          max: `Maximum ${MAX_BULK_IMPORT_EMAILS.toLocaleString("en-US")} unique emails per import.`,
+          noneAdded: "No new contacts were added; they all already existed.",
+          added: (count: number) => `Added ${count.toLocaleString("en-US")} new contacts.`,
+        }
+      : {
+          unauthorized: "No autorizado.",
+          noValid: "No encontramos correos válidos para importar.",
+          max: `Máximo ${MAX_BULK_IMPORT_EMAILS.toLocaleString("es-MX")} correos únicos por importación.`,
+          noneAdded: "No se agregaron contactos nuevos; todos ya existían.",
+          added: (count: number) => `Se agregaron ${count.toLocaleString("es-MX")} contactos nuevos.`,
+        };
+
   if (await gate()) {
-    return { ...initialBulkImportState, message: "No autorizado." };
+    return { ...initialBulkImportState, message: bulkCopy.unauthorized };
   }
 
   const pasted = String(formData.get("emails") ?? "");
@@ -259,7 +278,7 @@ export async function bulkImportSubscribers(
       ...initialBulkImportState,
       ...parsed,
       uniqueCount: 0,
-      message: "No encontramos correos válidos para importar.",
+      message: bulkCopy.noValid,
     };
   }
 
@@ -268,7 +287,7 @@ export async function bulkImportSubscribers(
       ...initialBulkImportState,
       ...parsed,
       uniqueCount: parsed.emails.length,
-      message: `Máximo ${MAX_BULK_IMPORT_EMAILS.toLocaleString("es-MX")} correos únicos por importación.`,
+      message: bulkCopy.max,
     };
   }
 
@@ -293,8 +312,8 @@ export async function bulkImportSubscribers(
     ok: true,
     message:
       insertedCount === 0
-        ? "No se agregaron contactos nuevos; todos ya existían."
-        : `Se agregaron ${insertedCount.toLocaleString("es-MX")} contactos nuevos.`,
+        ? bulkCopy.noneAdded
+        : bulkCopy.added(insertedCount),
     inputCount: parsed.inputCount,
     uniqueCount: parsed.emails.length,
     insertedCount,

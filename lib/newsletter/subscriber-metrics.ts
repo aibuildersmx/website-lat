@@ -27,6 +27,19 @@ export interface RecentAttributedSubscriber {
   landingPage: string | null;
 }
 
+export interface CompanyEmailMetric {
+  label: string;
+  domain: string;
+  count: number;
+}
+
+export interface RecentCompanySubscriber {
+  email: string;
+  domain: string;
+  company: string | null;
+  subscribedAt: string | null;
+}
+
 export interface SubscriberMetrics {
   totalContacts: number;
   currentSubscribers: number;
@@ -39,6 +52,93 @@ export interface SubscriberMetrics {
     byCampaign: SubscriberAttributionMetric[];
     recent: RecentAttributedSubscriber[];
   };
+  emailAnalytics: {
+    workEmailSubscribers: number;
+    personalEmailSubscribers: number;
+    notableCompanySubscribers: number;
+    topCompanyDomains: CompanyEmailMetric[];
+    notableCompanies: CompanyEmailMetric[];
+    recentCompanySubscribers: RecentCompanySubscriber[];
+  };
+}
+
+const PERSONAL_EMAIL_DOMAINS = [
+  "gmail.com",
+  "googlemail.com",
+  "hotmail.com",
+  "outlook.com",
+  "live.com",
+  "msn.com",
+  "yahoo.com",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+  "privaterelay.appleid.com",
+  "aol.com",
+  "proton.me",
+  "protonmail.com",
+  "hey.com",
+  "mail.com",
+  "zoho.com",
+  "gmx.com",
+  "fastmail.com",
+];
+
+function domainSql() {
+  return sql<string>`lower(nullif(split_part(email, '@', 2), ''))`;
+}
+
+function personalDomainListSql() {
+  return sql.join(
+    PERSONAL_EMAIL_DOMAINS.map((domain) => sql`${domain}`),
+    sql`, `,
+  );
+}
+
+function notableCompanySql() {
+  return sql`
+    (
+      values
+        ('google.com', 'Google'),
+        ('abc.xyz', 'Alphabet'),
+        ('microsoft.com', 'Microsoft'),
+        ('linkedin.com', 'LinkedIn'),
+        ('amazon.com', 'Amazon'),
+        ('aws.com', 'AWS'),
+        ('meta.com', 'Meta'),
+        ('facebook.com', 'Meta'),
+        ('instagram.com', 'Instagram'),
+        ('apple.com', 'Apple'),
+        ('openai.com', 'OpenAI'),
+        ('anthropic.com', 'Anthropic'),
+        ('nvidia.com', 'NVIDIA'),
+        ('tesla.com', 'Tesla'),
+        ('spacex.com', 'SpaceX'),
+        ('netflix.com', 'Netflix'),
+        ('stripe.com', 'Stripe'),
+        ('shopify.com', 'Shopify'),
+        ('salesforce.com', 'Salesforce'),
+        ('adobe.com', 'Adobe'),
+        ('oracle.com', 'Oracle'),
+        ('ibm.com', 'IBM'),
+        ('uber.com', 'Uber'),
+        ('airbnb.com', 'Airbnb'),
+        ('spotify.com', 'Spotify'),
+        ('databricks.com', 'Databricks'),
+        ('snowflake.com', 'Snowflake'),
+        ('cloudflare.com', 'Cloudflare'),
+        ('github.com', 'GitHub'),
+        ('gitlab.com', 'GitLab'),
+        ('figma.com', 'Figma'),
+        ('notion.so', 'Notion'),
+        ('canva.com', 'Canva'),
+        ('mercadolibre.com', 'Mercado Libre'),
+        ('rappi.com', 'Rappi'),
+        ('clip.mx', 'Clip'),
+        ('nu.com.mx', 'Nubank'),
+        ('nubank.com.br', 'Nubank')
+    ) as notable(domain, company)
+  `;
 }
 
 function channelSql() {
@@ -151,6 +251,92 @@ export async function subscriberMetrics(): Promise<SubscriberMetrics> {
     limit 12
   `);
 
+  const [emailSummary] = await db.execute<{
+    work_email_subscribers: number;
+    personal_email_subscribers: number;
+    notable_company_subscribers: number;
+  }>(sql`
+    with subscriber_domains as (
+      select ${domainSql()} as domain
+      from contacts
+      where newsletter_subscribed_at is not null
+    )
+    select
+      count(*) filter (
+        where subscriber_domains.domain is not null
+          and subscriber_domains.domain not in (${personalDomainListSql()})
+      )::int as work_email_subscribers,
+      count(*) filter (
+        where subscriber_domains.domain is null
+          or subscriber_domains.domain in (${personalDomainListSql()})
+      )::int as personal_email_subscribers,
+      count(*) filter (where notable.domain is not null)::int as notable_company_subscribers
+    from subscriber_domains
+    left join ${notableCompanySql()} on notable.domain = subscriber_domains.domain
+  `);
+
+  const topCompanyDomainRows = await db.execute<{
+    label: string;
+    domain: string;
+    count: number;
+  }>(sql`
+    with subscriber_domains as (
+      select ${domainSql()} as domain
+      from contacts
+      where newsletter_subscribed_at is not null
+    )
+    select domain as label, domain, count(*)::int as count
+    from subscriber_domains
+    where domain is not null and domain not in (${personalDomainListSql()})
+    group by domain
+    order by count desc, domain asc
+  `);
+
+  const notableCompanyRows = await db.execute<{
+    label: string;
+    domain: string;
+    count: number;
+  }>(sql`
+    with subscriber_domains as (
+      select ${domainSql()} as domain
+      from contacts
+      where newsletter_subscribed_at is not null
+    )
+    select notable.company as label, notable.domain, count(*)::int as count
+    from subscriber_domains
+    join ${notableCompanySql()} on notable.domain = subscriber_domains.domain
+    group by notable.company, notable.domain
+    order by count desc, notable.company asc
+  `);
+
+  const recentCompanyRows = await db.execute<{
+    email: string;
+    domain: string;
+    company: string | null;
+    subscribed_at: string | null;
+  }>(sql`
+    with subscriber_domains as (
+      select
+        email,
+        newsletter_subscribed_at,
+        created_at,
+        ${domainSql()} as domain
+      from contacts
+      where newsletter_subscribed_at is not null
+    )
+    select
+      email,
+      subscriber_domains.domain,
+      notable.company,
+      newsletter_subscribed_at::text as subscribed_at
+    from subscriber_domains
+    left join ${notableCompanySql()} on notable.domain = subscriber_domains.domain
+    where subscriber_domains.domain is not null
+      and subscriber_domains.domain not in (${personalDomainListSql()})
+    order by newsletter_subscribed_at desc nulls last, created_at desc
+    limit 12
+  `);
+
   return {
     totalContacts: summary?.total_contacts ?? 0,
     currentSubscribers: summary?.current_subscribers ?? 0,
@@ -179,6 +365,27 @@ export async function subscriberMetrics(): Promise<SubscriberMetrics> {
         campaign: row.campaign,
         referrer: row.referrer,
         landingPage: row.landing_page,
+      })),
+    },
+    emailAnalytics: {
+      workEmailSubscribers: emailSummary?.work_email_subscribers ?? 0,
+      personalEmailSubscribers: emailSummary?.personal_email_subscribers ?? 0,
+      notableCompanySubscribers: emailSummary?.notable_company_subscribers ?? 0,
+      topCompanyDomains: topCompanyDomainRows.map((row) => ({
+        label: row.label,
+        domain: row.domain,
+        count: row.count,
+      })),
+      notableCompanies: notableCompanyRows.map((row) => ({
+        label: row.label,
+        domain: row.domain,
+        count: row.count,
+      })),
+      recentCompanySubscribers: recentCompanyRows.map((row) => ({
+        email: row.email,
+        domain: row.domain,
+        company: row.company,
+        subscribedAt: row.subscribed_at,
       })),
     },
   };

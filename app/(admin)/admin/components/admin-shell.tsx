@@ -5,8 +5,42 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { CalendarDays, Home, Mail, Menu, Users, X, ChevronUp } from "lucide-react";
+import type { AdminLanguage } from "@/lib/admin/language";
 import { ThemeToggle } from "./theme-toggle";
+import { LanguageToggle } from "./language-toggle";
 import { identityForEmail } from "@/lib/admin/avatars";
+
+const SHELL_COPY: Record<
+  AdminLanguage,
+  {
+    closeAccountMenu: string;
+    signOut: string;
+    openMenu: string;
+    closeMenu: string;
+    nav: { talks: string; team: string };
+  }
+> = {
+  es: {
+    closeAccountMenu: "Cerrar menú de cuenta",
+    signOut: "Salir",
+    openMenu: "Abrir menú",
+    closeMenu: "Cerrar menú",
+    nav: {
+      talks: "Charlas",
+      team: "Equipo",
+    },
+  },
+  en: {
+    closeAccountMenu: "Close account menu",
+    signOut: "Sign out",
+    openMenu: "Open menu",
+    closeMenu: "Close menu",
+    nav: {
+      talks: "Talks",
+      team: "Team",
+    },
+  },
+};
 
 // Footer pinned to the bottom of the sidebar: theme toggle above the divider
 // (right-aligned), then the avatar row. Clicking the avatar opens an upward
@@ -14,19 +48,23 @@ import { identityForEmail } from "@/lib/admin/avatars";
 // open state.
 function AccountFooter({
   email,
+  language,
   signOutAction,
 }: {
   email: string;
+  language: AdminLanguage;
   signOutAction: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const identity = identityForEmail(email);
   const initial = (identity?.name ?? email).trim().charAt(0).toUpperCase();
+  const copy = SHELL_COPY[language];
 
   return (
     <div>
       {/* Theme toggle — above the divider, right-aligned. */}
-      <div className="flex justify-end px-3 py-2">
+      <div className="flex justify-end gap-1 px-3 py-2">
+        <LanguageToggle language={language} />
         <ThemeToggle />
       </div>
 
@@ -36,7 +74,7 @@ function AccountFooter({
             {/* Click-away backdrop. */}
             <button
               type="button"
-              aria-label="Cerrar menú de cuenta"
+              aria-label={copy.closeAccountMenu}
               onClick={() => setMenuOpen(false)}
               className="fixed inset-0 z-10 cursor-default"
             />
@@ -47,7 +85,7 @@ function AccountFooter({
                   type="submit"
                   className="w-full px-4 py-3 text-left font-mono text-xs uppercase tracking-[0.2em] text-gray-600 transition hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"
                 >
-                  Salir
+                  {copy.signOut}
                 </button>
               </form>
             </div>
@@ -96,8 +134,8 @@ function AccountFooter({
 // optional `requires` predicate here and filter against the user's role.
 const NAV: { href: string; label: string; section: string; icon: typeof Home; exact?: boolean }[] = [
   { href: "/admin/newsletter", label: "Newsletter", section: "The Build Log", icon: Mail },
-  { href: "/admin/talks", label: "Charlas", section: "HowIUseAI", icon: CalendarDays },
-  { href: "/admin/team", label: "Equipo", section: "Admin", icon: Users },
+  { href: "/admin/talks", label: "talks", section: "HowIUseAI", icon: CalendarDays },
+  { href: "/admin/team", label: "team", section: "Admin", icon: Users },
 ];
 
 function isActive(pathname: string, href: string, exact?: boolean): boolean {
@@ -122,15 +160,18 @@ function Logo() {
 
 export function AdminShell({
   email,
+  language,
   signOutAction,
   children,
 }: {
   email: string;
+  language: AdminLanguage;
   signOutAction: () => void;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const copy = SHELL_COPY[language];
 
   // Group entries by their section label, preserving first-seen order.
   const sections: { name: string; items: typeof NAV }[] = [];
@@ -154,6 +195,12 @@ export function AdminShell({
             {section.items.map((item) => {
               const active = isActive(pathname, item.href, item.exact);
               const Icon = item.icon;
+              const label =
+                item.label === "talks"
+                  ? copy.nav.talks
+                  : item.label === "team"
+                    ? copy.nav.team
+                    : item.label;
               return (
                 <li key={item.href}>
                   <Link
@@ -166,7 +213,7 @@ export function AdminShell({
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                    {item.label}
+                    {label}
                   </Link>
                 </li>
               );
@@ -177,7 +224,9 @@ export function AdminShell({
     </nav>
   );
 
-  const account = <AccountFooter email={email} signOutAction={signOutAction} />;
+  const account = (
+    <AccountFooter email={email} language={language} signOutAction={signOutAction} />
+  );
 
   return (
     <div className="min-h-screen bg-stone-100 dark:bg-neutral-950">
@@ -199,11 +248,12 @@ export function AdminShell({
           <Logo />
         </Link>
         <div className="flex items-center gap-1">
+          <LanguageToggle language={language} />
           <ThemeToggle />
           <button
             type="button"
             onClick={() => setOpen(true)}
-            aria-label="Abrir menú"
+            aria-label={copy.openMenu}
             className="rounded-lg p-2 text-gray-600 hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"
           >
             <Menu className="h-5 w-5" strokeWidth={1.75} />
@@ -225,7 +275,7 @@ export function AdminShell({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Cerrar menú"
+                aria-label={copy.closeMenu}
                 className="rounded-lg p-2 text-gray-600 hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"
               >
                 <X className="h-5 w-5" strokeWidth={1.75} />

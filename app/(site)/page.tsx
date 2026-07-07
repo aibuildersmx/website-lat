@@ -9,12 +9,32 @@ export const dynamic = "force-dynamic";
 
 const READER_LOGOS = [
   {
+    src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Stripe_Logo,_revised_2016.svg",
+    alt: "Stripe",
+  },
+  {
+    src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Uber_logo_2018.svg",
+    alt: "Uber",
+  },
+  {
+    src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Amazon_logo.svg",
+    alt: "Amazon",
+  },
+  {
+    src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Google_2015_logo.svg",
+    alt: "Google",
+  },
+  {
     src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mercado_Libre_wordmark_%28Spanish_version%29.svg",
     alt: "Mercado Libre",
   },
   {
     src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Nubank_logo_2021.svg",
     alt: "Nubank",
+  },
+  {
+    src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Salesforce.com_logo.svg",
+    alt: "Salesforce",
   },
   {
     src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Rappi_logo.svg",
@@ -31,10 +51,6 @@ const READER_LOGOS = [
   {
     src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Zillow_logo.svg",
     alt: "Zillow",
-  },
-  {
-    src: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Google_2015_logo.svg",
-    alt: "Google",
   },
   { src: "/assets/logos/cursor.svg", alt: "Cursor" },
   {
