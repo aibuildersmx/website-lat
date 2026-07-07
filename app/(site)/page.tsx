@@ -86,7 +86,7 @@ export default async function Home() {
                 <span className="avatar-more">+</span>
               </div>
               <p>
-                Únete a <strong>{subscriberCount} lectores</strong>
+                Únete a <strong>{subscriberCount}+ lectores</strong>
               </p>
             </div>
           </div>
