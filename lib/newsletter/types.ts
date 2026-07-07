@@ -70,6 +70,7 @@ export interface JobItem {
 
 export interface Issue {
   slug: string; // "002"
+  archivePublished?: boolean; // false hides sent issues from the public archive
   subject: string; // email subject line
   preview: string; // inbox preview text
   issueLabel: string; // "Issue 002"

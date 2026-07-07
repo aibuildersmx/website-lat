@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listIssues, createIssue } from "@/lib/actions/newsletter";
+import { listIssues, createIssue, toggleIssueArchiveVisibility } from "@/lib/actions/newsletter";
 import { subscriberMetrics } from "@/lib/newsletter/subscriber-metrics";
 import { BulkSubscriberImport } from "./components/bulk-subscriber-import";
 
@@ -15,6 +15,43 @@ function StatusDot({ status }: { status: string }) {
       <span className={`h-1.5 w-1.5 rounded-full ${color}`} />
       <span className="text-xs font-medium text-gray-400 dark:text-gray-500">{label}</span>
     </span>
+  );
+}
+
+function ArchiveToggle({
+  id,
+  status,
+  archivePublished,
+}: {
+  id: string;
+  status: string;
+  archivePublished: boolean;
+}) {
+  const sent = status === "sent";
+
+  if (!sent) {
+    return (
+      <span className="rounded-full bg-black/5 px-3 py-1.5 text-xs font-medium text-gray-400 dark:bg-white/5 dark:text-gray-500">
+        No publicado
+      </span>
+    );
+  }
+
+  return (
+    <form action={toggleIssueArchiveVisibility}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="archivePublished" value={archivePublished ? "false" : "true"} />
+      <button
+        type="submit"
+        className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+          archivePublished
+            ? "bg-green-500/10 text-green-700 hover:bg-green-500/15 dark:text-green-400"
+            : "bg-black/5 text-gray-500 hover:bg-black/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15"
+        }`}
+      >
+        {archivePublished ? "Visible en archivo" : "Oculto del archivo"}
+      </button>
+    </form>
   );
 }
 
@@ -268,22 +305,26 @@ export default async function NewsletterListPage() {
           <ul className="divide-y divide-black/5 dark:divide-white/10">
             {issues.map((issue) => (
               <li key={issue.id}>
-                <Link
-                  href={`/admin/newsletter/${issue.id}`}
-                  className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-stone-50 dark:hover:bg-white/5"
-                >
+                <div className="grid gap-4 px-6 py-4 transition hover:bg-stone-50 sm:grid-cols-[1fr_auto_auto] sm:items-center dark:hover:bg-white/5">
                   <div className="min-w-0">
-                    <p className="truncate text-lg font-medium text-gray-800 dark:text-gray-100">
-                      {issue.subject || (
-                        <span className="text-gray-300 dark:text-gray-600">Sin subject</span>
-                      )}
-                    </p>
+                    <Link href={`/admin/newsletter/${issue.id}`} className="block min-w-0">
+                      <p className="truncate text-lg font-medium text-gray-800 transition hover:text-black dark:text-gray-100 dark:hover:text-white">
+                        {issue.subject || (
+                          <span className="text-gray-300 dark:text-gray-600">Sin subject</span>
+                        )}
+                      </p>
+                    </Link>
                     <p className="mt-0.5 text-xs font-medium text-gray-400 dark:text-gray-500">
                       Issue {issue.slug}
                     </p>
                   </div>
+                  <ArchiveToggle
+                    id={issue.id}
+                    status={issue.status}
+                    archivePublished={issue.archivePublished}
+                  />
                   <StatusDot status={issue.status} />
-                </Link>
+                </div>
               </li>
             ))}
           </ul>

@@ -67,6 +67,7 @@ export interface IssueListItem {
   slug: string;
   subject: string;
   status: string;
+  archivePublished: boolean;
   sentAt: Date | null;
   updatedAt: Date;
 }
@@ -79,12 +80,16 @@ export async function listIssues(): Promise<IssueListItem[]> {
       slug: newsletterIssues.slug,
       subject: newsletterIssues.subject,
       status: newsletterIssues.status,
+      data: newsletterIssues.data,
       sentAt: newsletterIssues.sentAt,
       updatedAt: newsletterIssues.updatedAt,
     })
     .from(newsletterIssues)
     .orderBy(desc(newsletterIssues.updatedAt));
-  return rows;
+  return rows.map(({ data, ...row }) => ({
+    ...row,
+    archivePublished: data.archivePublished !== false,
+  }));
 }
 
 export interface IssueDetail {
@@ -135,6 +140,25 @@ export async function createIssue(): Promise<void> {
     .returning({ id: newsletterIssues.id });
   revalidatePath(LIST_PATH);
   redirect(`${LIST_PATH}/${inserted[0].id}`);
+}
+
+export async function toggleIssueArchiveVisibility(formData: FormData): Promise<void> {
+  if (await gate()) return;
+
+  const id = String(formData.get("id") ?? "");
+  const archivePublished = String(formData.get("archivePublished") ?? "") === "true";
+  if (!id) return;
+
+  await db
+    .update(newsletterIssues)
+    .set({
+      data: sql`${newsletterIssues.data} || ${JSON.stringify({ archivePublished })}::jsonb`,
+      updatedAt: new Date(),
+    })
+    .where(eq(newsletterIssues.id, id));
+
+  revalidatePath(LIST_PATH);
+  revalidatePath("/newsletters");
 }
 
 export async function bulkImportSubscribers(
