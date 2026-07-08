@@ -75,7 +75,7 @@ d("processSendBatch (integration)", () => {
     db,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resend: resend as any,
-    from: "test@aibuilders.mx",
+    from: "hola@aibuilders.lat",
     replyTo: undefined,
   });
 

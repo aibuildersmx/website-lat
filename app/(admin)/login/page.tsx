@@ -82,7 +82,7 @@ export default function LoginPage() {
               type="email"
               name="email"
               required
-              placeholder="admin@aibuilders.mx"
+              placeholder="hola@aibuilders.lat"
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 placeholder:text-gray-300 transition-colors hover:border-gray-300 focus:border-gray-400 focus:outline-none dark:border-white/15 dark:bg-neutral-900 dark:text-gray-100 dark:placeholder:text-gray-600 dark:hover:border-white/25 dark:focus:border-white/40"
             />
           </div>

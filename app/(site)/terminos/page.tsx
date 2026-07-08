@@ -49,7 +49,7 @@ export default function TermsPage() {
               <p>
                 Podemos actualizar estos términos conforme evolucionen el sitio y las iniciativas de
                 la comunidad. Para dudas, escríbenos a{" "}
-                <a href="mailto:hola@aibuilders.mx">hola@aibuilders.mx</a>.
+                <a href="mailto:hola@aibuilders.lat">hola@aibuilders.lat</a>.
               </p>
             </section>
           </div>

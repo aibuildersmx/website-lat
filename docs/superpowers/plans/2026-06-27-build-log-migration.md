@@ -79,7 +79,7 @@ DATABASE_URL=
 
 # Newsletter / Resend (web + worker)
 RESEND_API_KEY=
-NEWSLETTER_FROM=The Build Log <hola@aibuilders.mx>
+NEWSLETTER_FROM=The Build Log <hola@aibuilders.lat>
 NEWSLETTER_REPLY_TO=
 # Base URL for unsubscribe/tracking links. Defaults to https://aibuilders.mx if unset.
 NEXT_PUBLIC_SITE_URL=

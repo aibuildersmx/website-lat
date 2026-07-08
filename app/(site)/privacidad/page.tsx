@@ -50,7 +50,7 @@ export default function PrivacyPage() {
               <p>
                 Puedes darte de baja del newsletter desde el enlace incluido en cada correo. Para
                 solicitar acceso, corrección o eliminación de tus datos, escríbenos a{" "}
-                <a href="mailto:hola@aibuilders.mx">hola@aibuilders.mx</a>.
+                <a href="mailto:hola@aibuilders.lat">hola@aibuilders.lat</a>.
               </p>
             </section>
           </div>

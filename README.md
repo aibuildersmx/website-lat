@@ -68,8 +68,8 @@ Railway service variables for `website-lat` may include:
 DATABASE_URL=postgresql://...@postgres.railway.internal:5432/railway
 RESEND_API_KEY=...
 RESEND_WEBHOOK_SECRET=...
-NEWSLETTER_FROM=The Build Log <newsletter@rs.aibuilders.mx>
-NEWSLETTER_REPLY_TO=hola@aibuilders.mx
+NEWSLETTER_FROM=The Build Log <hola@aibuilders.lat>
+NEWSLETTER_REPLY_TO=hola@aibuilders.lat
 NEXT_PUBLIC_SITE_URL=https://aibuilders.mx
 ```
 

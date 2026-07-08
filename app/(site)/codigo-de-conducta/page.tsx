@@ -47,7 +47,7 @@ export default function CodeOfConductPage() {
               <h2>Reportes</h2>
               <p>
                 Para reportar un problema, escríbenos a{" "}
-                <a href="mailto:hola@aibuilders.mx">hola@aibuilders.mx</a>. Revisaremos el caso y
+                <a href="mailto:hola@aibuilders.lat">hola@aibuilders.lat</a>. Revisaremos el caso y
                 podremos moderar, remover acceso o tomar otras medidas proporcionales.
               </p>
             </section>
