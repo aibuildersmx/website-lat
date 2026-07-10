@@ -17,6 +17,14 @@ export interface PublishedIssue {
   data: Issue;
 }
 
+export interface PublishedFeedIssue {
+  slug: string;
+  subject: string;
+  preview: string;
+  subtitle: string;
+  sentAt: Date | null;
+}
+
 // Public archive: sent issues explicitly marked for the public archive, newest
 // first. Reads the denormalized fields out of each issue's canonical `data` JSON.
 export async function listPublishedIssues(): Promise<ArchiveCard[]> {
@@ -41,6 +49,32 @@ export async function listPublishedIssues(): Promise<ArchiveCard[]> {
     readingTime: r.data.readingTime,
     title: r.data.title,
     subtitle: r.data.subtitle,
+  }));
+}
+
+export async function listPublishedFeedIssues(): Promise<PublishedFeedIssue[]> {
+  const rows = await db
+    .select({
+      slug: newsletterIssues.slug,
+      subject: newsletterIssues.subject,
+      data: newsletterIssues.data,
+      sentAt: newsletterIssues.sentAt,
+    })
+    .from(newsletterIssues)
+    .where(
+      and(
+        eq(newsletterIssues.status, "sent"),
+        sql`coalesce((${newsletterIssues.data}->>'archivePublished')::boolean, true) = true`,
+      ),
+    )
+    .orderBy(desc(newsletterIssues.sentAt));
+
+  return rows.map((row) => ({
+    slug: row.slug,
+    subject: row.subject || row.data.issueLabel,
+    preview: row.data.preview,
+    subtitle: row.data.subtitle,
+    sentAt: row.sentAt,
   }));
 }
 

@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { siteFontVariables } from "@/lib/fonts";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://aibuilders.lat"),
   title: "AI Builders Latam",
   description:
     "Las mejores actualizaciones de IA, cada semana. Curado para personas que construyen con IA en Latinoamérica.",

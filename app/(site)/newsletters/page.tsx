@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   title: "Ediciones anteriores — AI Builders Latam",
   description:
     "Archivo de ediciones anteriores de The Build Log, el boletín semanal de AI Builders Latam.",
+  alternates: {
+    types: {
+      "application/rss+xml": "/newsletters/rss.xml",
+    },
+  },
 };
 
 // Reads sent issues from the DB on each request.
@@ -41,6 +46,14 @@ export default async function Newsletters() {
           <div className="archive-signup">
             <NewsletterSignup className="archive-signup-form" />
           </div>
+          <a className="archive-rss-link" href="/newsletters/rss.xml" type="application/rss+xml">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 11a9 9 0 0 1 9 9" />
+              <path d="M4 4a16 16 0 0 1 16 16" />
+              <circle cx="5" cy="19" r="1" />
+            </svg>
+            RSS
+          </a>
         </section>
 
         <section className="newsletter-list" aria-label="Ediciones anteriores">

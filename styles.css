@@ -923,6 +923,35 @@ button:hover svg {
   height: 15px;
 }
 
+.archive-rss-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.archive-rss-link:hover,
+.archive-rss-link:focus-visible {
+  color: var(--ink);
+}
+
+.archive-rss-link svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .archive-grid {
   width: min(100%, 72rem);
   display: grid;
