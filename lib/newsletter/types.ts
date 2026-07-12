@@ -47,7 +47,7 @@ export interface ShowcaseProject {
 export interface EventItem {
   day: string; // "18"
   month: string; // "Jun"
-  label: string; // "AIBM · Online"
+  label: string; // location, e.g. "VIRTUAL" or "Ciudad de México"
   title: string;
   body: string;
   href: string;
@@ -68,16 +68,35 @@ export interface JobItem {
   href: string;
 }
 
-export interface Issue {
+export interface BuildersMexicoLink {
+  text: string;
+  href: string;
+}
+
+export interface BuildersMexicoItem {
+  title: string;
+  body: string;
+  href: string;
+}
+
+export interface SponsorPlacement {
+  title: string;
+  description?: string;
+  href: string;
+}
+
+export interface BaseIssue {
   slug: string; // "002"
   archivePublished?: boolean; // false hides sent issues from the public archive
   subject: string; // email subject line
   preview: string; // inbox preview text
   issueLabel: string; // "Issue 002"
+  showIssueLabel?: boolean; // defaults to true for existing issues
   date: string; // "31 May 2026"
   readingTime: string; // "6 min de lectura"
   title: string; // "The Build Log"
   subtitle: string;
+  sponsor?: SponsorPlacement;
   stories: Story[];
   essay: Essay;
   useCases: UseCase[];
@@ -85,6 +104,13 @@ export interface Issue {
   projects?: ShowcaseProject[];
   eventsLabel?: string; // section heading for `events` (default "Próximos eventos")
   events: EventItem[];
+  buildersMexico?: BuildersMexicoLink; // legacy single-link format
+  buildersMexicoItems?: BuildersMexicoItem[];
   community: Community;
   jobs: JobItem[];
+}
+
+export interface Issue extends BaseIssue {
+  spanish?: BaseIssue;
+  spanishTranslationStale?: boolean;
 }

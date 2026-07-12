@@ -6,7 +6,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { contacts, newsletterIssues, newsletterSends } from "@/lib/db/schema";
 import { getUser } from "@/lib/auth";
-import type { Issue } from "@/lib/newsletter/types";
+import type { BaseIssue, Issue } from "@/lib/newsletter/types";
 import { emptyIssue } from "@/lib/newsletter/issue";
 import { renderBuildLog } from "@/lib/newsletter/render";
 import { loadNewsletterConfig, MissingEnvError } from "@/lib/newsletter/resend";
@@ -26,6 +26,12 @@ import {
 } from "@/lib/newsletter/engagement";
 import { getBoss, SEND_BATCH_QUEUE } from "@/lib/queue/boss";
 import { normalizeAdminLanguage } from "@/lib/admin/language";
+import {
+  extractResponseText,
+  mergeSpanishTranslation,
+  originalIssue,
+  parseTranslationJson,
+} from "@/lib/newsletter/translation";
 
 const LIST_PATH = "/admin/newsletter";
 const AUDIENCE_PATH = "/admin/audience";
@@ -384,6 +390,73 @@ export async function renderPreview(data: Issue): Promise<string> {
   return previewHtml(data);
 }
 
+type TranslationResult =
+  | { ok: true; translation: BaseIssue }
+  | { error: string };
+
+const MAX_TRANSLATION_INPUT_CHARS = 100_000;
+
+export async function translateIssueToSpanish(id: string): Promise<TranslationResult> {
+  if (await gate()) return { error: "No autorizado." };
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    return { error: "Falta OPENAI_API_KEY en la configuración del servidor." };
+  }
+
+  const [row] = await db
+    .select({ data: newsletterIssues.data, status: newsletterIssues.status })
+    .from(newsletterIssues)
+    .where(eq(newsletterIssues.id, id))
+    .limit(1);
+  if (!row) return { error: "Issue no encontrado." };
+  if (row.status !== "draft") return { error: "Solo se pueden traducir borradores." };
+
+  const source = originalIssue(row.data);
+  const input = JSON.stringify(source);
+  if (input.length > MAX_TRANSLATION_INPUT_CHARS) {
+    return { error: "El newsletter es demasiado grande para traducirlo en una sola solicitud." };
+  }
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_TRANSLATION_MODEL?.trim() || "gpt-5.4-mini",
+        max_output_tokens: 20_000,
+        instructions:
+          "Translate the supplied newsletter JSON into natural, concise Latin American Spanish. " +
+          "Return only one valid JSON object with exactly the same keys, arrays, item order, and data types. " +
+          "Translate human-facing prose, titles, labels, subject, preview, and roles. " +
+          "Do not translate or alter URLs, slugs, dates, issue numbers, personal names, product names, " +
+          "AI BUILDERS LATAM, AI Builders México, The Build Log, or location names. " +
+          "Preserve empty strings. Do not add markdown fences or commentary.",
+        input,
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+
+    if (!response.ok) {
+      return { error: `OpenAI rechazó la traducción (${response.status}).` };
+    }
+
+    const payload = (await response.json()) as unknown;
+    const translated = mergeSpanishTranslation(
+      source,
+      parseTranslationJson(extractResponseText(payload)),
+    );
+    return { ok: true, translation: translated };
+  } catch (error) {
+    console.error("Newsletter translation failed:", error);
+    if (error instanceof Error && error.name === "TimeoutError") {
+      return { error: "La traducción tardó demasiado. Intenta de nuevo." };
+    }
+    return { error: "No se pudo completar la traducción. Intenta de nuevo." };
+  }
+}
+
 export async function sendTest(
   data: Issue,
   email: string,
@@ -391,7 +464,8 @@ export async function sendTest(
   if (await gate()) return { error: "No autorizado." };
   const to = email.trim().toLowerCase();
   if (!to.includes("@")) return { error: "Ingresa un correo válido." };
-  if (!data.subject.trim()) return { error: "El issue necesita un subject antes de enviar." };
+  if (!data.spanish) return { error: "Genera la versión en español antes de enviar una prueba." };
+  if (!data.spanish.subject.trim()) return { error: "La versión en español necesita un subject." };
 
   let cfg;
   try {
@@ -423,7 +497,7 @@ export async function sendTest(
   const res = await cfg.resend.emails.send({
     from: cfg.from,
     to: [to],
-    subject: `[TEST] ${data.subject}`,
+    subject: `[TEST] ${data.spanish.subject}`,
     html,
     replyTo: cfg.replyTo,
   });
@@ -440,8 +514,12 @@ export async function sendIssue(id: string): Promise<ActionOk | ActionError> {
   if (detail.status === "sending") return { error: "Este issue ya se está enviando." };
 
   const data = detail.data;
-  if (!data.subject.trim()) return { error: "El issue necesita un subject." };
-  if (!data.stories.length) return { error: "Agrega al menos una historia antes de enviar." };
+  if (!data.spanish) return { error: "Genera la versión en español antes de enviar." };
+  if (data.spanishTranslationStale) {
+    return { error: "La traducción está desactualizada. Actualízala antes de enviar." };
+  }
+  if (!data.spanish.subject.trim()) return { error: "La versión en español necesita un subject." };
+  if (!data.spanish.stories.length) return { error: "Agrega al menos una historia antes de enviar." };
 
   // Fail fast if Resend isn't configured — the same env the worker needs.
   try {

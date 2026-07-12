@@ -6,9 +6,10 @@ import type { Issue } from "./types";
 export function emptyIssue(slug: string): Issue {
   return {
     slug,
-    subject: "",
+    subject: "The Build Log",
     preview: "Lo que importa esta semana para nuestra comunidad.",
     issueLabel: `Issue ${slug}`,
+    showIssueLabel: true,
     date: "",
     readingTime: "6 min de lectura",
     title: "The Build Log",

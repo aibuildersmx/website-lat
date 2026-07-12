@@ -82,7 +82,7 @@ const PUBLIC_NEWSLETTER_CSS = `<style>
 
 function stripPublicEmailFooter(html: string): string {
   return html.replace(
-    /\s*<tr><td style="padding:0;"><div style="height:1px;line-height:1px;font-size:1px;background:[^"]+;">&nbsp;<\/div><\/td><\/tr>\s*<tr><td style="padding:32px 0 0;">\s*<p[^>]*>The Build Log es una curaduría semanal[\s\S]*?Ámsterdam 255[\s\S]*?<\/td><\/tr>/,
+    /\s*<tr><td style="padding:0;"><div style="height:1px;line-height:1px;font-size:1px;background:[^"]+;">&nbsp;<\/div><\/td><\/tr>\s*<tr><td style="padding:32px 0 0;">\s*<p[^>]*>The Build Log es una curaduría semanal[\s\S]*?<\/td><\/tr>/,
     "",
   );
 }

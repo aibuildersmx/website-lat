@@ -57,7 +57,7 @@ export async function processSendBatch(
     pending.map((r) => ({
       from,
       to: [r.email],
-      subject: issue.subject,
+      subject: issue.spanish?.subject ?? issue.subject,
       html: injectTracking(injectUnsubscribe(html, r.contactId, issueId), r.contactId, issueId),
       replyTo,
       headers: unsubscribeHeaders(r.contactId, issueId),

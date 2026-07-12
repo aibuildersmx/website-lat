@@ -2,14 +2,28 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { IconPicker } from "./icon-picker";
 import type {
-  Issue,
+  BaseIssue,
   Story,
-  UseCase,
   EventItem,
-  JobItem,
+  BuildersMexicoItem,
 } from "@/lib/newsletter/types";
+
+const SUBJECT_BASE = "The Build Log";
+
+function subjectSuffix(subject: string): string {
+  const prefix = `${SUBJECT_BASE}:`;
+  return subject.startsWith(prefix)
+    ? subject.slice(prefix.length).trimStart()
+    : subject === SUBJECT_BASE
+      ? ""
+    : subject;
+}
+
+function eventLocation(label: string): string {
+  const location = label.replace(/^(AI BUILDERS|AIBM)\s*[-·]\s*/i, "").trim();
+  return /^ONLINE$/i.test(location) ? "VIRTUAL" : location || "VIRTUAL";
+}
 
 // --- immutable helpers ------------------------------------------------------
 function replaceAt<T>(arr: T[], i: number, val: T): T[] {
@@ -89,12 +103,19 @@ function Editable({
 function LinkLine({
   value,
   onChange,
+  overlay = false,
 }: {
   value: string;
   onChange: (v: string) => void;
+  overlay?: boolean;
 }) {
   return (
-    <div className="mt-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+    <div
+      className={cn(
+        overlay ? "absolute inset-x-3 bottom-1" : "mt-2",
+        "opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
+      )}
+    >
       <Editable
         value={value}
         onChange={onChange}
@@ -126,27 +147,30 @@ function Eyebrow({
   );
 }
 
-// Section heading shown above each block, mirrors the email's "01 / 05" rhythm.
 function SectionHeader({
-  index,
   title,
   editableTitle,
   onTitleChange,
   titlePlaceholder,
+  compact = false,
+  separated = false,
 }: {
-  index: string;
   title?: string;
   editableTitle?: string;
   onTitleChange?: (v: string) => void;
   titlePlaceholder?: string;
+  compact?: boolean;
+  separated?: boolean;
 }) {
   const titleClass =
-    "mt-1 text-2xl font-semibold text-gray-800 dark:text-gray-100";
+    `${compact ? "text-[28px]" : "text-[34px]"} font-semibold leading-[1.1] text-gray-800 dark:text-gray-100`;
   return (
-    <div className="mt-14 mb-6">
-      <p className="font-mono text-[11px] uppercase tracking-normal text-gray-300 dark:text-gray-600">
-        {index}
-      </p>
+    <div
+      className={cn(
+        "mt-8 mb-6",
+        separated && "border-t border-gray-200 pt-8 dark:border-white/10",
+      )}
+    >
       {onTitleChange ? (
         <Editable
           value={editableTitle ?? ""}
@@ -165,12 +189,19 @@ function SectionHeader({
 function ItemShell({
   onRemove,
   children,
+  compact = false,
 }: {
   onRemove: () => void;
   children: React.ReactNode;
+  compact?: boolean;
 }) {
   return (
-    <div className="group/item relative rounded-xl border border-transparent px-3 py-4 transition-colors hover:border-black/5 dark:hover:border-white/10">
+    <div
+      className={cn(
+        "group/item relative rounded-xl border border-transparent px-3 transition-colors hover:border-black/5 dark:hover:border-white/10",
+        compact ? "py-2" : "py-4",
+      )}
+    >
       <button
         type="button"
         onClick={onRemove}
@@ -206,15 +237,30 @@ export function EditableCanvas({
   issue,
   onChange,
 }: {
-  issue: Issue;
-  onChange: (next: Issue) => void;
+  issue: BaseIssue;
+  onChange: (next: BaseIssue) => void;
 }) {
-  const patch = (p: Partial<Issue>) => onChange({ ...issue, ...p });
-  const patchEssay = (p: Partial<Issue["essay"]>) =>
+  const patch = (p: Partial<BaseIssue>) => onChange({ ...issue, ...p });
+  const patchEssay = (p: Partial<BaseIssue["essay"]>) =>
     onChange({ ...issue, essay: { ...issue.essay, ...p } });
-  const patchCommunity = (p: Partial<Issue["community"]>) =>
-    onChange({ ...issue, community: { ...issue.community, ...p } });
-
+  const patchSponsor = (p: Partial<NonNullable<BaseIssue["sponsor"]>>) =>
+    onChange({
+      ...issue,
+      sponsor: { title: "", description: "", href: "", ...issue.sponsor, ...p },
+    });
+  const buildersMexicoItems: BuildersMexicoItem[] =
+    issue.buildersMexicoItems ??
+    (issue.buildersMexico?.text
+      ? [{ title: issue.buildersMexico.text, body: "", href: issue.buildersMexico.href }]
+      : []);
+  const patchBuildersMexicoItems = (items: BuildersMexicoItem[]) =>
+    onChange({ ...issue, buildersMexico: undefined, buildersMexicoItems: items });
+  const metadata = [
+    issue.showIssueLabel !== false && issue.issueLabel.trim() ? issue.issueLabel : null,
+    issue.date || "Fecha pendiente",
+    issue.readingTime,
+  ].filter((value): value is string => Boolean(value));
+  const currentSubjectSuffix = subjectSuffix(issue.subject);
   return (
     <div className="mx-auto w-full max-w-[680px]">
       {/* Envelope: email metadata that isn't part of the visible body */}
@@ -223,12 +269,22 @@ export function EditableCanvas({
           Sobre · inbox
         </p>
         <div className="space-y-2">
-          <Editable
-            value={issue.subject}
-            onChange={(v) => patch({ subject: v })}
-            placeholder="Asunto del correo…"
-            className="text-[15px] font-medium text-gray-800 dark:text-gray-100"
-          />
+          <div className="flex items-baseline gap-1 text-[15px] font-medium text-gray-800 dark:text-gray-100">
+            <span className="shrink-0">
+              {SUBJECT_BASE}{currentSubjectSuffix ? ":" : ""}
+            </span>
+            <Editable
+              value={currentSubjectSuffix}
+              onChange={(value) =>
+                patch({
+                  subject: value.trim() ? `${SUBJECT_BASE}: ${value}` : SUBJECT_BASE,
+                })
+              }
+              placeholder="Some Text Here"
+              className="min-w-0 flex-1"
+              ariaLabel="Texto del asunto"
+            />
+          </div>
           <Editable
             value={issue.preview}
             onChange={(v) => patch({ preview: v })}
@@ -250,64 +306,78 @@ export function EditableCanvas({
       {/* The newsletter body — follows the admin color scheme */}
       <article className="rounded-2xl border border-black/5 bg-white px-6 py-10 sm:px-10 dark:border-white/10 dark:bg-neutral-900">
         {/* Masthead */}
-        <p className="mb-8 font-mono text-[11px] uppercase tracking-normal text-gray-300 dark:text-gray-600">
-          AI Builders MX
+        <h1 className="text-[38px] font-semibold leading-[1.1] text-gray-900 dark:text-white">
+          {issue.title}
+        </h1>
+        <p className="mt-2.5 text-lg leading-[1.4] text-gray-500 dark:text-gray-400">
+          {issue.subtitle}
         </p>
-        <Editable
-          value={issue.title}
-          onChange={(v) => patch({ title: v })}
-          placeholder="The Build Log"
-          className="text-4xl font-normal leading-[0.95] text-gray-900 sm:text-5xl dark:text-white"
-        />
-        <div className="mt-5 text-lg leading-snug text-gray-500 dark:text-gray-400">
-          <Editable
-            value={issue.subtitle}
-            onChange={(v) => patch({ subtitle: v })}
-            placeholder="Subtítulo del issue…"
-            multiline
-          />
-        </div>
 
         {/* Meta line */}
-        <div className="mt-8 flex flex-wrap gap-x-3 gap-y-1 border-y border-black/5 py-4 dark:border-white/10">
-          <Editable
-            value={issue.issueLabel}
-            onChange={(v) => patch({ issueLabel: v })}
-            placeholder="Issue 003"
-            className="font-mono text-[11px] uppercase tracking-normal text-gray-400 dark:text-gray-500"
-          />
-          <span className="font-mono text-[11px] text-gray-300 dark:text-gray-600">·</span>
-          <Editable
-            value={issue.date}
-            onChange={(v) => patch({ date: v })}
-            placeholder="07 Jun 2026"
-            className="font-mono text-[11px] uppercase tracking-normal text-gray-400 dark:text-gray-500"
-          />
-          <span className="font-mono text-[11px] text-gray-300 dark:text-gray-600">·</span>
-          <Editable
-            value={issue.readingTime}
-            onChange={(v) => patch({ readingTime: v })}
-            placeholder="6 min de lectura"
-            className="font-mono text-[11px] uppercase tracking-normal text-gray-400 dark:text-gray-500"
-          />
+        <div className="mt-[18px] flex flex-wrap gap-x-2.5 gap-y-1 border-b border-gray-200 pb-3 dark:border-white/10">
+          <a
+            href="https://aibuilders.lat"
+            target="_blank"
+            rel="noreferrer"
+            className="font-mono text-[13px] uppercase text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            AI BUILDERS LATAM
+          </a>
+          {metadata.map((value, index) => (
+            <span key={`${value}-${index}`} className="contents">
+              <span className="font-mono text-[13px] text-gray-300 dark:text-gray-600">·</span>
+              <span className="font-mono text-[13px] uppercase text-gray-400 dark:text-gray-500">
+                {value}
+              </span>
+            </span>
+          ))}
+        </div>
+
+        {/* Compact sponsor placement: CTA remains visible when inventory is empty. */}
+        <div className="mt-4 py-2">
+          <p className="font-mono text-[10px] font-medium uppercase text-gray-400 dark:text-gray-500">
+            Publicidad <span aria-hidden="true">—</span> Patrocina{" "}
+            <a
+              href="https://vacantes.lat/checkout/ad-sponsor"
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              este espacio
+            </a>
+          </p>
+          <div className="group mt-2">
+            <div className="text-base font-semibold leading-snug text-gray-800 dark:text-gray-100">
+              <Editable
+                value={issue.sponsor?.title ?? ""}
+                onChange={(title) => patchSponsor({ title })}
+                placeholder="Título del anuncio"
+              />
+            </div>
+            <div className="mt-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+              <Editable
+                value={issue.sponsor?.description ?? ""}
+                onChange={(description) => patchSponsor({ description })}
+                placeholder="Descripción de una línea (opcional)"
+              />
+            </div>
+            <LinkLine
+              value={issue.sponsor?.href ?? ""}
+              onChange={(href) => patchSponsor({ href })}
+            />
+          </div>
         </div>
 
         {/* 01 — Stories */}
-        <SectionHeader index="01 / 05" title="Esta semana en IA" />
+        <SectionHeader title="Esta semana en IA" compact />
         {issue.stories.map((s, i) => (
           <ItemShell
             key={i}
             onRemove={() => patch({ stories: removeAt(issue.stories, i) })}
+            compact
           >
-            <div className="group border-b border-black/5 pb-8 dark:border-white/10">
-              <Eyebrow
-                value={s.eyebrow}
-                onChange={(v) =>
-                  patch({ stories: replaceAt(issue.stories, i, { ...s, eyebrow: v }) })
-                }
-                placeholder="01 · Desarrollo"
-              />
-              <div className="mt-2 text-2xl font-semibold leading-tight text-gray-900 dark:text-white">
+            <div className="group pb-4">
+              <div className="text-xl font-semibold leading-tight text-gray-900 dark:text-white">
                 <Editable
                   value={s.title}
                   onChange={(v) =>
@@ -316,7 +386,7 @@ export function EditableCanvas({
                   placeholder="Título de la historia"
                 />
               </div>
-              <div className="mt-3 text-[17px] leading-relaxed text-gray-500 dark:text-gray-400">
+              <div className="mt-2 text-[17px] leading-relaxed text-gray-500 dark:text-gray-400">
                 <Editable
                   value={s.body}
                   onChange={(v) =>
@@ -331,6 +401,7 @@ export function EditableCanvas({
                 onChange={(v) =>
                   patch({ stories: replaceAt(issue.stories, i, { ...s, href: v }) })
                 }
+                overlay
               />
             </div>
           </ItemShell>
@@ -345,14 +416,17 @@ export function EditableCanvas({
         />
 
         {/* 02 — Essay */}
-        <SectionHeader index="02 / 05" title="Pensamiento de la semana" />
-        <div className="group rounded-2xl border border-black/10 bg-stone-50/60 p-6 dark:border-white/10 dark:bg-white/5">
+        <SectionHeader
+          title="Pensamiento de la semana"
+          separated={Boolean(issue.stories.length && issue.essay.title.trim())}
+        />
+        <div className="group rounded-[18px] border border-gray-200 bg-stone-50 p-8 dark:border-white/10 dark:bg-white/5">
           <Eyebrow
             value={issue.essay.eyebrow}
             onChange={(v) => patchEssay({ eyebrow: v })}
             placeholder="Ensayo · 3 min"
           />
-          <div className="mt-3 text-[26px] font-normal leading-tight text-gray-900 dark:text-white">
+          <div className="mt-3 text-[30px] font-normal leading-[1.15] text-gray-900 dark:text-white">
             <Editable
               value={issue.essay.title}
               onChange={(v) => patchEssay({ title: v })}
@@ -367,7 +441,7 @@ export function EditableCanvas({
               multiline
             />
           </div>
-          <div className="mt-7 border-t border-black/5 pt-5 dark:border-white/10">
+          <div className="mt-7 border-t border-gray-200 pt-5 dark:border-white/10">
             <div className="text-base font-semibold text-gray-800 dark:text-gray-100">
               <Editable
                 value={issue.essay.author}
@@ -396,62 +470,21 @@ export function EditableCanvas({
           </div>
         </div>
 
-        {/* 03 — Use cases */}
-        <SectionHeader index="03 / 05" title="En qué estamos usando IA" />
-        {issue.useCases.map((u, i) => (
-          <ItemShell
-            key={i}
-            onRemove={() => patch({ useCases: removeAt(issue.useCases, i) })}
-          >
-            <div className="pb-3">
-              <IconPicker
-                value={u.icon}
-                onSelect={(name) =>
-                  patch({ useCases: replaceAt(issue.useCases, i, { ...u, icon: name }) })
-                }
-              />
-              <div className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-                <Editable
-                  value={u.title}
-                  onChange={(v) =>
-                    patch({ useCases: replaceAt(issue.useCases, i, { ...u, title: v }) })
-                  }
-                  placeholder="Título del caso"
-                />
-              </div>
-              <div className="mt-2 text-base leading-relaxed text-gray-500 dark:text-gray-400">
-                <Editable
-                  value={u.body}
-                  onChange={(v) =>
-                    patch({ useCases: replaceAt(issue.useCases, i, { ...u, body: v }) })
-                  }
-                  placeholder="Descripción del caso…"
-                  multiline
-                />
-              </div>
-            </div>
-          </ItemShell>
-        ))}
-        <AddButton
-          label="+ Añadir caso"
-          onClick={() =>
-            patch({ useCases: [...issue.useCases, { icon: "", title: "", body: "" } as UseCase] })
-          }
-        />
-
-        {/* 04 — Events */}
+        {/* 03 — Events */}
         <SectionHeader
-          index="04 / 05"
-          editableTitle={issue.eventsLabel}
-          onTitleChange={(v) => patch({ eventsLabel: v })}
-          titlePlaceholder="Próximos eventos"
+          title={issue.eventsLabel?.trim() || "Próximos eventos"}
+          compact
+          separated={Boolean(
+            issue.events.length && (issue.stories.length || issue.essay.title.trim()),
+          )}
         />
         {issue.events.map((e, i) => (
           <ItemShell
             key={i}
             onRemove={() => patch({ events: removeAt(issue.events, i) })}
+            compact
           >
-            <div className="group border-b border-black/5 pb-4 dark:border-white/10">
+            <div className="group pb-4">
               <div className="flex flex-wrap items-baseline gap-x-2 font-mono text-[11px] uppercase tracking-normal text-gray-400 dark:text-gray-500">
                 <Editable
                   value={e.day}
@@ -469,11 +502,11 @@ export function EditableCanvas({
                 />
                 <span className="text-gray-300 dark:text-gray-600">·</span>
                 <Editable
-                  value={e.label}
+                  value={eventLocation(e.label)}
                   onChange={(v) =>
                     patch({ events: replaceAt(issue.events, i, { ...e, label: v }) })
                   }
-                  placeholder="AIBM · Online"
+                  placeholder="VIRTUAL o ubicación"
                 />
               </div>
               <div className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
@@ -500,6 +533,7 @@ export function EditableCanvas({
                 onChange={(v) =>
                   patch({ events: replaceAt(issue.events, i, { ...e, href: v }) })
                 }
+                overlay
               />
             </div>
           </ItemShell>
@@ -510,132 +544,132 @@ export function EditableCanvas({
             patch({
               events: [
                 ...issue.events,
-                { day: "", month: "", label: "", title: "", body: "", href: "" } as EventItem,
+                {
+                  day: "",
+                  month: "",
+                  label: "VIRTUAL",
+                  title: "",
+                  body: "",
+                  href: "",
+                } as EventItem,
               ],
             })
           }
         />
 
-        {/* 05 — Community */}
-        <SectionHeader index="05 / 05" title="Comunidad" />
-        <div className="rounded-2xl border border-black/10 bg-stone-50/60 p-6 dark:border-white/10 dark:bg-white/5">
-          <Eyebrow
-            value={issue.community.label}
-            onChange={(v) => patchCommunity({ label: v })}
-            placeholder="Resumen de la semana"
-          />
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold text-gray-900 dark:text-white">
-            <Editable
-              value={issue.community.title}
-              onChange={(v) => patchCommunity({ title: v })}
-              placeholder="Automatización"
-            />
-            <span className="text-base font-normal text-gray-400 dark:text-gray-500">
-              <Editable
-                value={issue.community.titleSuffix}
-                onChange={(v) => patchCommunity({ titleSuffix: v })}
-                placeholder="· herramientas dev …"
-              />
-            </span>
-          </div>
-          <div className="mt-4 text-base leading-relaxed text-gray-500 dark:text-gray-400">
-            <Editable
-              value={issue.community.body}
-              onChange={(v) => patchCommunity({ body: v })}
-              placeholder="Cuerpo de comunidad…"
-              multiline
-            />
-          </div>
-
-          {/* Stats lines */}
-          <ul className="mt-5 space-y-2">
-            {issue.community.stats.map((line, i) => (
-              <li key={i} className="group/item flex items-baseline gap-3">
-                <span className="font-mono text-xs text-gray-300 dark:text-gray-600">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div className="flex-1 text-base text-gray-600 dark:text-gray-300">
-                  <Editable
-                    value={line}
-                    onChange={(v) =>
-                      patchCommunity({
-                        stats: replaceAt(issue.community.stats, i, v),
-                      })
-                    }
-                    placeholder="Punto de la semana…"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    patchCommunity({ stats: removeAt(issue.community.stats, i) })
+        <SectionHeader
+          title="Desde AI Builders México"
+          compact
+          separated={Boolean(
+            buildersMexicoItems.some((item) => item.title.trim() || item.body.trim()) &&
+              (issue.stories.length || issue.essay.title.trim() || issue.events.length),
+          )}
+        />
+        {buildersMexicoItems.map((item, index) => (
+          <ItemShell
+            key={index}
+            onRemove={() => patchBuildersMexicoItems(removeAt(buildersMexicoItems, index))}
+            compact
+          >
+            <div className="group pb-4">
+              <div className="text-xl font-semibold leading-tight text-gray-900 dark:text-white">
+                <Editable
+                  value={item.title}
+                  onChange={(title) =>
+                    patchBuildersMexicoItems(
+                      replaceAt(buildersMexicoItems, index, { ...item, title }),
+                    )
                   }
-                  className="font-mono text-xs uppercase text-gray-300 opacity-0 transition hover:text-red-500 group-hover/item:opacity-100 dark:text-gray-600 dark:hover:text-red-400"
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-          <AddButton
-            label="+ Añadir línea"
-            onClick={() =>
-              patchCommunity({ stats: [...issue.community.stats, ""] })
-            }
-          />
-        </div>
-
-        {/* Jobs */}
-        <div className="mt-6 space-y-1">
-          {issue.jobs.map((j, i) => (
-            <ItemShell
-              key={i}
-              onRemove={() => patch({ jobs: removeAt(issue.jobs, i) })}
-            >
-              <div className="group border-b border-black/5 pb-4 dark:border-white/10">
-                <Eyebrow
-                  value={j.label}
-                  onChange={(v) =>
-                    patch({ jobs: replaceAt(issue.jobs, i, { ...j, label: v }) })
-                  }
-                  placeholder="Contratando"
-                />
-                <div className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  <Editable
-                    value={j.title}
-                    onChange={(v) =>
-                      patch({ jobs: replaceAt(issue.jobs, i, { ...j, title: v }) })
-                    }
-                    placeholder="Puesto"
-                  />
-                </div>
-                <div className="mt-2 text-[15px] text-gray-500 dark:text-gray-400">
-                  <Editable
-                    value={j.meta}
-                    onChange={(v) =>
-                      patch({ jobs: replaceAt(issue.jobs, i, { ...j, meta: v }) })
-                    }
-                    placeholder="Freelance · remoto LatAm"
-                  />
-                </div>
-                <LinkLine
-                  value={j.href}
-                  onChange={(v) =>
-                    patch({ jobs: replaceAt(issue.jobs, i, { ...j, href: v }) })
-                  }
+                  placeholder="Título"
                 />
               </div>
-            </ItemShell>
-          ))}
-          <AddButton
-            label="+ Añadir empleo"
-            onClick={() =>
-              patch({
-                jobs: [...issue.jobs, { label: "", title: "", meta: "", href: "" } as JobItem],
-              })
-            }
-          />
-        </div>
+              <div className="mt-2 text-[17px] leading-relaxed text-gray-500 dark:text-gray-400">
+                <Editable
+                  value={item.body}
+                  onChange={(body) =>
+                    patchBuildersMexicoItems(
+                      replaceAt(buildersMexicoItems, index, { ...item, body }),
+                    )
+                  }
+                  placeholder="Descripción…"
+                  multiline
+                />
+              </div>
+              <LinkLine
+                value={item.href}
+                onChange={(href) =>
+                  patchBuildersMexicoItems(
+                    replaceAt(buildersMexicoItems, index, { ...item, href }),
+                  )
+                }
+                overlay
+              />
+            </div>
+          </ItemShell>
+        ))}
+        <AddButton
+          label="+ Añadir contenido"
+          onClick={() =>
+            patchBuildersMexicoItems([
+              ...buildersMexicoItems,
+              { title: "", body: "", href: "" },
+            ])
+          }
+        />
+
+        <footer className="mt-10 border-t border-gray-200 pt-8 text-gray-400 dark:border-white/10 dark:text-gray-500">
+          <p className="mb-6 text-sm leading-6">
+            The Build Log es una curaduría semanal de AI BUILDERS LATAM.
+          </p>
+          <div className="mb-6 space-y-2 text-sm">
+            <p>
+              ¿Quieres promocionarte en The Build Log?{" "}
+              <a
+                href="https://vacantes.lat/checkout/ad-sponsor"
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 underline dark:text-blue-400"
+              >
+                Patrocina una edición
+              </a>
+              .
+            </p>
+            <p>
+              ¿Buscas trabajo en IA?{" "}
+              <a
+                href="https://vacantes.lat"
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 underline dark:text-blue-400"
+              >
+                Explora vacantes
+              </a>
+              .
+            </p>
+          </div>
+          <p className="mt-3 font-mono text-xs">
+            <span className="underline">Cancelar suscripción</span>
+            <span aria-hidden="true"> · </span>
+            <a
+              href="https://aibuilders.lat"
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              AI BUILDERS LATAM
+            </a>
+            <span aria-hidden="true"> · </span>
+            <a
+              href="https://aibuilders.mx"
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              AI BUILDERS MEXICO
+            </a>
+          </p>
+        </footer>
+
       </article>
     </div>
   );

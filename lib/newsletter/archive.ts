@@ -42,14 +42,17 @@ export async function listPublishedIssues(): Promise<ArchiveCard[]> {
       ),
     )
     .orderBy(desc(newsletterIssues.sentAt));
-  return rows.map((r) => ({
-    slug: r.slug,
-    issueLabel: r.data.issueLabel,
-    date: r.sentAt ? formatArchiveSentDate(r.sentAt) : r.data.date,
-    readingTime: r.data.readingTime,
-    title: r.data.title,
-    subtitle: r.data.subtitle,
-  }));
+  return rows.map((r) => {
+    const content = r.data.spanish ?? r.data;
+    return {
+      slug: r.slug,
+      issueLabel: content.issueLabel,
+      date: r.sentAt ? formatArchiveSentDate(r.sentAt) : content.date,
+      readingTime: content.readingTime,
+      title: content.title,
+      subtitle: content.subtitle,
+    };
+  });
 }
 
 export async function listPublishedFeedIssues(): Promise<PublishedFeedIssue[]> {
@@ -69,13 +72,16 @@ export async function listPublishedFeedIssues(): Promise<PublishedFeedIssue[]> {
     )
     .orderBy(desc(newsletterIssues.sentAt));
 
-  return rows.map((row) => ({
-    slug: row.slug,
-    subject: row.subject || row.data.issueLabel,
-    preview: row.data.preview,
-    subtitle: row.data.subtitle,
-    sentAt: row.sentAt,
-  }));
+  return rows.map((row) => {
+    const content = row.data.spanish ?? row.data;
+    return {
+      slug: row.slug,
+      subject: content.subject || row.subject || content.issueLabel,
+      preview: content.preview,
+      subtitle: content.subtitle,
+      sentAt: row.sentAt,
+    };
+  });
 }
 
 function formatArchiveSentDate(date: Date): string {

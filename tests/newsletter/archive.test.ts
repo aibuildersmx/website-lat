@@ -14,7 +14,14 @@ vi.mock("@/lib/db/client", () => ({
                   date: "15 Jun 2026",
                   readingTime: "6 min de lectura",
                   title: "The Build Log",
-                  subtitle: "Resumen semanal",
+                  subtitle: "Weekly summary",
+                  spanish: {
+                    issueLabel: "Issue 002",
+                    date: "15 Jun 2026",
+                    readingTime: "6 min de lectura",
+                    title: "The Build Log",
+                    subtitle: "Resumen semanal en español",
+                  },
                 },
               },
             ]),
@@ -36,7 +43,7 @@ describe("listPublishedIssues", () => {
         date: "15 Jun 2026",
         readingTime: "6 min de lectura",
         title: "The Build Log",
-        subtitle: "Resumen semanal",
+        subtitle: "Resumen semanal en español",
       },
     ]);
   });

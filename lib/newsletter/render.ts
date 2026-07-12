@@ -1,15 +1,4 @@
-import type { Issue } from "./types";
-import { siteUrl } from "./unsubscribe";
-
-// Use-case icons are Phosphor glyphs served as PNGs (Gmail/Outlook strip inline
-// SVG, so an <img> with an absolute URL is the only email-safe option). The route
-// rasterizes any Phosphor name on demand, so new icons need no pre-generation.
-// `UseCase.icon` holds the Phosphor icon name, e.g. "repeat". The email ships
-// light, so it requests the dark (near-black) glyph variant.
-const ICON_VARIANT = "dark";
-function iconUrl(name: string): string {
-  return `${siteUrl()}/api/newsletter/icons/${name}.png?variant=${ICON_VARIANT}`;
-}
+import type { BaseIssue, Issue } from "./types";
 
 function esc(s: string): string {
   return s
@@ -27,7 +16,6 @@ const BG = "#ffffff"; // body / page (canvas: bg-white)
 const PANEL = "#fafaf9"; // card surfaces (canvas: stone-50)
 const TEXT = "#111827"; // headings (gray-900)
 const MUTED = "#6b7280"; // body copy (gray-500)
-const STATS = "#4b5563"; // stats / list lines (gray-600)
 const QUIET = "#9ca3af"; // eyebrows, counters, mono labels (gray-400)
 const LINE = "#e5e7eb"; // hairlines + card borders (gray-200)
 const ACCENT = "#111827"; // links that need emphasis (text color, underlined)
@@ -46,47 +34,42 @@ function eyebrow(text: string): string {
   )}</p>`;
 }
 
-function sectionHeader(title: string, count: string): string {
-  return `<tr><td style="padding:40px 0 28px;">
-    <p style="margin:0 0 6px;color:${QUIET};font-family:${MONO};font-size:13px;letter-spacing:normal;text-transform:uppercase;">${esc(
-      count,
-    )}</p>
-    <h2 style="margin:0;color:${TEXT};font-family:${SANS};font-size:34px;font-weight:600;line-height:1.1;">${esc(
-      title,
-    )}</h2>
+function eventLocation(label: string): string {
+  const location = label.replace(/^(AI BUILDERS|AIBM)\s*[-·]\s*/i, "").trim();
+  return /^ONLINE$/i.test(location) ? "VIRTUAL" : location || "VIRTUAL";
+}
+
+function sectionHeader(title: string, compact = false): string {
+  return `<tr><td style="padding:32px 0 24px;">
+    <h2 style="margin:0;color:${TEXT};font-family:${SANS};font-size:${compact ? "28px" : "34px"};font-weight:600;line-height:1.1;">${esc(title)}</h2>
   </td></tr>`;
 }
 
-export function renderBuildLog(issue: Issue): string {
+function renderIssue(issue: BaseIssue): string {
+  const documentTitle =
+    issue.showIssueLabel !== false && issue.issueLabel.trim()
+      ? `${issue.title} · ${issue.issueLabel}`
+      : issue.title;
+  const metadata = [
+    issue.showIssueLabel !== false && issue.issueLabel.trim() ? issue.issueLabel : null,
+    issue.date,
+    issue.readingTime,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map(esc)
+    .join(" &nbsp;·&nbsp; ");
+
   const stories = issue.stories
     .map(
       (s) => `
-      <div style="padding:0 0 40px;border-bottom:1px solid ${LINE};margin-bottom:32px;">
-        ${eyebrow(s.eyebrow)}
-        <h3 style="margin:0;font-family:${SANS};font-size:24px;font-weight:600;line-height:1.25;">
-          <a href="${esc(s.href)}" style="color:${TEXT};text-decoration:none;">${esc(
+      <div style="padding:4px 0 12px;margin-bottom:8px;">
+        <h3 style="margin:0;font-family:${SANS};font-size:20px;font-weight:600;line-height:1.25;">
+          <a class="title-link" href="${esc(s.href)}" style="color:${TEXT};text-decoration:none;">${esc(
         s.title,
       )} ↗</a>
         </h3>
-        <p style="margin:16px 0 0;color:${MUTED};font-family:${SANS};font-size:17px;line-height:1.55;">${esc(
+        <p style="margin:10px 0 0;color:${MUTED};font-family:${SANS};font-size:17px;line-height:1.55;">${esc(
           s.body,
-        )}</p>
-      </div>`,
-    )
-    .join("");
-
-  const useCases = issue.useCases
-    .map(
-      (u) => `
-      <div style="padding:0 0 28px;">
-        <div style="width:44px;height:44px;border:1px solid ${LINE};border-radius:12px;text-align:center;line-height:44px;margin-bottom:16px;">
-          <img src="${esc(iconUrl(u.icon))}" width="24" height="24" alt="" style="display:inline-block;vertical-align:middle;">
-        </div>
-        <h3 style="margin:0 0 8px;font-family:${SANS};font-size:20px;font-weight:600;color:${TEXT};">${esc(
-        u.title,
-      )}</h3>
-        <p style="margin:0;color:${MUTED};font-family:${SANS};font-size:16px;line-height:1.5;">${esc(
-          u.body,
         )}</p>
       </div>`,
     )
@@ -119,49 +102,22 @@ export function renderBuildLog(issue: Issue): string {
   const events = issue.events
     .map(
       (e) => `
-      <a href="${esc(e.href)}" style="display:block;text-decoration:none;padding:28px 0;border-bottom:1px solid ${LINE};">
+      <div style="padding:4px 0 12px;margin-bottom:8px;">
         <p style="margin:0 0 6px;color:${QUIET};font-family:${MONO};font-size:13px;letter-spacing:normal;text-transform:uppercase;">${esc(
-        `${e.day} ${e.month} · ${e.label}`,
+        `${e.day} ${e.month} · ${eventLocation(e.label)}`,
       )}</p>
-        <h3 style="margin:0;font-family:${SANS};font-size:22px;font-weight:600;color:${TEXT};">${esc(
-        e.title,
-      )} ↗</h3>
+        <h3 style="margin:0;font-family:${SANS};font-size:22px;font-weight:600;"><a class="title-link" href="${esc(
+          e.href,
+        )}" style="color:${TEXT};text-decoration:none;">${esc(e.title)} ↗</a></h3>
         <p style="margin:12px 0 0;color:${MUTED};font-family:${SANS};font-size:16px;line-height:1.5;">${esc(
           e.body,
         )}</p>
-      </a>`,
-    )
-    .join("");
-
-  const jobs = issue.jobs
-    .map(
-      (j) => `
-      <a href="${esc(j.href)}" style="display:block;text-decoration:none;padding:24px 0;border-bottom:1px solid ${LINE};">
-        <p style="margin:0 0 6px;color:${QUIET};font-family:${MONO};font-size:13px;letter-spacing:normal;text-transform:uppercase;">${esc(
-        j.label,
-      )}</p>
-        <h3 style="margin:0;font-family:${SANS};font-size:20px;font-weight:600;color:${TEXT};">${esc(
-        j.title,
-      )} ↗</h3>
-        <p style="margin:10px 0 0;color:${MUTED};font-family:${SANS};font-size:15px;">${esc(
-          j.meta,
-        )}</p>
-      </a>`,
-    )
-    .join("");
-
-  const statsList = issue.community.stats
-    .map(
-      (line, i) =>
-        `<li style="margin:0 0 10px;color:${STATS};font-family:${SANS};font-size:16px;line-height:1.4;"><span style="color:${QUIET};font-family:${MONO};">${String(
-          i + 1,
-        ).padStart(2, "0")}</span> ${esc(line)}</li>`,
+      </div>`,
     )
     .join("");
 
   const essayBlock = `<tr><td>
     <div style="padding:32px;border:1px solid ${LINE};border-radius:18px;background:${PANEL};">
-      <div style="font-size:36px;color:${TEXT};margin-bottom:20px;">&rdquo;</div>
       ${eyebrow(issue.essay.eyebrow)}
       <h3 style="margin:0 0 16px;font-family:${SANS};font-size:30px;font-weight:400;line-height:1.15;color:${TEXT};">${esc(
         issue.essay.title,
@@ -184,34 +140,31 @@ export function renderBuildLog(issue: Issue): string {
     </div>
   </td></tr>`;
 
-  const communityBlock = `<tr><td>
-    <div style="padding:28px;border:1px solid ${LINE};border-radius:18px;background:${PANEL};">
-      ${eyebrow(issue.community.label)}
-      <h3 style="margin:0;font-family:${SANS};font-size:24px;font-weight:600;color:${TEXT};">${esc(
-        issue.community.title,
-      )} <span style="color:${QUIET};font-weight:400;">${esc(
-    issue.community.titleSuffix,
-  )}</span></h3>
-      <p style="margin:16px 0 0;color:${MUTED};font-family:${SANS};font-size:16px;line-height:1.5;">${esc(
-        issue.community.body,
-      )}</p>
-      <ul style="margin:20px 0 0;padding:0 0 0 4px;list-style:none;">${statsList}</ul>
-    </div>
-    <div style="margin-top:16px;">${jobs}</div>
-  </td></tr>`;
+  const buildersMexicoItems =
+    issue.buildersMexicoItems ??
+    (issue.buildersMexico?.text
+      ? [{ title: issue.buildersMexico.text, body: "", href: issue.buildersMexico.href }]
+      : []);
+  const buildersMexicoContent = buildersMexicoItems
+    .filter((item) => item.title.trim() || item.body.trim())
+    .map(
+      (item) => `<div style="padding:4px 0 12px;margin-bottom:8px;">
+        <h3 style="margin:0;font-family:${SANS};font-size:20px;font-weight:600;line-height:1.25;">
+          <a class="title-link" href="${esc(item.href)}" style="color:${TEXT};text-decoration:none;">${esc(item.title)} ↗</a>
+        </h3>
+        <p style="margin:10px 0 0;color:${MUTED};font-family:${SANS};font-size:17px;line-height:1.55;">${esc(item.body)}</p>
+      </div>`,
+    )
+    .join("");
+  const buildersMexicoBlock = `<tr><td>${buildersMexicoContent}</td></tr>`;
 
   // Sections render only when they carry content, and the "NN / TOTAL" counter
   // is computed from how many actually render — so an issue without an essay
   // shows "01 / 04" instead of a hardcoded "/ 05" with an empty card.
-  const sections: Array<[string, string]> = [];
+  const sections: Array<[string, string, boolean?]> = [];
   if (issue.stories.length)
-    sections.push(["Esta semana en IA", `<tr><td>${stories}</td></tr>`]);
+    sections.push(["Esta semana en IA", `<tr><td>${stories}</td></tr>`, true]);
   if (issue.essay.title.trim()) sections.push(["Pensamiento de la semana", essayBlock]);
-  if (issue.useCases.length)
-    sections.push([
-      "En qué estamos usando IA",
-      `<tr><td style="padding-bottom:20px;">${useCases}</td></tr>`,
-    ]);
   if (issue.projects?.length)
     sections.push([
       issue.projectsLabel?.trim() || "Proyectos de la comunidad",
@@ -221,17 +174,31 @@ export function renderBuildLog(issue: Issue): string {
     sections.push([
       issue.eventsLabel?.trim() || "Próximos eventos",
       `<tr><td>${events}</td></tr>`,
+      true,
     ]);
-  if (issue.community.title.trim() || issue.jobs.length)
-    sections.push(["Comunidad", communityBlock]);
+  if (buildersMexicoContent)
+    sections.push(["Desde AI Builders México", buildersMexicoBlock, true]);
 
-  const total = String(sections.length).padStart(2, "0");
   const sectionsHtml = sections
     .map(
-      ([title, body], i) =>
-        sectionHeader(title, `${String(i + 1).padStart(2, "0")} / ${total}`) + body,
+      ([title, body, compact], index) =>
+        (index > 0 ? hr() : "") + sectionHeader(title, compact) + body,
     )
     .join("\n");
+
+  const sponsor = issue.sponsor;
+  const sponsorDescription = sponsor?.description?.trim()
+    ? `<p style="margin:5px 0 0;color:${MUTED};font-family:${SANS};font-size:14px;line-height:1.45;">${esc(sponsor.description)}</p>`
+    : "";
+  const sponsorContent = sponsor?.title.trim()
+    ? `<p style="margin:8px 0 0;font-family:${SANS};font-size:16px;font-weight:600;line-height:1.35;"><a href="${esc(
+        sponsor.href,
+      )}" style="color:${TEXT};text-decoration:underline;">${esc(sponsor.title)}</a></p>${sponsorDescription}`
+    : "";
+  const sponsorPlacement = `<tr><td style="padding:16px 0 8px;">
+    <p style="margin:0;color:${QUIET};font-family:${MONO};font-size:10px;font-weight:500;line-height:1.4;text-transform:uppercase;">Publicidad &mdash; Patrocina <a href="https://vacantes.lat/checkout/ad-sponsor" style="color:${MUTED};text-decoration:underline;">este espacio</a></p>
+    ${sponsorContent}
+  </td></tr>`;
 
   return `<!doctype html>
 <html lang="es">
@@ -243,7 +210,10 @@ export function renderBuildLog(issue: Issue): string {
      Outlook-Windows ignore this and run their own auto-darkening. -->
 <meta name="color-scheme" content="light dark">
 <meta name="supported-color-schemes" content="light dark">
-<title>${esc(issue.title)} · ${esc(issue.issueLabel)}</title>
+<title>${esc(documentTitle)}</title>
+<style>
+  a.title-link:hover { text-decoration: underline !important; }
+</style>
 </head>
 <body style="margin:0;padding:0;background:${BG};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(issue.preview)}</div>
@@ -251,34 +221,36 @@ export function renderBuildLog(issue: Issue): string {
 <tr><td align="center" style="padding:32px 16px 64px;">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;">
 
-  <tr><td style="padding:0 0 24px;">
-    <p style="margin:0 0 40px;color:${QUIET};font-family:${MONO};font-size:13px;letter-spacing:normal;text-transform:uppercase;">AI Builders MX</p>
-    <h1 style="margin:0;color:${TEXT};font-family:${SANS};font-size:60px;font-weight:400;line-height:0.95;">${esc(
+  <tr><td style="padding:0;">
+    <h1 style="margin:0;color:${TEXT};font-family:${SANS};font-size:38px;font-weight:600;line-height:1.1;">${esc(
       issue.title,
     )}</h1>
-    <p style="margin:24px 0 0;color:${MUTED};font-family:${SANS};font-size:22px;line-height:1.4;">${esc(
+    <p style="margin:10px 0 0;color:${MUTED};font-family:${SANS};font-size:18px;line-height:1.4;">${esc(
       issue.subtitle,
     )}</p>
   </td></tr>
 
-  ${hr()}
-  <tr><td style="padding:20px 0;">
-    <span style="color:${QUIET};font-family:${MONO};font-size:13px;letter-spacing:normal;text-transform:uppercase;">${esc(
-      issue.issueLabel,
-    )} &nbsp;·&nbsp; ${esc(issue.date)} &nbsp;·&nbsp; ${esc(issue.readingTime)}</span>
+  <tr><td style="padding:18px 0 12px;">
+    <span style="color:${QUIET};font-family:${MONO};font-size:13px;letter-spacing:normal;text-transform:uppercase;"><a href="https://aibuilders.lat" style="color:#2563eb;text-decoration:underline;">AI BUILDERS LATAM</a>${metadata ? ` &nbsp;·&nbsp; ${metadata}` : ""}</span>
   </td></tr>
   ${hr()}
+
+  ${sponsorPlacement}
 
   ${sectionsHtml}
 
   ${hr()}
   <tr><td style="padding:32px 0 0;">
-    <p style="margin:0 0 12px;color:${QUIET};font-family:${SANS};font-size:14px;line-height:1.5;">The Build Log es una curaduría semanal de AI Builders MX para gente que construye con IA en serio.</p>
-    <p style="margin:0 0 8px;color:${QUIET};font-family:${MONO};font-size:12px;letter-spacing:normal;">
+    <p style="margin:0 0 24px;color:${QUIET};font-family:${SANS};font-size:14px;line-height:1.5;">The Build Log es una curaduría semanal de AI BUILDERS LATAM.</p>
+    <div style="margin:0 0 24px;color:${MUTED};font-family:${SANS};font-size:14px;line-height:1.5;">
+      <p style="margin:0 0 8px;">¿Quieres promocionarte en The Build Log? <a href="https://vacantes.lat/checkout/ad-sponsor" style="color:#2563eb;text-decoration:underline;">Patrocina una edición</a>.</p>
+      <p style="margin:0;">¿Buscas trabajo en IA? <a href="https://vacantes.lat" style="color:#2563eb;text-decoration:underline;">Explora vacantes</a>.</p>
+    </div>
+    <p style="margin:0;color:${QUIET};font-family:${MONO};font-size:12px;letter-spacing:normal;">
       <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${ACCENT};text-decoration:underline;">Cancelar suscripción</a>
-      &nbsp;·&nbsp; AI Builders MX · Ciudad de México
+      &nbsp;·&nbsp; <a href="https://aibuilders.lat" style="color:#2563eb;text-decoration:underline;">AI BUILDERS LATAM</a>
+      &nbsp;·&nbsp; <a href="https://aibuilders.mx" style="color:#2563eb;text-decoration:underline;">AI BUILDERS MEXICO</a>
     </p>
-    <p style="margin:0;color:${QUIET};font-family:${MONO};font-size:12px;letter-spacing:normal;line-height:1.5;">Ámsterdam 255, Hipódromo Condesa, Cuauhtémoc, 06100 Ciudad de México, CDMX, México</p>
   </td></tr>
 
 </table>
@@ -289,4 +261,8 @@ export function renderBuildLog(issue: Issue): string {
 <img src="{{{OPEN_PIXEL}}}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;overflow:hidden;">
 </body>
 </html>`;
+}
+
+export function renderBuildLog(issue: Issue): string {
+  return renderIssue(issue.spanish ?? issue);
 }
