@@ -11,6 +11,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type { Issue } from "@/lib/newsletter/types";
+import type { ArticleContent } from "@/lib/blog/article-types";
 
 export const contacts = pgTable(
   "contacts",
@@ -92,6 +93,7 @@ export const newsletterIssues = pgTable("newsletter_issues", {
   subject: text("subject").notNull().default(""), // denormalized for list views
   status: text("status").notNull().default("draft"), // "draft" | "sending" | "sent"
   data: jsonb("data").$type<Issue>().notNull(), // the full Issue object
+  version: integer("version").notNull().default(1), // optimistic concurrency for external editors
   resendBroadcastId: text("resend_broadcast_id"), // set once broadcast
   sentAt: timestamp("sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -100,6 +102,101 @@ export const newsletterIssues = pgTable("newsletter_issues", {
 
 export type NewsletterIssueRow = typeof newsletterIssues.$inferSelect;
 export type NewNewsletterIssueRow = typeof newsletterIssues.$inferInsert;
+
+// Personal credentials for remote MCP clients. Raw credentials are shown once
+// and never persisted; only their SHA-256 hashes are stored here.
+export const mcpApiTokens = pgTable(
+  "mcp_api_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    tokenPrefix: text("token_prefix").notNull(),
+    scopes: text("scopes").array().notNull().default([]),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("mcp_api_tokens_user_id_idx").on(t.userId),
+    activeIdx: index("mcp_api_tokens_active_idx").on(t.expiresAt, t.revokedAt),
+  }),
+);
+
+export type McpApiTokenRow = typeof mcpApiTokens.$inferSelect;
+export type NewMcpApiTokenRow = typeof mcpApiTokens.$inferInsert;
+
+// Metadata-only MCP audit trail. Newsletter bodies, tool arguments, response
+// payloads, bearer credentials, and cookies must never be stored here.
+export const mcpAuditLog = pgTable(
+  "mcp_audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    tokenId: uuid("token_id").references(() => mcpApiTokens.id, { onDelete: "set null" }),
+    requestId: text("request_id").notNull(),
+    operation: text("operation").notNull(),
+    newsletterId: uuid("newsletter_id").references(() => newsletterIssues.id, {
+      onDelete: "set null",
+    }),
+    outcome: text("outcome").notNull(),
+    errorCode: text("error_code"),
+    ipHash: text("ip_hash"),
+    userAgent: text("user_agent"),
+    durationMs: integer("duration_ms").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tokenCreatedIdx: index("mcp_audit_log_token_created_idx").on(t.tokenId, t.createdAt),
+    userCreatedIdx: index("mcp_audit_log_user_created_idx").on(t.userId, t.createdAt),
+  }),
+);
+
+export type McpAuditLogRow = typeof mcpAuditLog.$inferSelect;
+
+// Atomic fixed-window admission counters. These are deliberately separate from
+// the audit trail: authorization decisions must not depend on eventually
+// inserted audit rows when requests arrive concurrently.
+export const mcpRateLimits = pgTable("mcp_rate_limits", {
+  key: text("key").primaryKey(),
+  windowStartedAt: timestamp("window_started_at", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type McpRateLimitRow = typeof mcpRateLimits.$inferSelect;
+
+// First-party essays authored in the admin composer. The body is constrained
+// structured content rather than executable MDX so database content can be
+// rendered safely without evaluating user-provided code.
+export const articles = pgTable(
+  "articles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull().default(""),
+    description: text("description").notNull().default(""),
+    author: text("author").notNull().default("Ben Kim"),
+    publishedOn: date("published_on").notNull(),
+    readTime: text("read_time").notNull().default("5 min"),
+    tags: text("tags").array().notNull().default([]),
+    content: jsonb("content").$type<ArticleContent>().notNull().default({ sections: [] }),
+    status: text("status").notNull().default("draft"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    statusDateIdx: index("articles_status_date_idx").on(t.status, t.publishedOn),
+  }),
+);
+
+export type ArticleRow = typeof articles.$inferSelect;
+export type NewArticleRow = typeof articles.$inferInsert;
 
 export const virtualTalks = pgTable(
   "virtual_talks",

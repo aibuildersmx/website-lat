@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Home, Mail, Menu, PlusCircle, Users, X, ChevronUp } from "lucide-react";
+import { CalendarDays, Cable, FileText, Home, Mail, Menu, PlusCircle, Send, Users, X, ChevronUp } from "lucide-react";
 import type { AdminLanguage } from "@/lib/admin/language";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageToggle } from "./language-toggle";
@@ -17,7 +17,7 @@ const SHELL_COPY: Record<
     signOut: string;
     openMenu: string;
     closeMenu: string;
-    nav: { audience: string; newsletter: string; composer: string; talks: string; team: string };
+    nav: { audience: string; newsletter: string; composer: string; outreach: string; articles: string; articleComposer: string; talks: string; team: string; mcp: string };
   }
 > = {
   es: {
@@ -29,8 +29,12 @@ const SHELL_COPY: Record<
       audience: "Audiencia",
       newsletter: "Newsletter",
       composer: "Composer",
+      outreach: "Outreach",
+      articles: "Artículos",
+      articleComposer: "Composer",
       talks: "Charlas",
       team: "Equipo",
+      mcp: "Conexiones MCP",
     },
   },
   en: {
@@ -42,8 +46,12 @@ const SHELL_COPY: Record<
       audience: "Audience",
       newsletter: "Newsletter",
       composer: "Composer",
+      outreach: "Outreach",
+      articles: "Articles",
+      articleComposer: "Composer",
       talks: "Talks",
       team: "Team",
+      mcp: "MCP connections",
     },
   },
 };
@@ -167,8 +175,24 @@ const NAV: NavItem[] = [
       pathname === "/admin/newsletter/new" ||
       /^\/admin\/newsletter\/[^/]+$/.test(pathname),
   },
+  { href: "/admin/outreach", label: "outreach", section: "Ventas", icon: Send },
+  {
+    href: "/admin/articles",
+    label: "articles",
+    section: "Blog",
+    icon: FileText,
+    activeFor: (pathname) => pathname === "/admin/articles" || /^\/admin\/articles\/(?!new$)[^/]+$/.test(pathname),
+  },
+  {
+    href: "/admin/articles/new",
+    label: "articleComposer",
+    section: "Blog",
+    icon: PlusCircle,
+    exact: true,
+  },
   { href: "/admin/talks", label: "talks", section: "HowIUseAI", icon: CalendarDays },
   { href: "/admin/team", label: "team", section: "Admin", icon: Users },
+  { href: "/admin/mcp", label: "mcp", section: "Admin", icon: Cable },
 ];
 
 function isActive(pathname: string, item: NavItem): boolean {
@@ -181,8 +205,12 @@ function navLabel(label: string, copy: (typeof SHELL_COPY)[AdminLanguage]): stri
   if (label === "audience") return copy.nav.audience;
   if (label === "newsletter") return copy.nav.newsletter;
   if (label === "composer") return copy.nav.composer;
+  if (label === "outreach") return copy.nav.outreach;
+  if (label === "articles") return copy.nav.articles;
+  if (label === "articleComposer") return copy.nav.articleComposer;
   if (label === "talks") return copy.nav.talks;
   if (label === "team") return copy.nav.team;
+  if (label === "mcp") return copy.nav.mcp;
   return label;
 }
 

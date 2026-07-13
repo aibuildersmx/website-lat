@@ -5,6 +5,7 @@ import { GlassAura } from "@/components/glass-aura";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { formatPostDate, getAllPosts } from "@/lib/blog/posts";
+import { articleToPostMeta, getPublishedArticles } from "@/lib/blog/articles";
 
 export const metadata: Metadata = {
   title: "Blog — AI Builders Latam",
@@ -18,8 +19,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogIndexPage() {
-  const posts: BlogIndexPost[] = getAllPosts().map((post) => ({
+// Database-authored articles are published at runtime. Keep the index dynamic
+// so a deployment whose initial build runs before the migration still shows
+// newly published articles immediately afterward.
+export const dynamic = "force-dynamic";
+
+export default async function BlogIndexPage() {
+  const databasePosts = (await getPublishedArticles()).map(articleToPostMeta);
+  const filesystemPosts = getAllPosts();
+  const filesystemSlugs = new Set(filesystemPosts.map((post) => post.slug));
+  const allPosts = [...filesystemPosts, ...databasePosts.filter((post) => !filesystemSlugs.has(post.slug))]
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const posts: BlogIndexPost[] = allPosts.map((post) => ({
     ...post,
     formattedDate: formatPostDate(post.date, "es-MX"),
   }));

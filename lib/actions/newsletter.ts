@@ -8,6 +8,7 @@ import { contacts, newsletterIssues, newsletterSends } from "@/lib/db/schema";
 import { getUser } from "@/lib/auth";
 import type { BaseIssue, Issue } from "@/lib/newsletter/types";
 import { emptyIssue } from "@/lib/newsletter/issue";
+import { insertNewsletterDraft } from "@/lib/newsletter/draft-create";
 import { renderBuildLog } from "@/lib/newsletter/render";
 import { loadNewsletterConfig, MissingEnvError } from "@/lib/newsletter/resend";
 import { subscribedRecipients, chunk } from "@/lib/newsletter/recipients";
@@ -233,21 +234,9 @@ export async function getNewIssueDraftData(): Promise<Issue> {
 
 export async function createIssueDraft(data?: Issue): Promise<string> {
   if (await gate()) redirect("/login");
-  const slugs = await db
-    .select({ slug: newsletterIssues.slug })
-    .from(newsletterIssues);
-  const existingSlugs = slugs.map((r) => r.slug);
-  const requestedSlug = data?.slug.trim();
-  const slug = requestedSlug && !existingSlugs.includes(requestedSlug)
-    ? requestedSlug
-    : nextSlug(existingSlugs);
-  const draft = data ? { ...data, slug } : emptyIssue(slug);
-  const inserted = await db
-    .insert(newsletterIssues)
-    .values({ slug, subject: draft.subject, status: "draft", data: draft })
-    .returning({ id: newsletterIssues.id });
+  const inserted = await insertNewsletterDraft(data, undefined, { respectRequestedSlug: true });
   revalidatePath(LIST_PATH);
-  return inserted[0].id;
+  return inserted.id;
 }
 
 export async function toggleIssueArchiveVisibility(formData: FormData): Promise<void> {
@@ -261,6 +250,7 @@ export async function toggleIssueArchiveVisibility(formData: FormData): Promise<
     .update(newsletterIssues)
     .set({
       data: sql`${newsletterIssues.data} || ${JSON.stringify({ archivePublished })}::jsonb`,
+      version: sql`${newsletterIssues.version} + 1`,
       updatedAt: new Date(),
     })
     .where(eq(newsletterIssues.id, id));
@@ -369,15 +359,18 @@ export async function saveIssue(
 ): Promise<ActionOk | ActionError> {
   if (await gate()) return { error: "No autorizado." };
   // Keep the row's denormalized columns in sync with the canonical Issue JSON.
-  await db
+  const updated = await db
     .update(newsletterIssues)
     .set({
       data,
       slug: data.slug,
       subject: data.subject,
+      version: sql`${newsletterIssues.version} + 1`,
       updatedAt: new Date(),
     })
-    .where(eq(newsletterIssues.id, id));
+    .where(and(eq(newsletterIssues.id, id), eq(newsletterIssues.status, "draft")))
+    .returning({ id: newsletterIssues.id });
+  if (!updated[0]) return { error: "Este newsletter ya no es un borrador editable." };
   revalidatePath(`${LIST_PATH}/${id}`);
   revalidatePath(LIST_PATH);
   return { ok: true };
