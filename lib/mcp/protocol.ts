@@ -221,7 +221,12 @@ export async function handleMcpRequest(
   }
 
   if (message.method !== "tools/call") return error(responseId, -32601, "Method not found.");
-  if (!isRecord(message.params) || !onlyKeys(message.params, ["name", "arguments"]) || typeof message.params.name !== "string") {
+  if (
+    !isRecord(message.params)
+    || !onlyKeys(message.params, ["name", "arguments", "_meta"])
+    || typeof message.params.name !== "string"
+    || (message.params._meta !== undefined && !isRecord(message.params._meta))
+  ) {
     return error(responseId, -32602, "Invalid tool call parameters.");
   }
 

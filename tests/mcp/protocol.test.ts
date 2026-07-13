@@ -98,6 +98,28 @@ describe("newsletter MCP protocol", () => {
     expect(mocks.list).not.toHaveBeenCalled();
   });
 
+  it("accepts MCP-reserved metadata on tool calls", async () => {
+    mocks.list.mockResolvedValueOnce([]);
+
+    const response = await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 4,
+      method: "tools/call",
+      params: {
+        name: "list_newsletter_drafts",
+        arguments: { limit: 10 },
+        _meta: { progressToken: "codex-call" },
+      },
+    }, actor);
+
+    expect(response).toMatchObject({
+      result: {
+        structuredContent: { drafts: [] },
+      },
+    });
+    expect(mocks.list).toHaveBeenCalledWith(10);
+  });
+
   it("treats initialized as a notification with no response", async () => {
     await expect(handleMcpRequest({ jsonrpc: "2.0", method: "notifications/initialized" }, actor))
       .resolves.toBeNull();
