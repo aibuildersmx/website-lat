@@ -4,14 +4,14 @@ export const MAX_OUTREACH_BODY_CHARS = 20_000;
 
 export const DEFAULT_OUTREACH_SUBJECT = "Patrocina el newsletter de AI Builders Latam";
 
-export const DEFAULT_OUTREACH_BODY = `Hola, te escribo rápido.
+export const DEFAULT_OUTREACH_BODY = `Hola, soy Ben de [AI Builders Latam](https://aibuilders.lat). Te escribo rápido.
 
-El newsletter de [AI Builders Latam](https://aibuilders.lat) llega a 2,404+ builders de IA, desarrolladores y fundadores técnicos de habla hispana, y la mayoría de nuestra comunidad está en Ciudad de México.
+Nuestro newsletter llega a 2,404+ builders de IA, desarrolladores y fundadores técnicos de habla hispana, y la mayoría de nuestra comunidad está en Ciudad de México.
 
 Como parte de nuestra oferta de lanzamiento, un espacio patrocinado cuesta actualmente $2,000 MXN. Incluye tu empresa o producto, una breve descripción y un enlace en nuestra próxima edición disponible.
 
 Puedes consultar los detalles y reservar un espacio aquí:
-[Reservar un espacio patrocinado →](https://vacantes.lat/checkout/ad-sponsor)
+[Reservar un espacio patrocinado](https://vacantes.lat/checkout/ad-sponsor)
 
 Si otra persona se encarga de marketing o alianzas, te agradecería mucho una presentación.`;
 
@@ -21,11 +21,6 @@ export interface OutreachTranslation {
 }
 
 export type OutreachLanguage = "es" | "en";
-
-const OPT_OUT_COPY: Record<OutreachLanguage, string> = {
-  es: "Si prefieres no recibir mensajes de alianzas, responde a este correo y te retiraremos de la lista.",
-  en: "If you would rather not receive partnership messages, reply to this email and we will remove you from the list.",
-};
 
 function escapeHtml(value: string): string {
   return value
@@ -88,7 +83,6 @@ export function renderOutreachHtml(body: string, language: OutreachLanguage = "e
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;border-radius:16px;">
         <tr><td style="padding:32px;">
           ${paragraphs}
-          <p style="margin:28px 0 0;padding-top:20px;border-top:1px solid #e7e5e4;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#78716c;">AI Builders Latam · ${OPT_OUT_COPY[language]}</p>
         </td></tr>
       </table>
     </td></tr>
@@ -97,9 +91,8 @@ export function renderOutreachHtml(body: string, language: OutreachLanguage = "e
 </html>`;
 }
 
-export function outreachPlainText(body: string, language: OutreachLanguage = "es"): string {
-  const content = body.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1: $2").trim();
-  return `${content}\n\n---\nAI Builders Latam · ${OPT_OUT_COPY[language]}`;
+export function outreachPlainText(body: string): string {
+  return body.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1: $2").trim();
 }
 
 export function parseOutreachTranslation(value: unknown): OutreachTranslation {

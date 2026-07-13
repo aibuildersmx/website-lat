@@ -14,7 +14,7 @@ describe("outreach email rendering", () => {
     expect(html).toContain("Primer párrafo.");
     expect(html).toContain('href="https://aibuilders.lat/"');
     expect(html).toContain(">AI Builders Latam</a><br>Segunda línea.");
-    expect(html.match(/<p style=/g)).toHaveLength(3); // two body paragraphs + opt-out footer
+    expect(html.match(/<p style=/g)).toHaveLength(2);
   });
 
   it("escapes editable HTML instead of executing it", () => {
@@ -30,11 +30,9 @@ describe("outreach email rendering", () => {
     ).toContain("Reserva aquí: Patrocinar: https://vacantes.lat/checkout/ad-sponsor");
   });
 
-  it("localizes the opt-out copy for translated versions", () => {
+  it("sets the document language for translated versions", () => {
     expect(renderOutreachHtml("Hello", "en")).toContain('<html lang="en">');
-    expect(outreachPlainText("Hello", "en")).toContain(
-      "If you would rather not receive partnership messages",
-    );
+    expect(outreachPlainText("Hello")).toBe("Hello");
   });
 });
 

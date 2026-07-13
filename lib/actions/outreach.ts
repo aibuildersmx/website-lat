@@ -139,7 +139,7 @@ export async function sendOutreachEmail(input: {
 
   const language = input.language ?? "es";
   const html = renderOutreachHtml(input.body, language);
-  const text = outreachPlainText(input.body, language);
+  const text = outreachPlainText(input.body);
   const response = await cfg.resend.batch.send(
     parsed.emails.map((email) => ({
       from: cfg.from,
