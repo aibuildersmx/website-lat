@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { CheckCircle2, Eye, Languages, Send, TriangleAlert } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Check, CheckCircle2, Eye, Languages, Search, Send, TriangleAlert, UserPlus } from "lucide-react";
 import { sendOutreachEmail, translateOutreachEmail } from "@/lib/actions/outreach";
 import { parseBulkSubscriberEmails } from "@/lib/newsletter/bulk-import";
+import type { AudienceSubscriberSearch } from "@/lib/newsletter/subscriber-metrics";
+import { addOutreachRecipients, toggleOutreachRecipient } from "@/lib/outreach/recipients";
 import {
   DEFAULT_OUTREACH_BODY,
   DEFAULT_OUTREACH_SUBJECT,
@@ -46,9 +48,11 @@ function StatusBanner({ tone, children }: { tone: "success" | "error"; children:
 export function OutreachComposer({
   fromEmail,
   replyToEmail,
+  initialCustomers,
 }: {
   fromEmail: string;
   replyToEmail: string;
+  initialCustomers: AudienceSubscriberSearch;
 }) {
   const [subject, setSubject] = useState(DEFAULT_OUTREACH_SUBJECT);
   const [body, setBody] = useState(DEFAULT_OUTREACH_BODY);
@@ -57,6 +61,11 @@ export function OutreachComposer({
   const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>("en");
   const [version, setVersion] = useState<Version>("source");
   const [recipients, setRecipients] = useState("");
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customerSearch, setCustomerSearch] = useState(initialCustomers);
+  const [customerSearchLoading, setCustomerSearchLoading] = useState(false);
+  const [customerSearchError, setCustomerSearchError] = useState(false);
+  const customerSearchReady = useRef(false);
   const [confirmed, setConfirmed] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [translationMessage, setTranslationMessage] = useState<
@@ -72,6 +81,10 @@ export function OutreachComposer({
     () => parseBulkSubscriberEmails(recipients),
     [recipients],
   );
+  const selectedRecipients = useMemo(
+    () => new Set(parsedRecipients.emails.map((email) => email.toLowerCase())),
+    [parsedRecipients.emails],
+  );
   const activeSubject = version === "translation" ? translatedSubject : subject;
   const activeBody = version === "translation" ? translatedBody : body;
   const activeLanguage = version === "translation" ? targetLanguage : "es";
@@ -86,6 +99,50 @@ export function OutreachComposer({
     parsedRecipients.invalidCount === 0 &&
     activeSubject.trim().length > 0 &&
     activeBody.trim().length > 0;
+
+  useEffect(() => {
+    if (!customerSearchReady.current) {
+      customerSearchReady.current = true;
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setCustomerSearchLoading(true);
+      setCustomerSearchError(false);
+      try {
+        const response = await fetch(
+          `/api/admin/audience/search?q=${encodeURIComponent(customerQuery)}`,
+          { headers: { Accept: "application/json" }, signal: controller.signal },
+        );
+        if (!response.ok) throw new Error(`Customer search failed: ${response.status}`);
+        setCustomerSearch((await response.json()) as AudienceSubscriberSearch);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setCustomerSearchError(true);
+      } finally {
+        if (!controller.signal.aborted) setCustomerSearchLoading(false);
+      }
+    }, 300);
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [customerQuery]);
+
+  function toggleCustomer(email: string) {
+    setRecipients((current) => toggleOutreachRecipient(current, email));
+    setConfirmed(false);
+  }
+
+  function addVisibleCustomers() {
+    const visible = customerSearch.subscribers
+      .filter((customer) => customer.newsletterSubscribed)
+      .map((customer) => customer.email);
+    setRecipients((current) =>
+      addOutreachRecipients(current, visible, MAX_OUTREACH_RECIPIENTS),
+    );
+    setConfirmed(false);
+  }
 
   function handleTranslate() {
     setTranslationMessage(null);
@@ -239,6 +296,88 @@ export function OutreachComposer({
                 <dd className="mt-1 break-all text-gray-700 dark:text-gray-200">{replyToEmail}</dd>
               </div>
             </dl>
+          </section>
+
+          <section className="rounded-2xl border border-black/5 bg-white p-5 dark:border-white/10 dark:bg-neutral-900">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <FieldLabel>Lista de clientes</FieldLabel>
+                <p className="mt-1 text-xs text-gray-400">
+                  {customerSearchLoading
+                    ? "Buscando…"
+                    : `${customerSearch.subscribers.length} de ${customerSearch.total.toLocaleString("es-MX")}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addVisibleCustomers}
+                disabled={!customerSearch.subscribers.some((customer) => customer.newsletterSubscribed)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-2 font-mono text-[10px] font-bold uppercase text-gray-600 transition hover:border-black/25 disabled:opacity-40 dark:border-white/15 dark:text-gray-300"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Agregar visibles
+              </button>
+            </div>
+
+            <label className="relative mt-4 block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="search"
+                value={customerQuery}
+                onChange={(event) => setCustomerQuery(event.target.value)}
+                placeholder="Buscar email, empresa, source…"
+                className={`${fieldClass} py-2.5 pl-9 text-xs`}
+              />
+            </label>
+
+            {customerSearchError ? (
+              <p className="py-6 text-center text-xs text-red-500">No se pudo cargar la lista.</p>
+            ) : customerSearch.subscribers.length === 0 ? (
+              <p className="py-6 text-center text-xs text-gray-400">No encontramos clientes.</p>
+            ) : (
+              <div className="mt-3 max-h-80 space-y-1 overflow-y-auto pr-1">
+                {customerSearch.subscribers.map((customer) => {
+                  const selected = selectedRecipients.has(customer.email.toLowerCase());
+                  const selectable = customer.newsletterSubscribed;
+                  return (
+                    <button
+                      key={customer.email}
+                      type="button"
+                      disabled={!selectable}
+                      onClick={() => toggleCustomer(customer.email)}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
+                        selected
+                          ? "bg-gray-900 text-white dark:bg-white dark:text-black"
+                          : selectable
+                            ? "hover:bg-black/5 dark:hover:bg-white/5"
+                            : "cursor-not-allowed opacity-45"
+                      }`}
+                    >
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                        selected
+                          ? "border-white/30 bg-white/15 dark:border-black/20 dark:bg-black/10"
+                          : "border-black/10 dark:border-white/15"
+                      }`}>
+                        {selected && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-medium">{customer.email}</span>
+                        <span className={`mt-0.5 block truncate text-[11px] ${
+                          selected ? "text-white/60 dark:text-black/50" : "text-gray-400"
+                        }`}>
+                          {customer.name || customer.source || customer.campaign || "Sin datos adicionales"}
+                        </span>
+                      </span>
+                      {!selectable && (
+                        <span className="rounded-full bg-black/5 px-2 py-1 font-mono text-[9px] uppercase text-gray-500 dark:bg-white/10 dark:text-gray-400">
+                          Baja
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <section className="rounded-2xl border border-black/5 bg-white p-5 dark:border-white/10 dark:bg-neutral-900">
