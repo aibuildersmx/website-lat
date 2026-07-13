@@ -158,6 +158,28 @@ function renderIssue(issue: BaseIssue): string {
     .join("");
   const buildersMexicoBlock = `<tr><td>${buildersMexicoContent}</td></tr>`;
 
+  const communityTitle = [issue.community.title, issue.community.titleSuffix]
+    .filter((part) => part.trim())
+    .join(" ");
+  const communityStatItems = issue.community.stats.filter((item) => item.trim());
+  const communityStats = communityStatItems
+    .map(
+      (item, index) =>
+        `<p style="margin:0 0 ${index === communityStatItems.length - 1 ? "0" : "10px"};color:${TEXT};font-family:${SANS};font-size:16px;line-height:1.5;"><strong>${String(index + 1).padStart(2, "0")}</strong>&nbsp;&nbsp;${esc(item)}</p>`,
+    )
+    .join("");
+  const communityContent = Boolean(
+    communityTitle.trim() || issue.community.body.trim() || communityStats,
+  );
+  const communityBlock = `<tr><td>
+    <div style="padding:32px;border:1px solid ${LINE};border-radius:18px;background:${PANEL};">
+      ${issue.community.label.trim() ? eyebrow(issue.community.label) : ""}
+      ${communityTitle.trim() ? `<h3 style="margin:0 0 16px;font-family:${SANS};font-size:30px;font-weight:400;line-height:1.15;color:${TEXT};">${esc(communityTitle)}</h3>` : ""}
+      ${issue.community.body.trim() ? `<p style="margin:0;color:${MUTED};font-family:${SANS};font-size:18px;line-height:1.55;">${esc(issue.community.body)}</p>` : ""}
+      ${communityStats ? `<div style="margin-top:24px;padding-top:20px;border-top:1px solid ${LINE};">${communityStats}</div>` : ""}
+    </div>
+  </td></tr>`;
+
   // Sections render only when they carry content, and the "NN / TOTAL" counter
   // is computed from how many actually render — so an issue without an essay
   // shows "01 / 04" instead of a hardcoded "/ 05" with an empty card.
@@ -178,6 +200,8 @@ function renderIssue(issue: BaseIssue): string {
     ]);
   if (buildersMexicoContent)
     sections.push(["Desde AI Builders México", buildersMexicoBlock, true]);
+  if (communityContent)
+    sections.push(["Comunidad", communityBlock, true]);
 
   const sectionsHtml = sections
     .map(

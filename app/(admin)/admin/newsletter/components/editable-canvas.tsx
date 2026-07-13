@@ -243,6 +243,8 @@ export function EditableCanvas({
   const patch = (p: Partial<BaseIssue>) => onChange({ ...issue, ...p });
   const patchEssay = (p: Partial<BaseIssue["essay"]>) =>
     onChange({ ...issue, essay: { ...issue.essay, ...p } });
+  const patchCommunity = (p: Partial<BaseIssue["community"]>) =>
+    onChange({ ...issue, community: { ...issue.community, ...p } });
   const patchSponsor = (p: Partial<NonNullable<BaseIssue["sponsor"]>>) =>
     onChange({
       ...issue,
@@ -616,6 +618,77 @@ export function EditableCanvas({
             ])
           }
         />
+
+        <SectionHeader
+          title="Comunidad"
+          compact
+          separated={Boolean(
+            issue.community.title.trim() ||
+              issue.community.body.trim() ||
+              issue.community.stats.some((item) => item.trim()),
+          )}
+        />
+        <div className="rounded-[18px] border border-gray-200 bg-stone-50 p-8 dark:border-white/10 dark:bg-white/5">
+          <Eyebrow
+            value={issue.community.label}
+            onChange={(label) => patchCommunity({ label })}
+            placeholder="Golden nugget"
+          />
+          <div className="mt-3 text-[30px] font-normal leading-[1.15] text-gray-900 dark:text-white">
+            <Editable
+              value={issue.community.title}
+              onChange={(title) => patchCommunity({ title })}
+              placeholder="Idea destacada de la comunidad"
+              multiline
+            />
+          </div>
+          <div className="mt-2 text-lg leading-relaxed text-gray-500 dark:text-gray-400">
+            <Editable
+              value={issue.community.titleSuffix}
+              onChange={(titleSuffix) => patchCommunity({ titleSuffix })}
+              placeholder="Sufijo del título (opcional)"
+              multiline
+            />
+          </div>
+          <div className="mt-4 text-lg leading-relaxed text-gray-500 dark:text-gray-400">
+            <Editable
+              value={issue.community.body}
+              onChange={(body) => patchCommunity({ body })}
+              placeholder="Contexto de la idea…"
+              multiline
+            />
+          </div>
+          <div className="mt-6 border-t border-gray-200 pt-5 dark:border-white/10">
+            {issue.community.stats.map((stat, index) => (
+              <ItemShell
+                key={index}
+                onRemove={() =>
+                  patchCommunity({ stats: removeAt(issue.community.stats, index) })
+                }
+                compact
+              >
+                <div className="flex items-start gap-3 text-base leading-relaxed text-gray-800 dark:text-gray-100">
+                  <strong className="font-mono text-sm">
+                    {String(index + 1).padStart(2, "0")}
+                  </strong>
+                  <Editable
+                    value={stat}
+                    onChange={(value) =>
+                      patchCommunity({ stats: replaceAt(issue.community.stats, index, value) })
+                    }
+                    placeholder="Aprendizaje de la comunidad"
+                    multiline
+                    className="min-w-0 flex-1"
+                  />
+                </div>
+              </ItemShell>
+            ))}
+            <AddButton
+              label="+ Añadir aprendizaje"
+              onClick={() => patchCommunity({ stats: [...issue.community.stats, ""] })}
+            />
+          </div>
+        </div>
 
         <footer className="mt-10 border-t border-gray-200 pt-8 text-gray-400 dark:border-white/10 dark:text-gray-500">
           <p className="mb-6 text-sm leading-6">

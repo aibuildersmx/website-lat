@@ -51,14 +51,28 @@ describe("renderBuildLog", () => {
     }
   });
 
-  it("renders the essay and events, but omits retired sections", () => {
+  it("renders the essay, events, and community card, but omits retired sections", () => {
     expect(html).toContain(issue002.essay.title);
     expect(html).toContain(issue002.events[0].title);
     expect(html).not.toContain(issue002.useCases[0].title);
-    expect(html).not.toContain(issue002.community.title);
+    expect(html).toContain("Comunidad");
+    expect(html).toContain(issue002.community.label);
+    expect(html).toContain(issue002.community.title);
+    expect(html).toContain(issue002.community.body);
+    expect(html).toContain(issue002.community.stats[0]);
+    expect(html).toContain("01");
     expect(html).not.toContain(issue002.jobs[0].title);
     expect(html).not.toContain("AIBM · Online");
     expect(html).toContain("VIRTUAL");
+  });
+
+  it("omits the community section when its card is empty", () => {
+    const out = renderBuildLog({
+      ...issue002,
+      community: { label: "Golden nugget", title: "", titleSuffix: "", body: "", stats: [] },
+    });
+    expect(out).not.toContain("Comunidad");
+    expect(out).not.toContain("Golden nugget");
   });
 
   it("renders the community projects section with author credits and links", () => {
