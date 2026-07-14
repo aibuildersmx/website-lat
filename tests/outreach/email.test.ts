@@ -2,26 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   outreachPlainText,
   parseOutreachTranslation,
-  renderOutreachHtml,
 } from "@/lib/outreach/email";
 
-describe("outreach email rendering", () => {
-  it("preserves paragraph spacing and renders safe Markdown links", () => {
-    const html = renderOutreachHtml(
+describe("outreach plain-text rendering", () => {
+  it("preserves paragraph spacing and expands Markdown links", () => {
+    const text = outreachPlainText(
       "Primer párrafo.\n\n[AI Builders Latam](https://aibuilders.lat)\nSegunda línea.",
     );
 
-    expect(html).toContain("Primer párrafo.");
-    expect(html).toContain('href="https://aibuilders.lat/"');
-    expect(html).toContain(">AI Builders Latam</a><br>Segunda línea.");
-    expect(html.match(/<p style=/g)).toHaveLength(2);
-  });
-
-  it("escapes editable HTML instead of executing it", () => {
-    const html = renderOutreachHtml('<script>alert("x")</script>');
-
-    expect(html).not.toContain("<script>");
-    expect(html).toContain("&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;");
+    expect(text).toBe(
+      "Primer párrafo.\n\nAI Builders Latam: https://aibuilders.lat\nSegunda línea.",
+    );
   });
 
   it("provides a readable plain-text fallback for Markdown links", () => {
@@ -30,8 +21,7 @@ describe("outreach email rendering", () => {
     ).toContain("Reserva aquí: Patrocinar: https://vacantes.lat/checkout/ad-sponsor");
   });
 
-  it("sets the document language for translated versions", () => {
-    expect(renderOutreachHtml("Hello", "en")).toContain('<html lang="en">');
+  it("leaves ordinary text unchanged", () => {
     expect(outreachPlainText("Hello")).toBe("Hello");
   });
 });

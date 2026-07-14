@@ -10,8 +10,6 @@ import {
   MAX_OUTREACH_SUBJECT_CHARS,
   outreachPlainText,
   parseOutreachTranslation,
-  renderOutreachHtml,
-  type OutreachLanguage,
   type OutreachTranslation,
 } from "@/lib/outreach/email";
 
@@ -112,7 +110,6 @@ export async function sendOutreachEmail(input: {
   body: string;
   recipients: string;
   confirmed: boolean;
-  language?: OutreachLanguage;
 }): Promise<OutreachSendOk | OutreachError> {
   const user = await adminUser();
   if (!user) return { error: "No autorizado." };
@@ -137,15 +134,12 @@ export async function sendOutreachEmail(input: {
     throw error;
   }
 
-  const language = input.language ?? "es";
-  const html = renderOutreachHtml(input.body, language);
   const text = outreachPlainText(input.body);
   const response = await cfg.resend.batch.send(
     parsed.emails.map((email) => ({
       from: cfg.from,
       to: [email],
       subject: input.subject.trim(),
-      html,
       text,
       replyTo: user.email,
     })),

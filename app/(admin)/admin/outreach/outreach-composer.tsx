@@ -12,7 +12,7 @@ import {
   MAX_OUTREACH_BODY_CHARS,
   MAX_OUTREACH_RECIPIENTS,
   MAX_OUTREACH_SUBJECT_CHARS,
-  renderOutreachHtml,
+  outreachPlainText,
 } from "@/lib/outreach/email";
 
 type TargetLanguage = "en" | "es";
@@ -87,11 +87,7 @@ export function OutreachComposer({
   );
   const activeSubject = version === "translation" ? translatedSubject : subject;
   const activeBody = version === "translation" ? translatedBody : body;
-  const activeLanguage = version === "translation" ? targetLanguage : "es";
-  const emailHtml = useMemo(
-    () => renderOutreachHtml(activeBody, activeLanguage),
-    [activeBody, activeLanguage],
-  );
+  const emailText = useMemo(() => outreachPlainText(activeBody), [activeBody]);
   const canSend =
     confirmed &&
     parsedRecipients.emails.length > 0 &&
@@ -168,7 +164,6 @@ export function OutreachComposer({
         body: activeBody,
         recipients,
         confirmed,
-        language: version === "translation" ? targetLanguage : "es",
       });
       if ("error" in result) {
         setSendMessage({ tone: "error", text: result.error });
@@ -471,11 +466,9 @@ export function OutreachComposer({
                 Cerrar ×
               </button>
             </div>
-            <iframe
-              title="Email real de outreach"
-              srcDoc={emailHtml}
-              className="w-full flex-1 bg-stone-100"
-            />
+            <pre className="flex-1 overflow-auto whitespace-pre-wrap bg-white p-6 font-sans text-base leading-7 text-gray-900">
+              {emailText}
+            </pre>
           </div>
         </div>
       )}
