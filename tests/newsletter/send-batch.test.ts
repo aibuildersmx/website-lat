@@ -99,6 +99,26 @@ d("processSendBatch (integration)", () => {
     expect(issue.sentAt).not.toBeNull();
   });
 
+  it("does not finalize while a warm-up plan still has recipients to stage", async () => {
+    await seed(2);
+    await db.insert(schema.newsletterWarmup).values({
+      issueId,
+      dailyCaps: [1_200],
+      chunkSize: 100,
+      active: true,
+    });
+
+    const r = fakeResend();
+    await sb.processSendBatch(deps(r.client), { issueId, contactIds });
+
+    const [issue] = await db
+      .select()
+      .from(schema.newsletterIssues)
+      .where(eq(schema.newsletterIssues.id, issueId));
+    expect(issue.status).toBe("sending");
+    expect(issue.sentAt).toBeNull();
+  });
+
   it("is idempotent: a second run does not re-call Resend", async () => {
     await seed(2);
     const r = fakeResend();

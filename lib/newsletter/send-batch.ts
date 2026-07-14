@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Resend } from "resend";
 import type { DB } from "@/lib/db/client";
-import { contacts, newsletterIssues, newsletterSends } from "@/lib/db/schema";
+import { contacts, newsletterIssues, newsletterSends, newsletterWarmup } from "@/lib/db/schema";
 import type { Issue } from "./types";
 import { renderBuildLog } from "./render";
 import { injectUnsubscribe, unsubscribeHeaders } from "./unsubscribe";
@@ -110,6 +110,12 @@ export async function finalizeIfComplete(db: DB, issueId: string): Promise<void>
       ),
     );
   if (count > 0) return;
+  const [activeWarmup] = await db
+    .select({ id: newsletterWarmup.id })
+    .from(newsletterWarmup)
+    .where(and(eq(newsletterWarmup.issueId, issueId), eq(newsletterWarmup.active, true)))
+    .limit(1);
+  if (activeWarmup) return;
   await db
     .update(newsletterIssues)
     .set({ status: "sent", sentAt: new Date(), updatedAt: new Date() })

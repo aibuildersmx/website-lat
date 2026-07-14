@@ -9,18 +9,10 @@
 //   pnpm tsx scripts/newsletter/start-warmup.ts --status                  # show active plan + progress
 //   pnpm tsx scripts/newsletter/start-warmup.ts --stop                    # pause/stop the active plan
 //
-// Starting also (re)seeds the priority inboxes (Esteban/Ben/Javi) so they're in
-// the DB and always go out in the first batch.
+// Starting also (re)seeds the priority inboxes so they're in the DB and always
+// go out in the first batch.
 
 import { parseArgs } from "node:util";
-
-// Always-first-batch inboxes. Ben & Javi aren't reliably in the contacts table,
-// so we upsert them on every start; Esteban usually is. See SEED_TAG.
-const SEED_CONTACTS = [
-  { email: "esteban@estebanconstante.com", name: "Esteban" },
-  { email: "1996byk@gmail.com", name: "Ben Kim" },
-  { email: "momillo@gmail.com", name: "Javi Rivero" },
-];
 
 async function main() {
   const { positionals, values } = parseArgs({
@@ -40,9 +32,9 @@ async function main() {
 
   const { db } = await import("../../lib/db/client");
   const schema = await import("../../lib/db/schema");
-  const { and, asc, desc, eq, sql } = await import("drizzle-orm");
-  const { SEED_TAG } = await import("../../lib/newsletter/warmup");
-  const { contacts, newsletterIssues, newsletterSends, newsletterWarmup } = schema;
+  const { desc, eq, sql } = await import("drizzle-orm");
+  const { startWarmupPlan } = await import("../../lib/newsletter/warmup-start");
+  const { newsletterIssues, newsletterSends, newsletterWarmup } = schema;
 
   // --- status ---------------------------------------------------------------
   if (values.status) {
@@ -114,37 +106,15 @@ async function main() {
     process.exit(1);
   }
 
-  // 1. Seed the priority inboxes (idempotent): ensure they exist, subscribed, tagged.
-  for (const s of SEED_CONTACTS) {
-    await db
-      .insert(contacts)
-      .values({ email: s.email, name: s.name, newsletterSubscribed: true, tags: [SEED_TAG], sources: ["newsletter-seed"] })
-      .onConflictDoUpdate({
-        target: contacts.email,
-        set: {
-          newsletterSubscribed: true,
-          // add SEED_TAG without dropping existing tags
-          tags: sql`(select array(select distinct unnest(${contacts.tags} || array[${SEED_TAG}]::text[])))`,
-          updatedAt: new Date(),
-        },
-      });
-  }
-  const seeded = await db
-    .select({ email: contacts.email })
-    .from(contacts)
-    .where(and(eq(contacts.newsletterSubscribed, true), sql`${SEED_TAG} = any(${contacts.tags})`))
-    .orderBy(asc(contacts.email));
-
-  // 2. Deactivate any existing active plan, then insert the new one.
-  await db.update(newsletterWarmup).set({ active: false, updatedAt: new Date() }).where(eq(newsletterWarmup.active, true));
-  const [plan] = await db
-    .insert(newsletterWarmup)
-    .values({ issueId, dailyCaps: caps, chunkSize, startAt: new Date(), active: true })
-    .returning({ id: newsletterWarmup.id });
+  const plan = await startWarmupPlan(issueId, {
+    dailyCaps: caps,
+    chunkSize,
+    replaceActive: true,
+  });
 
   console.log(`✅ Warmup iniciado — issue ${issue.slug} "${issue.subject}"`);
-  console.log(`   Plan ${plan.id} | caps [${caps.join(", ")}] luego resto | chunk ${chunkSize}/tick (cada 30 min)`);
-  console.log(`   Seed (primer batch): ${seeded.map((s) => s.email).join(", ")}`);
+  console.log(`   Plan ${plan.planId} | caps [${caps.join(", ")}] luego resto | chunk ${chunkSize}/tick (cada 30 min)`);
+  console.log("   Inboxes semilla actualizados para el primer batch.");
   console.log(`   El worker arranca el envío en el próximo tick del cron (≤30 min).`);
   console.log(`   Pausar:  pnpm tsx scripts/newsletter/start-warmup.ts --stop`);
   console.log(`   Estado:  pnpm tsx scripts/newsletter/start-warmup.ts --status`);

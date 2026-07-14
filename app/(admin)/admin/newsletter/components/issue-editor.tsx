@@ -9,6 +9,7 @@ import {
   saveIssue,
   sendTest,
   sendIssue,
+  startIssueWarmup,
   renderPreview,
   retryFailed,
   getIssueProgress,
@@ -67,6 +68,7 @@ export function IssueEditor({
   );
   const [translating, setTranslating] = useState(false);
   const [downloadingHtml, setDownloadingHtml] = useState(false);
+  const [startingWarmup, setStartingWarmup] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const firstRender = useRef(true);
@@ -111,17 +113,21 @@ export function IssueEditor({
     if (!sending) return;
     if (!issueId) return;
     let active = true;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const tick = async () => {
       const p = await getIssueProgress(issueId);
       if (!active) return;
       setProgress(p);
-      if (p.pending === 0 && p.total > 0) setStatus("sent");
+      if (p.issueStatus === "sent") {
+        setStatus("sent");
+        return;
+      }
+      timeout = setTimeout(tick, p.warmingUp ? 30_000 : 3_000);
     };
     void tick();
-    const interval = setInterval(tick, 3000);
     return () => {
       active = false;
-      clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
     };
   }, [sending, issueId]);
 
@@ -273,6 +279,34 @@ export function IssueEditor({
     }
   }
 
+  async function onStartWarmup() {
+    if (!window.confirm("¿Iniciar el envío por tandas? Se enviarán hasta 1,200 correos durante las primeras 24 horas y el resto al día siguiente, en grupos de 100 cada 30 minutos.")) return;
+    setStartingWarmup(true);
+    setMessage(null);
+    const idToSend = await ensureIssueId(issue);
+    const saved = await saveIssue(idToSend, issue);
+    if ("error" in saved) {
+      setStartingWarmup(false);
+      setSaveState("error");
+      setMessage({ kind: "err", text: saved.error });
+      return;
+    }
+    setSaveState("saved");
+    const res = await startIssueWarmup(idToSend);
+    setStartingWarmup(false);
+    if ("error" in res) {
+      setMessage({ kind: "err", text: res.error });
+      return;
+    }
+    setStatus("sending");
+    setProgress((current) => ({
+      ...current,
+      issueStatus: "sending",
+      warmingUp: true,
+    }));
+    setMessage({ kind: "ok", text: res.message ?? "Envío por tandas iniciado." });
+  }
+
   async function onRetryFailed() {
     setMessage(null);
     if (!issueId) return;
@@ -336,7 +370,7 @@ export function IssueEditor({
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {draft && issueId && (
               <button
                 type="button"
@@ -348,11 +382,25 @@ export function IssueEditor({
             )}
             <button
               type="button"
-              onClick={onSendIssue}
-              disabled={sent || sending}
+              onClick={onStartWarmup}
+              disabled={sent || sending || startingWarmup}
               className="h-10 rounded-xl bg-gray-900 px-5 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-gray-200"
             >
-              {sent ? "Enviado" : sending ? "Enviando…" : "Enviar newsletter"}
+              {sent
+                ? "Enviado"
+                : sending
+                  ? "Enviando…"
+                  : startingWarmup
+                    ? "Iniciando…"
+                    : "Enviar por tandas"}
+            </button>
+            <button
+              type="button"
+              onClick={onSendIssue}
+              disabled={sent || sending || startingWarmup}
+              className="h-10 rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:border-black/30 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15 dark:bg-neutral-900 dark:text-gray-300 dark:hover:border-white/40 dark:hover:text-white"
+            >
+              Enviar todo ahora
             </button>
           </div>
         </div>

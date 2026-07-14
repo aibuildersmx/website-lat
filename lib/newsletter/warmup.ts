@@ -99,6 +99,16 @@ export async function warmupTick(boss: PgBoss): Promise<WarmupTickResult> {
       .update(newsletterWarmup)
       .set({ active: false, updatedAt: new Date() })
       .where(eq(newsletterWarmup.id, plan.id));
+    const [{ pending }] = await db
+      .select({ pending: sql<number>`count(*)::int` })
+      .from(newsletterSends)
+      .where(and(eq(newsletterSends.issueId, plan.issueId), eq(newsletterSends.status, "pending")));
+    if (pending === 0) {
+      await db
+        .update(newsletterIssues)
+        .set({ status: "sent", sentAt: new Date(), updatedAt: new Date() })
+        .where(eq(newsletterIssues.id, plan.issueId));
+    }
     return { status: "finished", issueId: plan.issueId };
   }
 

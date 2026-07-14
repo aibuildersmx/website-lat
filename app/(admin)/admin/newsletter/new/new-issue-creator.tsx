@@ -12,7 +12,14 @@ export function NewIssueCreator({ initialData }: { initialData: Issue }) {
       id={null}
       initialData={initialData}
       status="draft"
-      initialProgress={{ total: 0, pending: 0, sent: 0, failed: 0 }}
+      initialProgress={{
+        total: 0,
+        pending: 0,
+        sent: 0,
+        failed: 0,
+        issueStatus: "draft",
+        warmingUp: false,
+      }}
       engagement={null}
       onIssueCreated={(id) => router.replace(`/admin/newsletter/${id}`)}
     />

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { contacts, newsletterIssues, newsletterSends } from "@/lib/db/schema";
+import { contacts, newsletterIssues, newsletterSends, newsletterWarmup } from "@/lib/db/schema";
 import { getUser } from "@/lib/auth";
 import type { BaseIssue, Issue } from "@/lib/newsletter/types";
 import { emptyIssue } from "@/lib/newsletter/issue";
@@ -14,6 +14,12 @@ import { loadNewsletterConfig, MissingEnvError } from "@/lib/newsletter/resend";
 import { subscribedRecipients, chunk } from "@/lib/newsletter/recipients";
 import { injectUnsubscribe, siteUrl } from "@/lib/newsletter/unsubscribe";
 import { stripTracking } from "@/lib/newsletter/tracking";
+import {
+  BATCHED_SEND_CHUNK_SIZE,
+  BATCHED_SEND_DAILY_CAPS,
+  warmupSchedule,
+} from "@/lib/newsletter/warmup-config";
+import { startWarmupPlan, WarmupStartError } from "@/lib/newsletter/warmup-start";
 import {
   initialBulkImportState,
   parseBulkSubscriberEmails,
@@ -25,7 +31,7 @@ import {
   type EngagementSummary,
   type LinkClicks,
 } from "@/lib/newsletter/engagement";
-import { getBoss, SEND_BATCH_QUEUE } from "@/lib/queue/boss";
+import { getBoss, SEND_BATCH_QUEUE, WARMUP_TICK_QUEUE } from "@/lib/queue/boss";
 import { normalizeAdminLanguage } from "@/lib/admin/language";
 import {
   extractResponseText,
@@ -188,6 +194,23 @@ export interface IssueDetail {
   status: string;
   sentAt: Date | null;
   data: Issue;
+}
+
+function sendReadinessError(detail: IssueDetail | null): ActionError | null {
+  if (!detail) return { error: "Issue no encontrado." };
+  if (detail.status === "sent") return { error: "Este issue ya fue enviado." };
+  if (detail.status === "sending") return { error: "Este issue ya se está enviando." };
+  if (!detail.data.spanish) return { error: "Genera la versión en español antes de enviar." };
+  if (detail.data.spanishTranslationStale) {
+    return { error: "La traducción está desactualizada. Actualízala antes de enviar." };
+  }
+  if (!detail.data.spanish.subject.trim()) {
+    return { error: "La versión en español necesita un subject." };
+  }
+  if (!detail.data.spanish.stories.length) {
+    return { error: "Agrega al menos una historia antes de enviar." };
+  }
+  return null;
 }
 
 export async function getIssue(id: string): Promise<IssueDetail | null> {
@@ -502,17 +525,8 @@ export async function sendIssue(id: string): Promise<ActionOk | ActionError> {
   if (await gate()) return { error: "No autorizado." };
 
   const detail = await getIssue(id);
-  if (!detail) return { error: "Issue no encontrado." };
-  if (detail.status === "sent") return { error: "Este issue ya fue enviado." };
-  if (detail.status === "sending") return { error: "Este issue ya se está enviando." };
-
-  const data = detail.data;
-  if (!data.spanish) return { error: "Genera la versión en español antes de enviar." };
-  if (data.spanishTranslationStale) {
-    return { error: "La traducción está desactualizada. Actualízala antes de enviar." };
-  }
-  if (!data.spanish.subject.trim()) return { error: "La versión en español necesita un subject." };
-  if (!data.spanish.stories.length) return { error: "Agrega al menos una historia antes de enviar." };
+  const readinessError = sendReadinessError(detail);
+  if (readinessError) return readinessError;
 
   // Fail fast if Resend isn't configured — the same env the worker needs.
   try {
@@ -555,6 +569,45 @@ export async function sendIssue(id: string): Promise<ActionOk | ActionError> {
   return { ok: true, message: `Encolado: enviando a ${recipients.length} contactos.` };
 }
 
+export async function startIssueWarmup(id: string): Promise<ActionOk | ActionError> {
+  if (await gate()) return { error: "No autorizado." };
+
+  const detail = await getIssue(id);
+  const readinessError = sendReadinessError(detail);
+  if (readinessError) return readinessError;
+
+  try {
+    loadNewsletterConfig();
+  } catch (error) {
+    if (error instanceof MissingEnvError) return { error: error.message };
+    throw error;
+  }
+
+  try {
+    const plan = await startWarmupPlan(id, {
+      dailyCaps: BATCHED_SEND_DAILY_CAPS,
+      chunkSize: BATCHED_SEND_CHUNK_SIZE,
+    });
+    try {
+      const boss = await getBoss();
+      await boss.send(WARMUP_TICK_QUEUE, {});
+    } catch (error) {
+      console.error("Could not enqueue the first warm-up tick; the cron will retry:", error);
+    }
+
+    const schedule = warmupSchedule(plan.audienceCount, plan.dailyCaps);
+    revalidatePath(`${LIST_PATH}/${id}`);
+    revalidatePath(LIST_PATH);
+    return {
+      ok: true,
+      message: `Envío por tandas iniciado: ${schedule.map((count, index) => `día ${index + 1}, ${count.toLocaleString("es-MX")}`).join(" · ")}. Grupos de ${plan.chunkSize} cada 30 min.`,
+    };
+  } catch (error) {
+    if (error instanceof WarmupStartError) return { error: error.message };
+    throw error;
+  }
+}
+
 export async function retryFailed(id: string): Promise<ActionOk | ActionError> {
   if (await gate()) return { error: "No autorizado." };
 
@@ -590,6 +643,8 @@ export interface IssueProgress {
   sent: number;
   failed: number;
   pending: number;
+  issueStatus: string;
+  warmingUp: boolean;
 }
 
 export interface IssueEngagement extends EngagementSummary {
@@ -622,17 +677,47 @@ export async function getIssueEngagement(id: string): Promise<IssueEngagement> {
 }
 
 export async function getIssueProgress(id: string): Promise<IssueProgress> {
-  if (await gate()) return { total: 0, sent: 0, failed: 0, pending: 0 };
-  const rows = await db
-    .select({ status: newsletterSends.status, count: sql<number>`count(*)::int` })
-    .from(newsletterSends)
-    .where(eq(newsletterSends.issueId, id))
-    .groupBy(newsletterSends.status);
+  if (await gate()) {
+    return { total: 0, sent: 0, failed: 0, pending: 0, issueStatus: "draft", warmingUp: false };
+  }
+  const [rows, [issue], [activeWarmup]] = await Promise.all([
+    db
+      .select({ status: newsletterSends.status, count: sql<number>`count(*)::int` })
+      .from(newsletterSends)
+      .where(eq(newsletterSends.issueId, id))
+      .groupBy(newsletterSends.status),
+    db
+      .select({ status: newsletterIssues.status })
+      .from(newsletterIssues)
+      .where(eq(newsletterIssues.id, id))
+      .limit(1),
+    db
+      .select({ id: newsletterWarmup.id })
+      .from(newsletterWarmup)
+      .where(and(eq(newsletterWarmup.issueId, id), eq(newsletterWarmup.active, true)))
+      .limit(1),
+  ]);
   const by = (s: string) => rows.find((r) => r.status === s)?.count ?? 0;
   const sent = by("sent");
   const failed = by("failed");
   const pending = by("pending");
-  return { total: sent + failed + pending, sent, failed, pending };
+  const stagedTotal = sent + failed + pending;
+  let total = stagedTotal;
+  if (activeWarmup) {
+    const [{ audienceCount }] = await db
+      .select({ audienceCount: sql<number>`count(*)::int` })
+      .from(contacts)
+      .where(eq(contacts.newsletterSubscribed, true));
+    total = Math.max(stagedTotal, audienceCount);
+  }
+  return {
+    total,
+    sent,
+    failed,
+    pending,
+    issueStatus: issue?.status ?? "draft",
+    warmingUp: Boolean(activeWarmup),
+  };
 }
 
 // --- Phase 4 seam (NOT wired yet) -------------------------------------------
