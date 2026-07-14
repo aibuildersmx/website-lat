@@ -24,8 +24,8 @@ const SANS =
   "Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const MONO = "'SF Mono', Menlo, Consolas, monospace";
 
-function hr(): string {
-  return `<tr><td style="padding:0;"><div style="height:1px;line-height:1px;font-size:1px;background:${LINE};">&nbsp;</div></td></tr>`;
+function hr(topPadding = 0): string {
+  return `<tr><td style="padding:${topPadding}px 0 0;"><div style="height:1px;line-height:1px;font-size:1px;background:${LINE};">&nbsp;</div></td></tr>`;
 }
 
 function eyebrow(text: string): string {
@@ -206,7 +206,7 @@ function renderIssue(issue: BaseIssue): string {
   const sectionsHtml = sections
     .map(
       ([title, body, compact], index) =>
-        (index > 0 ? hr() : "") + sectionHeader(title, compact) + body,
+        (index > 0 ? hr(32) : "") + sectionHeader(title, compact) + body,
     )
     .join("\n");
 
@@ -263,7 +263,7 @@ function renderIssue(issue: BaseIssue): string {
 
   ${sectionsHtml}
 
-  ${hr()}
+  ${hr(40)}
   <tr><td style="padding:32px 0 0;">
     <p style="margin:0 0 24px;color:${QUIET};font-family:${SANS};font-size:14px;line-height:1.5;">The Build Log es una curaduría semanal de AI BUILDERS LATAM.</p>
     <div style="margin:0 0 24px;color:${MUTED};font-family:${SANS};font-size:14px;line-height:1.5;">

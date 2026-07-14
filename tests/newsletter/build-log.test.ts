@@ -66,6 +66,15 @@ describe("renderBuildLog", () => {
     expect(html).toContain("VIRTUAL");
   });
 
+  it("keeps divider lines clear of section cards", () => {
+    expect(html).toContain(
+      `<tr><td style="padding:32px 0 0;"><div style="height:1px;line-height:1px;font-size:1px;background:#e5e7eb;">&nbsp;</div></td></tr>`,
+    );
+    expect(html).toContain(
+      `<tr><td style="padding:40px 0 0;"><div style="height:1px;line-height:1px;font-size:1px;background:#e5e7eb;">&nbsp;</div></td></tr>`,
+    );
+  });
+
   it("omits the community section when its card is empty", () => {
     const out = renderBuildLog({
       ...issue002,
