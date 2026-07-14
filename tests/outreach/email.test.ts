@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_OUTREACH_BODY,
   outreachPlainText,
   parseOutreachTranslation,
 } from "@/lib/outreach/email";
+
+describe("default outreach copy", () => {
+  it("uses the current sponsorship offer", () => {
+    expect(DEFAULT_OUTREACH_BODY).toContain(
+      "[AI Builders Latam](https://aibuilders.lat)",
+    );
+    expect(DEFAULT_OUTREACH_BODY).toContain("2,404+ desarrolladores y fundadores técnicos");
+    expect(DEFAULT_OUTREACH_BODY).toContain("$2,000 USD por espacio");
+    expect(DEFAULT_OUTREACH_BODY).toContain("los lugares son limitados");
+    expect(DEFAULT_OUTREACH_BODY).toContain("Saludos,\nBen");
+    expect(DEFAULT_OUTREACH_BODY).not.toContain("$2,000 MXN");
+  });
+});
 
 describe("outreach plain-text rendering", () => {
   it("preserves paragraph spacing and expands Markdown links", () => {

@@ -4,16 +4,20 @@ export const MAX_OUTREACH_BODY_CHARS = 20_000;
 
 export const DEFAULT_OUTREACH_SUBJECT = "Patrocina el newsletter de AI Builders Latam";
 
-export const DEFAULT_OUTREACH_BODY = `Hola, soy Ben de [AI Builders Latam](https://aibuilders.lat). Te escribo rápido.
+export const DEFAULT_OUTREACH_BODY = `Hola, soy Ben, de [AI Builders Latam](https://aibuilders.lat), la mayor comunidad de builders de habla hispana.
 
-Nuestro newsletter llega a 2,404+ builders de IA, desarrolladores y fundadores técnicos de habla hispana, y la mayoría de nuestra comunidad está en Ciudad de México.
+Nuestro newsletter llega directamente a 2,404+ desarrolladores y fundadores técnicos que construyen con IA todos los días.
 
-Como parte de nuestra oferta de lanzamiento, un espacio patrocinado cuesta actualmente $2,000 MXN. Incluye tu empresa o producto, una breve descripción y un enlace en nuestra próxima edición disponible.
+Acabamos de abrir la convocatoria para patrocinar nuestra próxima edición: un espacio ideal para dar a conocer tu empresa o producto ante una audiencia técnica y comprometida.
 
-Puedes consultar los detalles y reservar un espacio aquí:
-[Reservar un espacio patrocinado](https://vacantes.lat/checkout/ad-sponsor)
+Como parte de nuestra oferta de lanzamiento la inversión es de $2,000 USD por espacio, y los lugares son limitados.
 
-Si otra persona se encarga de marketing o alianzas, te agradecería mucho una presentación.`;
+👉 Reserva tu espacio patrocinado aquí: [Reservar un espacio patrocinado](https://vacantes.lat/checkout/ad-sponsor)
+
+Si tienes preguntas, respóndeme este correo con gusto.
+
+Saludos,
+Ben`;
 
 export interface OutreachTranslation {
   subject: string;
