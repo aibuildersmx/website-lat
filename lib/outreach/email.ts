@@ -28,6 +28,43 @@ export function outreachPlainText(body: string): string {
   return body.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1: $2").trim();
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function outreachInlineHtml(value: string): string {
+  const link = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  let html = "";
+  let cursor = 0;
+
+  for (const match of value.matchAll(link)) {
+    const index = match.index ?? 0;
+    html += escapeHtml(value.slice(cursor, index));
+    html += `<a href="${escapeHtml(match[2])}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">${escapeHtml(match[1])}</a>`;
+    cursor = index + match[0].length;
+  }
+
+  return html + escapeHtml(value.slice(cursor));
+}
+
+export function outreachHtml(body: string): string {
+  const paragraphs = body
+    .trim()
+    .split(/\n{2,}/)
+    .map(
+      (paragraph) =>
+        `<p style="margin:0 0 20px;">${outreachInlineHtml(paragraph).replaceAll("\n", "<br>")}</p>`,
+    )
+    .join("");
+
+  return `<!doctype html><html><body style="margin:0;background:#ffffff;color:#171717;font-family:Arial,sans-serif;font-size:16px;line-height:1.65;"><div style="max-width:640px;margin:0 auto;padding:32px 24px;">${paragraphs}</div></body></html>`;
+}
+
 export function parseOutreachTranslation(value: unknown): OutreachTranslation {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("OpenAI no devolvió una traducción válida.");

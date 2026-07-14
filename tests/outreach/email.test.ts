@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_OUTREACH_BODY,
+  outreachHtml,
   outreachPlainText,
   parseOutreachTranslation,
 } from "@/lib/outreach/email";
@@ -15,6 +16,26 @@ describe("default outreach copy", () => {
     expect(DEFAULT_OUTREACH_BODY).toContain("los lugares son limitados");
     expect(DEFAULT_OUTREACH_BODY).toContain("Saludos,\nBen");
     expect(DEFAULT_OUTREACH_BODY).not.toContain("$2,000 MXN");
+  });
+});
+
+describe("outreach HTML rendering", () => {
+  it("renders Markdown labels as linked text without visible URLs", () => {
+    const html = outreachHtml(
+      "Conoce [AI Builders Latam](https://aibuilders.lat) y [reserva aquí](https://vacantes.lat/checkout/ad-sponsor).",
+    );
+
+    expect(html).toContain('href="https://aibuilders.lat"');
+    expect(html).toContain(">AI Builders Latam</a>");
+    expect(html).toContain(">reserva aquí</a>");
+    expect(html).not.toContain(">https://");
+  });
+
+  it("escapes untrusted HTML in the editable body", () => {
+    const html = outreachHtml("Hola <script>alert('x')</script>");
+
+    expect(html).toContain("&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt;");
+    expect(html).not.toContain("<script>");
   });
 });
 
