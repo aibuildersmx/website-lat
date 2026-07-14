@@ -10,6 +10,7 @@ import {
   MAX_OUTREACH_SUBJECT_CHARS,
   outreachHtml,
   outreachPlainText,
+  outreachReplyTo,
   parseOutreachTranslation,
   type OutreachTranslation,
 } from "@/lib/outreach/email";
@@ -143,7 +144,7 @@ export async function sendOutreachEmail(input: {
       subject: input.subject.trim(),
       html: outreachHtml(input.body),
       text,
-      replyTo: user.email,
+      replyTo: outreachReplyTo(),
     })),
   );
 

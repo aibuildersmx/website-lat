@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_OUTREACH_BODY,
+  DEFAULT_OUTREACH_REPLY_TO,
   outreachHtml,
   outreachPlainText,
   parseOutreachTranslation,
@@ -16,6 +17,12 @@ describe("default outreach copy", () => {
     expect(DEFAULT_OUTREACH_BODY).toContain("los lugares son limitados");
     expect(DEFAULT_OUTREACH_BODY).toContain("Saludos,\nBen");
     expect(DEFAULT_OUTREACH_BODY).not.toContain("$2,000 MXN");
+  });
+});
+
+describe("outreach reply-to", () => {
+  it("defaults replies to the shared AI Builders inbox", () => {
+    expect(DEFAULT_OUTREACH_REPLY_TO).toBe("hola@aibuilders.lat");
   });
 });
 

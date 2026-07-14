@@ -1,8 +1,13 @@
 export const MAX_OUTREACH_RECIPIENTS = 100;
 export const MAX_OUTREACH_SUBJECT_CHARS = 180;
 export const MAX_OUTREACH_BODY_CHARS = 20_000;
+export const DEFAULT_OUTREACH_REPLY_TO = "hola@aibuilders.lat";
 
 export const DEFAULT_OUTREACH_SUBJECT = "Patrocina el newsletter de AI Builders Latam";
+
+export function outreachReplyTo(): string {
+  return process.env.OUTREACH_REPLY_TO?.trim() || DEFAULT_OUTREACH_REPLY_TO;
+}
 
 export const DEFAULT_OUTREACH_BODY = `Hola, soy Ben, de [AI Builders Latam](https://aibuilders.lat), la mayor comunidad de builders de habla hispana.
 

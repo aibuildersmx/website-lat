@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth";
 import { searchAudienceSubscribers } from "@/lib/newsletter/subscriber-metrics";
+import { outreachReplyTo } from "@/lib/outreach/email";
 import { OutreachComposer } from "./outreach-composer";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export default async function OutreachPage() {
   return (
     <OutreachComposer
       fromEmail={process.env.NEWSLETTER_FROM?.trim() || "NEWSLETTER_FROM no configurado"}
-      replyToEmail={user.email}
+      replyToEmail={outreachReplyTo()}
       initialCustomers={initialCustomers}
     />
   );
