@@ -251,9 +251,3 @@ export function validateIssue(value: unknown): IssueValidation {
 export function parseIssue(value: unknown): Issue | null {
   return validateIssue(value).issue ?? null;
 }
-
-export const newsletterIssueJsonSchema = {
-  type: "object",
-  description: "The canonical structured newsletter Issue object returned by get_newsletter_draft.",
-  additionalProperties: true,
-} as const;

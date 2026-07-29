@@ -14,8 +14,9 @@ import {
   updateNewsletterDraft,
 } from "./newsletters";
 import { isAdPlacement } from "@/lib/newsletter/ad-placement";
+import { newsletterIssueJsonSchema } from "@/lib/newsletter/issue-schema";
 import { AD_PLACEMENTS } from "@/lib/newsletter/types";
-import { newsletterIssueJsonSchema, parseIssue } from "@/lib/newsletter/validation";
+import { parseIssue } from "@/lib/newsletter/validation";
 
 type JsonRpcId = string | number | null;
 type JsonRpcResponse =
