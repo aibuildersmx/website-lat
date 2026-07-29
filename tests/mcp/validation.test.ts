@@ -67,7 +67,8 @@ describe("validateIssue error paths", () => {
   });
 
   it("reports missing required fields and unknown keys with paths", () => {
-    const { subject: _omit, ...withoutSubject } = emptyIssue("008");
+    const withoutSubject: Record<string, unknown> = { ...emptyIssue("008") };
+    delete withoutSubject.subject;
     const result = validateIssue({ ...withoutSubject, status: "sent" });
     expect(result.errors).toContain("issue: claves desconocidas: status");
     expect(result.errors).toContain("issue.subject: falta o no es string");
