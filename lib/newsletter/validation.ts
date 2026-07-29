@@ -1,104 +1,180 @@
 import { isAdPlacement } from "./ad-placement";
-import type {
-  BaseIssue,
-  BuildersMexicoItem,
-  BuildersMexicoLink,
-  Community,
-  Essay,
-  EventItem,
-  Issue,
-  JobItem,
-  ShowcaseProject,
-  SponsorPlacement,
-  Story,
-  UseCase,
-} from "./types";
+import { AD_PLACEMENTS, type Issue } from "./types";
 
 const MAX_SERIALIZED_CHARS = 200_000;
 const MAX_SHORT_TEXT = 2_000;
 const MAX_BODY_TEXT = 30_000;
 const MAX_ITEMS = 100;
+const MAX_ERRORS = 20;
 const SAFE_URL = /^(https?:\/\/|mailto:)/i;
 
 type RecordValue = Record<string, unknown>;
+type Ctx = { errors: string[] };
 
 function isRecord(value: unknown): value is RecordValue {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function hasOnlyKeys(value: RecordValue, keys: readonly string[]): boolean {
-  return Object.keys(value).every((key) => keys.includes(key));
+function fail(ctx: Ctx, message: string): false {
+  if (ctx.errors.length < MAX_ERRORS) ctx.errors.push(message);
+  return false;
 }
 
-function text(value: unknown, max = MAX_SHORT_TEXT): value is string {
-  return typeof value === "string" && value.length <= max;
+function checkKeys(ctx: Ctx, path: string, value: RecordValue, keys: readonly string[]): boolean {
+  const extra = Object.keys(value).filter((key) => !keys.includes(key));
+  if (extra.length === 0) return true;
+  return fail(ctx, `${path}: claves desconocidas: ${extra.join(", ")}`);
 }
 
-function url(value: unknown): value is string {
-  return text(value, 2_048) && (value === "" || SAFE_URL.test(value));
+function checkText(ctx: Ctx, path: string, value: unknown, max = MAX_SHORT_TEXT): boolean {
+  if (typeof value !== "string") return fail(ctx, `${path}: falta o no es string`);
+  if (value.length > max) return fail(ctx, `${path}: excede ${max} caracteres`);
+  return true;
 }
 
-function arrayOf<T>(
+function checkUrl(ctx: Ctx, path: string, value: unknown): boolean {
+  if (typeof value !== "string") return fail(ctx, `${path}: falta o no es string`);
+  if (value.length > 2_048) return fail(ctx, `${path}: excede 2048 caracteres`);
+  if (value !== "" && !SAFE_URL.test(value)) {
+    return fail(ctx, `${path}: debe ser URL https://, mailto: o cadena vacía`);
+  }
+  return true;
+}
+
+function checkBool(ctx: Ctx, path: string, value: unknown): boolean {
+  if (typeof value === "boolean") return true;
+  return fail(ctx, `${path}: debe ser boolean`);
+}
+
+function checkArray(
+  ctx: Ctx,
+  path: string,
   value: unknown,
-  check: (item: unknown) => item is T,
-): value is T[] {
-  return Array.isArray(value) && value.length <= MAX_ITEMS && value.every(check);
+  item: (ctx: Ctx, path: string, value: unknown) => boolean,
+): boolean {
+  if (!Array.isArray(value)) return fail(ctx, `${path}: falta o no es array`);
+  if (value.length > MAX_ITEMS) return fail(ctx, `${path}: máximo ${MAX_ITEMS} elementos`);
+  let ok = true;
+  value.forEach((entry, index) => {
+    ok = item(ctx, `${path}[${index}]`, entry) && ok;
+  });
+  return ok;
 }
 
-function story(value: unknown): value is Story {
-  return isRecord(value) && hasOnlyKeys(value, ["eyebrow", "title", "href", "body"])
-    && text(value.eyebrow) && text(value.title) && url(value.href) && text(value.body, MAX_BODY_TEXT);
+function checkObject(
+  ctx: Ctx,
+  path: string,
+  value: unknown,
+  keys: readonly string[],
+  fields: (ctx: Ctx, path: string, value: RecordValue) => boolean,
+): boolean {
+  if (!isRecord(value)) return fail(ctx, `${path}: falta o no es objeto`);
+  let ok = checkKeys(ctx, path, value, keys);
+  ok = fields(ctx, path, value) && ok;
+  return ok;
 }
 
-function essay(value: unknown): value is Essay {
-  return isRecord(value)
-    && hasOnlyKeys(value, ["eyebrow", "title", "body", "author", "authorRole", "linkText", "linkHref"])
-    && text(value.eyebrow) && text(value.title) && text(value.body, MAX_BODY_TEXT)
-    && text(value.author) && text(value.authorRole) && text(value.linkText) && url(value.linkHref);
+function checkStory(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["eyebrow", "title", "href", "body"], (c, p, v) => {
+    let ok = checkText(c, `${p}.eyebrow`, v.eyebrow);
+    ok = checkText(c, `${p}.title`, v.title) && ok;
+    ok = checkUrl(c, `${p}.href`, v.href) && ok;
+    ok = checkText(c, `${p}.body`, v.body, MAX_BODY_TEXT) && ok;
+    return ok;
+  });
 }
 
-function useCase(value: unknown): value is UseCase {
-  return isRecord(value) && hasOnlyKeys(value, ["icon", "title", "body"])
-    && text(value.icon, 32) && text(value.title) && text(value.body, MAX_BODY_TEXT);
+function checkEssay(ctx: Ctx, path: string, value: unknown): boolean {
+  const keys = ["eyebrow", "title", "body", "author", "authorRole", "linkText", "linkHref"];
+  return checkObject(ctx, path, value, keys, (c, p, v) => {
+    let ok = checkText(c, `${p}.eyebrow`, v.eyebrow);
+    ok = checkText(c, `${p}.title`, v.title) && ok;
+    ok = checkText(c, `${p}.body`, v.body, MAX_BODY_TEXT) && ok;
+    ok = checkText(c, `${p}.author`, v.author) && ok;
+    ok = checkText(c, `${p}.authorRole`, v.authorRole) && ok;
+    ok = checkText(c, `${p}.linkText`, v.linkText) && ok;
+    ok = checkUrl(c, `${p}.linkHref`, v.linkHref) && ok;
+    return ok;
+  });
 }
 
-function project(value: unknown): value is ShowcaseProject {
-  return isRecord(value) && hasOnlyKeys(value, ["eyebrow", "title", "author", "href", "body"])
-    && text(value.eyebrow) && text(value.title) && text(value.author)
-    && url(value.href) && text(value.body, MAX_BODY_TEXT);
+function checkUseCase(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["icon", "title", "body"], (c, p, v) => {
+    let ok = checkText(c, `${p}.icon`, v.icon, 32);
+    ok = checkText(c, `${p}.title`, v.title) && ok;
+    ok = checkText(c, `${p}.body`, v.body, MAX_BODY_TEXT) && ok;
+    return ok;
+  });
 }
 
-function event(value: unknown): value is EventItem {
-  return isRecord(value) && hasOnlyKeys(value, ["day", "month", "label", "title", "body", "href"])
-    && text(value.day, 16) && text(value.month, 24) && text(value.label)
-    && text(value.title) && text(value.body, MAX_BODY_TEXT) && url(value.href);
+function checkProject(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["eyebrow", "title", "author", "href", "body"], (c, p, v) => {
+    let ok = checkText(c, `${p}.eyebrow`, v.eyebrow);
+    ok = checkText(c, `${p}.title`, v.title) && ok;
+    ok = checkText(c, `${p}.author`, v.author) && ok;
+    ok = checkUrl(c, `${p}.href`, v.href) && ok;
+    ok = checkText(c, `${p}.body`, v.body, MAX_BODY_TEXT) && ok;
+    return ok;
+  });
 }
 
-function community(value: unknown): value is Community {
-  return isRecord(value) && hasOnlyKeys(value, ["label", "title", "titleSuffix", "body", "stats"])
-    && text(value.label) && text(value.title) && text(value.titleSuffix)
-    && text(value.body, MAX_BODY_TEXT) && arrayOf(value.stats, (item): item is string => text(item));
+function checkEvent(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["day", "month", "label", "title", "body", "href"], (c, p, v) => {
+    let ok = checkText(c, `${p}.day`, v.day, 16);
+    ok = checkText(c, `${p}.month`, v.month, 24) && ok;
+    ok = checkText(c, `${p}.label`, v.label) && ok;
+    ok = checkText(c, `${p}.title`, v.title) && ok;
+    ok = checkText(c, `${p}.body`, v.body, MAX_BODY_TEXT) && ok;
+    ok = checkUrl(c, `${p}.href`, v.href) && ok;
+    return ok;
+  });
 }
 
-function job(value: unknown): value is JobItem {
-  return isRecord(value) && hasOnlyKeys(value, ["label", "title", "meta", "href"])
-    && text(value.label) && text(value.title) && text(value.meta) && url(value.href);
+function checkCommunity(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["label", "title", "titleSuffix", "body", "stats"], (c, p, v) => {
+    let ok = checkText(c, `${p}.label`, v.label);
+    ok = checkText(c, `${p}.title`, v.title) && ok;
+    ok = checkText(c, `${p}.titleSuffix`, v.titleSuffix) && ok;
+    ok = checkText(c, `${p}.body`, v.body, MAX_BODY_TEXT) && ok;
+    ok = checkArray(c, `${p}.stats`, v.stats, (cc, pp, vv) => checkText(cc, pp, vv)) && ok;
+    return ok;
+  });
 }
 
-function buildersLink(value: unknown): value is BuildersMexicoLink {
-  return isRecord(value) && hasOnlyKeys(value, ["text", "href"])
-    && text(value.text) && url(value.href);
+function checkJob(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["label", "title", "meta", "href"], (c, p, v) => {
+    let ok = checkText(c, `${p}.label`, v.label);
+    ok = checkText(c, `${p}.title`, v.title) && ok;
+    ok = checkText(c, `${p}.meta`, v.meta) && ok;
+    ok = checkUrl(c, `${p}.href`, v.href) && ok;
+    return ok;
+  });
 }
 
-function buildersItem(value: unknown): value is BuildersMexicoItem {
-  return isRecord(value) && hasOnlyKeys(value, ["title", "body", "href"])
-    && text(value.title) && text(value.body, MAX_BODY_TEXT) && url(value.href);
+function checkBuildersLink(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["text", "href"], (c, p, v) => {
+    let ok = checkText(c, `${p}.text`, v.text);
+    ok = checkUrl(c, `${p}.href`, v.href) && ok;
+    return ok;
+  });
 }
 
-function sponsor(value: unknown): value is SponsorPlacement {
-  return isRecord(value) && hasOnlyKeys(value, ["title", "description", "href"])
-    && text(value.title) && (value.description === undefined || text(value.description, MAX_BODY_TEXT))
-    && url(value.href);
+function checkBuildersItem(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["title", "body", "href"], (c, p, v) => {
+    let ok = checkText(c, `${p}.title`, v.title);
+    ok = checkText(c, `${p}.body`, v.body, MAX_BODY_TEXT) && ok;
+    ok = checkUrl(c, `${p}.href`, v.href) && ok;
+    return ok;
+  });
+}
+
+function checkSponsor(ctx: Ctx, path: string, value: unknown): boolean {
+  return checkObject(ctx, path, value, ["title", "description", "href"], (c, p, v) => {
+    let ok = checkText(c, `${p}.title`, v.title);
+    ok = (v.description === undefined || checkText(c, `${p}.description`, v.description, MAX_BODY_TEXT)) && ok;
+    ok = checkUrl(c, `${p}.href`, v.href) && ok;
+    return ok;
+  });
 }
 
 const BASE_KEYS = [
@@ -108,46 +184,72 @@ const BASE_KEYS = [
   "buildersMexicoItems", "community", "jobs",
 ] as const;
 
-function baseIssue(value: unknown): value is BaseIssue {
-  if (!isRecord(value) || !hasOnlyKeys(value, BASE_KEYS)) return false;
-  return text(value.slug, 64)
-    && text(value.subject) && text(value.preview) && text(value.issueLabel)
-    && (value.archivePublished === undefined || typeof value.archivePublished === "boolean")
-    && (value.showIssueLabel === undefined || typeof value.showIssueLabel === "boolean")
-    && text(value.date) && text(value.readingTime) && text(value.title)
-    && text(value.subtitle, MAX_BODY_TEXT)
-    && (value.adPlacement === undefined || isAdPlacement(value.adPlacement))
-    && (value.sponsor === undefined || sponsor(value.sponsor))
-    && arrayOf(value.stories, story) && essay(value.essay) && arrayOf(value.useCases, useCase)
-    && (value.projectsLabel === undefined || text(value.projectsLabel))
-    && (value.projects === undefined || arrayOf(value.projects, project))
-    && (value.eventsLabel === undefined || text(value.eventsLabel))
-    && arrayOf(value.events, event)
-    && (value.buildersMexico === undefined || buildersLink(value.buildersMexico))
-    && (value.buildersMexicoItems === undefined || arrayOf(value.buildersMexicoItems, buildersItem))
-    && community(value.community) && arrayOf(value.jobs, job);
+function checkBaseIssue(ctx: Ctx, path: string, value: RecordValue): boolean {
+  let ok = checkKeys(ctx, path, value, BASE_KEYS);
+  ok = checkText(ctx, `${path}.slug`, value.slug, 64) && ok;
+  ok = checkText(ctx, `${path}.subject`, value.subject) && ok;
+  ok = checkText(ctx, `${path}.preview`, value.preview) && ok;
+  ok = checkText(ctx, `${path}.issueLabel`, value.issueLabel) && ok;
+  ok = (value.archivePublished === undefined || checkBool(ctx, `${path}.archivePublished`, value.archivePublished)) && ok;
+  ok = (value.showIssueLabel === undefined || checkBool(ctx, `${path}.showIssueLabel`, value.showIssueLabel)) && ok;
+  ok = checkText(ctx, `${path}.date`, value.date) && ok;
+  ok = checkText(ctx, `${path}.readingTime`, value.readingTime) && ok;
+  ok = checkText(ctx, `${path}.title`, value.title) && ok;
+  ok = checkText(ctx, `${path}.subtitle`, value.subtitle, MAX_BODY_TEXT) && ok;
+  ok = (value.adPlacement === undefined || isAdPlacement(value.adPlacement)
+    || fail(ctx, `${path}.adPlacement: debe ser uno de ${AD_PLACEMENTS.join(", ")}`)) && ok;
+  ok = (value.sponsor === undefined || checkSponsor(ctx, `${path}.sponsor`, value.sponsor)) && ok;
+  ok = checkArray(ctx, `${path}.stories`, value.stories, checkStory) && ok;
+  ok = checkEssay(ctx, `${path}.essay`, value.essay) && ok;
+  ok = checkArray(ctx, `${path}.useCases`, value.useCases, checkUseCase) && ok;
+  ok = (value.projectsLabel === undefined || checkText(ctx, `${path}.projectsLabel`, value.projectsLabel)) && ok;
+  ok = (value.projects === undefined || checkArray(ctx, `${path}.projects`, value.projects, checkProject)) && ok;
+  ok = (value.eventsLabel === undefined || checkText(ctx, `${path}.eventsLabel`, value.eventsLabel)) && ok;
+  ok = checkArray(ctx, `${path}.events`, value.events, checkEvent) && ok;
+  ok = (value.buildersMexico === undefined || checkBuildersLink(ctx, `${path}.buildersMexico`, value.buildersMexico)) && ok;
+  ok = (value.buildersMexicoItems === undefined || checkArray(ctx, `${path}.buildersMexicoItems`, value.buildersMexicoItems, checkBuildersItem)) && ok;
+  ok = checkCommunity(ctx, `${path}.community`, value.community) && ok;
+  ok = checkArray(ctx, `${path}.jobs`, value.jobs, checkJob) && ok;
+  return ok;
 }
 
-export function parseIssue(value: unknown): Issue | null {
-  let serialized: string;
+export type IssueValidation =
+  | { issue: Issue; errors?: undefined }
+  | { issue?: undefined; errors: string[] };
+
+export function validateIssue(value: unknown): IssueValidation {
+  let serialized: string | undefined;
   try {
     serialized = JSON.stringify(value);
   } catch {
-    return null;
+    return { errors: ["issue: no es serializable a JSON"] };
   }
-  if (serialized.length > MAX_SERIALIZED_CHARS || !isRecord(value)) return null;
-  if (!hasOnlyKeys(value, [...BASE_KEYS, "spanish", "spanishTranslationStale"])) return null;
+  if (serialized === undefined) return { errors: ["issue: no es serializable a JSON"] };
+  if (serialized.length > MAX_SERIALIZED_CHARS) {
+    return { errors: [`issue: excede ${MAX_SERIALIZED_CHARS} caracteres serializado`] };
+  }
+  if (!isRecord(value)) return { errors: ["issue: falta o no es objeto"] };
 
+  const ctx: Ctx = { errors: [] };
+  checkKeys(ctx, "issue", value, [...BASE_KEYS, "spanish", "spanishTranslationStale"]);
   const original = Object.fromEntries(
     Object.entries(value).filter(([key]) => key !== "spanish" && key !== "spanishTranslationStale"),
   );
-  if (!baseIssue(original)) return null;
-  if (value.spanish !== undefined && !baseIssue(value.spanish)) return null;
-  if (
-    value.spanishTranslationStale !== undefined
-    && typeof value.spanishTranslationStale !== "boolean"
-  ) return null;
-  return value as unknown as Issue;
+  checkBaseIssue(ctx, "issue", original);
+  if (value.spanish !== undefined) {
+    if (!isRecord(value.spanish)) fail(ctx, "issue.spanish: falta o no es objeto");
+    else checkBaseIssue(ctx, "issue.spanish", value.spanish);
+  }
+  if (value.spanishTranslationStale !== undefined && typeof value.spanishTranslationStale !== "boolean") {
+    fail(ctx, "issue.spanishTranslationStale: debe ser boolean");
+  }
+
+  if (ctx.errors.length > 0) return { errors: ctx.errors };
+  return { issue: value as unknown as Issue };
+}
+
+export function parseIssue(value: unknown): Issue | null {
+  return validateIssue(value).issue ?? null;
 }
 
 export const newsletterIssueJsonSchema = {

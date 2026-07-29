@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emptyIssue } from "@/lib/newsletter/issue";
-import { parseIssue } from "@/lib/newsletter/validation";
+import { parseIssue, validateIssue } from "@/lib/newsletter/validation";
 
 describe("MCP newsletter runtime validation", () => {
   it("accepts the canonical empty issue", () => {
@@ -42,5 +42,54 @@ describe("MCP newsletter runtime validation", () => {
 
   it("rejects oversized content", () => {
     expect(parseIssue({ ...emptyIssue("007"), subtitle: "x".repeat(210_000) })).toBeNull();
+  });
+});
+
+describe("validateIssue error paths", () => {
+  it("returns the issue for a valid input", () => {
+    const result = validateIssue(emptyIssue("008"));
+    expect(result.errors).toBeUndefined();
+    expect(result.issue).toEqual(emptyIssue("008"));
+  });
+
+  it("names the exact field for a bad URL inside an array", () => {
+    const result = validateIssue({
+      ...emptyIssue("008"),
+      stories: [
+        { eyebrow: "01", title: "Ok", href: "https://ok.dev", body: "b" },
+        { eyebrow: "02", title: "Bad", href: "javascript:alert(1)", body: "b" },
+      ],
+    });
+    expect(result.issue).toBeUndefined();
+    expect(result.errors).toEqual([
+      "issue.stories[1].href: debe ser URL https://, mailto: o cadena vacía",
+    ]);
+  });
+
+  it("reports missing required fields and unknown keys with paths", () => {
+    const { subject: _omit, ...withoutSubject } = emptyIssue("008");
+    const result = validateIssue({ ...withoutSubject, status: "sent" });
+    expect(result.errors).toContain("issue: claves desconocidas: status");
+    expect(result.errors).toContain("issue.subject: falta o no es string");
+  });
+
+  it("reports nested errors inside the spanish variant", () => {
+    const spanish = { ...emptyIssue("008"), essay: { ...emptyIssue("008").essay, linkHref: "ftp://x" } };
+    delete (spanish as Record<string, unknown>).spanish;
+    const result = validateIssue({ ...emptyIssue("008"), spanish });
+    expect(result.errors).toEqual([
+      "issue.spanish.essay.linkHref: debe ser URL https://, mailto: o cadena vacía",
+    ]);
+  });
+
+  it("caps output at 20 errors", () => {
+    const stories = Array.from({ length: 30 }, () => ({ eyebrow: 1, title: 1, href: 1, body: 1 }));
+    const result = validateIssue({ ...emptyIssue("008"), stories });
+    expect(result.errors).toHaveLength(20);
+  });
+
+  it("rejects oversized payloads with a single clear error", () => {
+    const result = validateIssue({ ...emptyIssue("008"), subtitle: "x".repeat(210_000) });
+    expect(result.errors).toEqual(["issue: excede 200000 caracteres serializado"]);
   });
 });
