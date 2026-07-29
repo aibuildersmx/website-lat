@@ -9,6 +9,7 @@ import { getUser } from "@/lib/auth";
 import type { BaseIssue, Issue } from "@/lib/newsletter/types";
 import { emptyIssue } from "@/lib/newsletter/issue";
 import { insertNewsletterDraft } from "@/lib/newsletter/draft-create";
+import { previewHtml } from "@/lib/newsletter/preview";
 import { renderBuildLog } from "@/lib/newsletter/render";
 import { loadNewsletterConfig, MissingEnvError } from "@/lib/newsletter/resend";
 import { subscribedRecipients, chunk } from "@/lib/newsletter/recipients";
@@ -118,15 +119,6 @@ async function gate(): Promise<ActionError | null> {
   const user = await getUser();
   if (!user) return { error: "No autorizado." };
   return null;
-}
-
-// Replace Resend's unsubscribe placeholder so previews/tests render a real (no-op)
-// link instead of a literal token. The real token is only injected by Resend
-// when it sends an actual broadcast.
-function previewHtml(issue: Issue): string {
-  return stripTracking(
-    renderBuildLog(issue).replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, "#"),
-  );
 }
 
 async function uploadedText(value: FormDataEntryValue | null): Promise<string> {
