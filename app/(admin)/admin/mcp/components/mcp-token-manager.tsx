@@ -41,8 +41,31 @@ export function McpTokenManager({ endpoint }: { endpoint: string }) {
         <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Nueva conexión</p>
         <h2 className="mt-1 text-lg font-medium text-gray-800 dark:text-gray-100">Crear token personal</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">
-          El token vence en 90 días. Solo permite leer, crear y editar borradores; no puede publicar, enviar ni eliminar newsletters.
+          El token vence en 90 días. Ningún preset puede publicar, enviar ni eliminar newsletters.
         </p>
+        <fieldset className="mt-5 max-w-2xl">
+          <legend className="text-xs font-medium text-gray-400 dark:text-gray-500">Permisos</legend>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-4">
+            <label className="flex flex-1 cursor-pointer items-start gap-3 rounded-xl border border-black/10 p-3 transition hover:border-black/30 dark:border-white/15 dark:hover:border-white/35">
+              <input type="radio" name="scopes" value="editor" defaultChecked className="mt-1" />
+              <span>
+                <span className="block text-sm font-medium text-gray-800 dark:text-gray-100">Editor completo</span>
+                <span className="mt-1 block text-xs leading-5 text-gray-500 dark:text-gray-400">
+                  Leer, crear y editar borradores, más preview. No puede publicar ni enviar.
+                </span>
+              </span>
+            </label>
+            <label className="flex flex-1 cursor-pointer items-start gap-3 rounded-xl border border-black/10 p-3 transition hover:border-black/30 dark:border-white/15 dark:hover:border-white/35">
+              <input type="radio" name="scopes" value="preview" className="mt-1" />
+              <span>
+                <span className="block text-sm font-medium text-gray-800 dark:text-gray-100">Solo preview</span>
+                <span className="mt-1 block text-xs leading-5 text-gray-500 dark:text-gray-400">
+                  Valida y renderiza issues sin tocar la base. Para quien arma el contenido.
+                </span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
         <div className="mt-5 flex max-w-2xl flex-col gap-3 sm:flex-row">
           <input
             name="name"
