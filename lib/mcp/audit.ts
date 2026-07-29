@@ -42,7 +42,7 @@ export async function claimMcpRateLimit(
   });
 }
 
-export async function withinMcpMutationRateLimit(
+export async function withinMcpOperationRateLimit(
   actor: McpActor,
   operation: string,
 ): Promise<boolean> {
@@ -51,6 +51,9 @@ export async function withinMcpMutationRateLimit(
   }
   if (operation === "update_newsletter_draft" || operation === "set_newsletter_ad_placement") {
     return claimMcpRateLimit(`token:${actor.tokenId}:update`, 30);
+  }
+  if (operation === "preview_newsletter_issue") {
+    return claimMcpRateLimit(`token:${actor.tokenId}:preview`, 20);
   }
   return true;
 }

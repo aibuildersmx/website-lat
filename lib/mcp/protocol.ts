@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { MCP_READ_SCOPE, MCP_WRITE_SCOPE, hasScope, type McpActor } from "./auth";
+import { MCP_PREVIEW_SCOPE, MCP_READ_SCOPE, MCP_WRITE_SCOPE, hasScope, type McpActor } from "./auth";
 import {
   recordMcpAudit,
-  withinMcpMutationRateLimit,
+  withinMcpOperationRateLimit,
   type McpRequestMetadata,
 } from "./audit";
 import {
@@ -15,8 +15,9 @@ import {
 } from "./newsletters";
 import { isAdPlacement } from "@/lib/newsletter/ad-placement";
 import { newsletterIssueJsonSchema } from "@/lib/newsletter/issue-schema";
-import { AD_PLACEMENTS } from "@/lib/newsletter/types";
-import { parseIssue } from "@/lib/newsletter/validation";
+import { issueWarnings, previewHtml } from "@/lib/newsletter/preview";
+import { AD_PLACEMENTS, type Issue } from "@/lib/newsletter/types";
+import { validateIssue } from "@/lib/newsletter/validation";
 
 type JsonRpcId = string | number | null;
 type JsonRpcResponse =
@@ -98,6 +99,21 @@ export const NEWSLETTER_MCP_TOOLS = [
       additionalProperties: false,
     },
   },
+  {
+    name: "preview_newsletter_issue",
+    title: "Preview a newsletter issue",
+    description:
+      "Validate an Issue and render the exact HTML the send would produce (spanish ?? base variant). " +
+      "Stateless: reads and writes nothing — safe to call as often as needed while iterating. " +
+      "The html field is tens of KB: save it to a file and open it in a browser; never echo it into the conversation.",
+    scope: MCP_PREVIEW_SCOPE,
+    inputSchema: {
+      type: "object",
+      properties: { issue: newsletterIssueJsonSchema },
+      required: ["issue"],
+      additionalProperties: false,
+    },
+  },
 ] as const;
 
 function isRecord(value: unknown): value is RecordValue {
@@ -161,9 +177,18 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
     if (input.subject !== undefined && (typeof input.subject !== "string" || input.subject.length > 2_000)) {
       return { result: toolResult("subject must be a string no longer than 2,000 characters.", true), errorCode: "invalid_arguments" };
     }
-    const issue = input.issue === undefined ? undefined : parseIssue(input.issue);
-    if (input.issue !== undefined && !issue) return { result: toolResult("issue does not match the newsletter data model.", true), errorCode: "invalid_arguments" };
-    const draft = await createNewsletterDraft(issue ?? undefined, input.subject as string | undefined);
+    let issue: Issue | undefined;
+    if (input.issue !== undefined) {
+      const validated = validateIssue(input.issue);
+      if (validated.errors) {
+        return {
+          result: toolResult({ error: "issue no cumple el modelo del newsletter.", details: validated.errors }, true),
+          errorCode: "invalid_arguments",
+        };
+      }
+      issue = validated.issue;
+    }
+    const draft = await createNewsletterDraft(issue, input.subject as string | undefined);
     return { result: toolResult(draft), newsletterId: draft.id };
   }
 
@@ -174,10 +199,15 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
     if (!Number.isInteger(args.expected_revision) || Number(args.expected_revision) < 1) {
       return { result: toolResult("expected_revision must be a positive integer.", true), errorCode: "invalid_arguments" };
     }
-    const issue = parseIssue(args.issue);
-    if (!issue) return { result: toolResult("issue does not match the newsletter data model.", true), errorCode: "invalid_arguments" };
+    const validated = validateIssue(args.issue);
+    if (validated.errors) {
+      return {
+        result: toolResult({ error: "issue no cumple el modelo del newsletter.", details: validated.errors }, true),
+        errorCode: "invalid_arguments",
+      };
+    }
     try {
-      const draft = await updateNewsletterDraft(args.id, Number(args.expected_revision), issue);
+      const draft = await updateNewsletterDraft(args.id, Number(args.expected_revision), validated.issue);
       return { result: toolResult(draft), newsletterId: args.id };
     } catch (cause) {
       if (cause instanceof DraftConflictError) {
@@ -206,6 +236,26 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
       }
       throw cause;
     }
+  }
+
+  if (name === "preview_newsletter_issue") {
+    if (!validArguments(args, ["issue"]) || args.issue === undefined) {
+      return { result: toolResult("issue es requerido.", true), errorCode: "invalid_arguments" };
+    }
+    const validated = validateIssue(args.issue);
+    if (validated.errors) {
+      return {
+        result: toolResult({ valid: false, errors: validated.errors }, true),
+        errorCode: "invalid_issue",
+      };
+    }
+    return {
+      result: toolResult({
+        valid: true,
+        warnings: issueWarnings(validated.issue),
+        html: previewHtml(validated.issue),
+      }),
+    };
   }
 
   return { protocolError: error(null, -32602, "Unknown tool.") };
@@ -273,7 +323,7 @@ export async function handleMcpRequest(
 
   const operation = message.params.name.slice(0, 100);
   const started = performance.now();
-  if (!(await withinMcpMutationRateLimit(actor, operation))) {
+  if (!(await withinMcpOperationRateLimit(actor, operation))) {
     await recordMcpAudit({ actor, metadata, operation, outcome: "denied", errorCode: "rate_limited", durationMs: performance.now() - started });
     return success(responseId, toolResult("Rate limit exceeded. Try again in one minute.", true));
   }

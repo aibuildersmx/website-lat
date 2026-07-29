@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   placeAd: vi.fn(),
   rate: vi.fn(),
   audit: vi.fn(),
+  preview: vi.fn(),
+  warnings: vi.fn(),
 }));
 
 vi.mock("@/lib/mcp/newsletters", () => ({
@@ -19,13 +21,18 @@ vi.mock("@/lib/mcp/newsletters", () => ({
   setNewsletterAdPlacement: mocks.placeAd,
 }));
 vi.mock("@/lib/mcp/audit", () => ({
-  withinMcpMutationRateLimit: mocks.rate,
+  withinMcpOperationRateLimit: mocks.rate,
   recordMcpAudit: mocks.audit,
 }));
 vi.mock("@/lib/mcp/auth", () => ({
   MCP_READ_SCOPE: "newsletter:drafts:read",
   MCP_WRITE_SCOPE: "newsletter:drafts:write",
+  MCP_PREVIEW_SCOPE: "newsletter:preview",
   hasScope: (actor: { scopes: string[] }, scope: string) => actor.scopes.includes(scope),
+}));
+vi.mock("@/lib/newsletter/preview", () => ({
+  previewHtml: mocks.preview,
+  issueWarnings: mocks.warnings,
 }));
 
 import { MCP_READ_SCOPE, MCP_WRITE_SCOPE } from "@/lib/mcp/auth";
@@ -36,7 +43,7 @@ import { emptyIssue } from "@/lib/newsletter/issue";
 const actor = {
   userId: "10000000-0000-4000-8000-000000000001",
   tokenId: "10000000-0000-4000-8000-000000000002",
-  scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE],
+  scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE, "newsletter:preview"],
 };
 
 describe("newsletter MCP protocol", () => {
@@ -44,6 +51,8 @@ describe("newsletter MCP protocol", () => {
     vi.clearAllMocks();
     mocks.rate.mockResolvedValue(true);
     mocks.audit.mockResolvedValue(undefined);
+    mocks.preview.mockReturnValue("<!doctype html><html>preview</html>");
+    mocks.warnings.mockReturnValue(["stories está vacío."]);
   });
 
   it("exposes only draft-safe tools", () => {
@@ -53,6 +62,7 @@ describe("newsletter MCP protocol", () => {
       "create_newsletter_draft",
       "update_newsletter_draft",
       "set_newsletter_ad_placement",
+      "preview_newsletter_issue",
     ]);
     expect(NEWSLETTER_MCP_TOOLS.map((tool) => tool.name).join(" ")).not.toMatch(/publish|delete|send|translate/);
   });
@@ -213,5 +223,74 @@ describe("newsletter MCP protocol", () => {
     }, { ...actor, scopes: [MCP_READ_SCOPE] });
     expect(response && "result" in response ? response.result.isError : false).toBe(true);
     expect(mocks.placeAd).not.toHaveBeenCalled();
+  });
+
+  it("previews a valid issue without touching persistence", async () => {
+    const response = await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 10,
+      method: "tools/call",
+      params: { name: "preview_newsletter_issue", arguments: { issue: emptyIssue("011") } },
+    }, actor);
+    expect(response).toMatchObject({
+      result: {
+        structuredContent: {
+          valid: true,
+          warnings: ["stories está vacío."],
+          html: "<!doctype html><html>preview</html>",
+        },
+      },
+    });
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.get).not.toHaveBeenCalled();
+    expect(mocks.list).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("returns field-level errors and no html for an invalid issue", async () => {
+    const response = await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 11,
+      method: "tools/call",
+      params: { name: "preview_newsletter_issue", arguments: { issue: { nope: true } } },
+    }, actor);
+    const result = response && "result" in response ? response.result : null;
+    expect(result?.isError).toBe(true);
+    const text = (result?.content as Array<{ text: string }>)[0]?.text ?? "";
+    expect(text).toContain('"valid": false');
+    expect(text).toContain("claves desconocidas: nope");
+    expect(text).not.toContain("<!doctype");
+    expect(mocks.preview).not.toHaveBeenCalled();
+  });
+
+  it("hides the preview tool from tokens without the preview scope", async () => {
+    const response = await handleMcpRequest(
+      { jsonrpc: "2.0", id: "t", method: "tools/list" },
+      { ...actor, scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE] },
+    );
+    const tools = response && "result" in response ? (response.result.tools as Array<{ name: string }>) : [];
+    expect(tools.map((tool) => tool.name)).not.toContain("preview_newsletter_issue");
+  });
+
+  it("a preview-only token sees exactly one tool", async () => {
+    const response = await handleMcpRequest(
+      { jsonrpc: "2.0", id: "p", method: "tools/list" },
+      { ...actor, scopes: ["newsletter:preview"] },
+    );
+    const tools = response && "result" in response ? (response.result.tools as Array<{ name: string }>) : [];
+    expect(tools.map((tool) => tool.name)).toEqual(["preview_newsletter_issue"]);
+  });
+
+  it("surfaces field-level details when create receives a bad issue", async () => {
+    const response = await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 12,
+      method: "tools/call",
+      params: { name: "create_newsletter_draft", arguments: { issue: { nope: true } } },
+    }, actor);
+    const result = response && "result" in response ? response.result : null;
+    expect(result?.isError).toBe(true);
+    expect((result?.content as Array<{ text: string }>)[0]?.text).toContain("claves desconocidas: nope");
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 });
