@@ -4,6 +4,7 @@ import type { DB } from "@/lib/db/client";
 import { contacts, newsletterIssues, newsletterSends, newsletterWarmup } from "@/lib/db/schema";
 import type { Issue } from "./types";
 import { renderBuildLog } from "./render";
+import { wrapEmailLinks } from "./links";
 import { injectUnsubscribe, unsubscribeHeaders } from "./unsubscribe";
 import { injectTracking } from "./tracking";
 
@@ -58,7 +59,11 @@ export async function processSendBatch(
       from,
       to: [r.email],
       subject: issue.spanish?.subject ?? issue.subject,
-      html: injectTracking(injectUnsubscribe(html, r.contactId, issueId), r.contactId, issueId),
+      html: injectTracking(
+        wrapEmailLinks(injectUnsubscribe(html, r.contactId, issueId)),
+        r.contactId,
+        issueId,
+      ),
       replyTo,
       headers: unsubscribeHeaders(r.contactId, issueId),
     })),
