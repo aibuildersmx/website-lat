@@ -52,7 +52,10 @@ function verifySig(token: string, sig: string): boolean {
  * http(s) links are wrapped; mailto:, anchors, and links already on our own
  * domain are returned untouched (no point bouncing those through the redirector).
  */
-export function wrapLink(url: string): string {
+export function wrapLink(
+  url: string,
+  { includeSiteLinks = false }: { includeSiteLinks?: boolean } = {},
+): string {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -62,10 +65,39 @@ export function wrapLink(url: string): string {
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return url;
 
   const site = new URL(siteUrl());
-  if (parsed.hostname === site.hostname) return url; // already our domain
+  if (parsed.hostname === site.hostname && !includeSiteLinks) return url; // already our domain
 
   const token = encodeTarget(url);
   return `${siteUrl()}/r/${token}?s=${sign(token)}`;
+}
+
+/**
+ * Route every web link in rendered newsletter HTML through the signed
+ * redirector. This must run immediately before sending: links created in the
+ * admin composer do not pass through the legacy import script, and therefore
+ * would otherwise bypass first-party click attribution.
+ *
+ * The renderer only emits quoted href attributes. Existing redirect links are
+ * left alone, so this is safe for imported issues as well.
+ */
+export function wrapEmailLinks(html: string): string {
+  return html.replace(
+    /(<a\b[^>]*\bhref=)(["'])([^"']*)(\2)/gi,
+    (_match, prefix: string, quote: string, href: string) => {
+      // render.ts HTML-escapes content URLs, so recover query-string ampersands
+      // before signing the actual destination.
+      const target = href.replaceAll("&amp;", "&");
+      try {
+        const parsed = new URL(target);
+        if (parsed.pathname.startsWith("/r/") && parsed.origin === new URL(siteUrl()).origin) {
+          return `${prefix}${quote}${target}${quote}`;
+        }
+      } catch {
+        // Let wrapLink preserve relative, malformed, and non-web destinations.
+      }
+      return `${prefix}${quote}${wrapLink(target, { includeSiteLinks: true })}${quote}`;
+    },
+  );
 }
 
 /** Resolve a /r token+signature back to its target URL, or null if invalid. */
