@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   description: "Panel de administración de AI Builders Latam.",
   icons: { icon: "/favicon.svg" },
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 };
 
 export default function AdminRootLayout({

@@ -57,6 +57,13 @@
       "when": 1783920919656,
       "tag": "0007_tidy_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788836395735,
+      "tag": "0008_aspiring_wallflower",
+      "breakpoints": true
     }
   ]
 }

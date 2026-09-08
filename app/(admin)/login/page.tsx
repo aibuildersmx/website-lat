@@ -75,26 +75,30 @@ export default function LoginPage() {
         {/* Form */}
         <form action={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+            <label htmlFor="email" className="font-mono text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
               Correo electrónico
             </label>
             <input
               type="email"
+              id="email"
               name="email"
               required
+              autoComplete="email"
               placeholder="hola@aibuilders.lat"
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 placeholder:text-gray-300 transition-colors hover:border-gray-300 focus:border-gray-400 focus:outline-none dark:border-white/15 dark:bg-neutral-900 dark:text-gray-100 dark:placeholder:text-gray-600 dark:hover:border-white/25 dark:focus:border-white/40"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+            <label htmlFor="password" className="font-mono text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
               Contraseña
             </label>
             <input
               type="password"
+              id="password"
               name="password"
               required
+              autoComplete="current-password"
               placeholder="••••••••"
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 placeholder:text-gray-300 transition-colors hover:border-gray-300 focus:border-gray-400 focus:outline-none dark:border-white/15 dark:bg-neutral-900 dark:text-gray-100 dark:placeholder:text-gray-600 dark:hover:border-white/25 dark:focus:border-white/40"
             />
@@ -113,6 +117,13 @@ export default function LoginPage() {
             )}
             {loading ? "Ingresando..." : "Ingresar"}
           </motion.button>
+
+          <Link
+            href="/forgot-password"
+            className="text-center text-sm text-gray-500 transition hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
         </form>
 
         {/* Footer */}
