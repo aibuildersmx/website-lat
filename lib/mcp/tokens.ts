@@ -17,7 +17,7 @@ export function hashMcpToken(raw: string): string {
 
 export function bearerToken(header: string | null): string | null {
   if (!header) return null;
-  const match = /^Bearer ([^\s,]+)$/.exec(header);
+  const match = /^Bearer[ \t]+([^\s,]+)$/i.exec(header);
   return match?.[1] ?? null;
 }
 

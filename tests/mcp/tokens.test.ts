@@ -11,9 +11,15 @@ describe("MCP credentials", () => {
     expect(token.displayPrefix).not.toBe(token.raw);
   });
 
-  it("accepts one strict bearer credential and rejects malformed headers", () => {
+  it("accepts a case-insensitive Bearer scheme with required whitespace", () => {
     expect(bearerToken("Bearer aibl_mcp_v1_secret")).toBe("aibl_mcp_v1_secret");
-    expect(bearerToken("bearer secret")).toBeNull();
+    expect(bearerToken("bearer aibl_mcp_v1_secret")).toBe("aibl_mcp_v1_secret");
+    expect(bearerToken("BEARER\taibl_mcp_v1_secret")).toBe("aibl_mcp_v1_secret");
+  });
+
+  it("rejects missing, unsupported, and ambiguous credentials", () => {
+    expect(bearerToken("Beareraibl_mcp_v1_secret")).toBeNull();
+    expect(bearerToken("Basic aibl_mcp_v1_secret")).toBeNull();
     expect(bearerToken("Bearer one, Bearer two")).toBeNull();
     expect(bearerToken("Bearer token with spaces")).toBeNull();
     expect(bearerToken(null)).toBeNull();
