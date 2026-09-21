@@ -141,13 +141,23 @@ export function IssueEditor({
 
   function onCanvasChange(next: BaseIssue) {
     setSaveState("saving");
+    const current = editorLanguage === "es" && issue.spanish ? issue.spanish : issue;
+    const placementChanged = next.adPlacement !== current.adPlacement;
     if (editorLanguage === "es") {
-      setIssue({ ...issue, spanish: next });
+      setIssue({
+        ...issue,
+        ...(placementChanged ? { adPlacement: next.adPlacement } : {}),
+        spanish: next,
+      });
       return;
     }
     setIssue({
       ...next,
-      spanish: issue.spanish,
+      spanish: issue.spanish
+        ? placementChanged
+          ? { ...issue.spanish, adPlacement: next.adPlacement }
+          : issue.spanish
+        : issue.spanish,
       spanishTranslationStale: issue.spanish ? true : undefined,
     });
   }

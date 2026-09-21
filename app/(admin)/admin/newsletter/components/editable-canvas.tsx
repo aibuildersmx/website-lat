@@ -1,13 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { AD_PLACEMENT_LABELS, isAdPlacement } from "@/lib/newsletter/ad-placement";
 import { cn } from "@/lib/utils";
-import type {
-  BaseIssue,
-  Story,
-  EventItem,
-  BuildersMexicoItem,
-} from "@/lib/newsletter/types";
+import { AD_PLACEMENTS, type BaseIssue, type Story, type EventItem, type BuildersMexicoItem } from "@/lib/newsletter/types";
 
 const SUBJECT_BASE = "The Build Log";
 
@@ -232,6 +228,76 @@ function AddButton({
   );
 }
 
+function SponsorSlot({
+  issue,
+  onChange,
+}: {
+  issue: BaseIssue;
+  onChange: (next: BaseIssue) => void;
+}) {
+  const patch = (p: Partial<BaseIssue>) => onChange({ ...issue, ...p });
+  const patchSponsor = (p: Partial<NonNullable<BaseIssue["sponsor"]>>) =>
+    onChange({
+      ...issue,
+      sponsor: { title: "", description: "", href: "", ...issue.sponsor, ...p },
+    });
+
+  return (
+    <div className="mt-4 py-2">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="font-mono text-[10px] font-medium uppercase text-gray-400 dark:text-gray-500">
+          Publicidad <span aria-hidden="true">—</span> Patrocina{" "}
+          <a
+            href="https://vacantes.lat/checkout/ad-sponsor"
+            target="_blank"
+            rel="noreferrer"
+            className="text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            este espacio
+          </a>
+        </p>
+        <label className="flex items-center gap-2 font-mono text-[10px] uppercase text-gray-400 dark:text-gray-500">
+          Posición
+          <select
+            aria-label="Posición del anuncio"
+            value={issue.adPlacement ?? "top"}
+            onChange={(event) => {
+              if (isAdPlacement(event.target.value)) patch({ adPlacement: event.target.value });
+            }}
+            className="rounded-lg border border-black/10 bg-white px-2 py-1 text-[10px] text-gray-600 outline-none dark:border-white/15 dark:bg-neutral-950 dark:text-gray-300"
+          >
+            {AD_PLACEMENTS.map((placement) => (
+              <option key={placement} value={placement}>
+                {AD_PLACEMENT_LABELS[placement]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="group">
+        <div className="text-base font-semibold leading-snug text-gray-800 dark:text-gray-100">
+          <Editable
+            value={issue.sponsor?.title ?? ""}
+            onChange={(title) => patchSponsor({ title })}
+            placeholder="Título del anuncio"
+          />
+        </div>
+        <div className="mt-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+          <Editable
+            value={issue.sponsor?.description ?? ""}
+            onChange={(description) => patchSponsor({ description })}
+            placeholder="Descripción de una línea (opcional)"
+          />
+        </div>
+        <LinkLine
+          value={issue.sponsor?.href ?? ""}
+          onChange={(href) => patchSponsor({ href })}
+        />
+      </div>
+    </div>
+  );
+}
+
 // --- the canvas -------------------------------------------------------------
 export function EditableCanvas({
   issue,
@@ -245,11 +311,8 @@ export function EditableCanvas({
     onChange({ ...issue, essay: { ...issue.essay, ...p } });
   const patchCommunity = (p: Partial<BaseIssue["community"]>) =>
     onChange({ ...issue, community: { ...issue.community, ...p } });
-  const patchSponsor = (p: Partial<NonNullable<BaseIssue["sponsor"]>>) =>
-    onChange({
-      ...issue,
-      sponsor: { title: "", description: "", href: "", ...issue.sponsor, ...p },
-    });
+  const adPlacement = issue.adPlacement ?? "top";
+  const sponsorSlot = <SponsorSlot issue={issue} onChange={onChange} />;
   const buildersMexicoItems: BuildersMexicoItem[] =
     issue.buildersMexicoItems ??
     (issue.buildersMexico?.text
@@ -335,40 +398,7 @@ export function EditableCanvas({
           ))}
         </div>
 
-        {/* Compact sponsor placement: CTA remains visible when inventory is empty. */}
-        <div className="mt-4 py-2">
-          <p className="font-mono text-[10px] font-medium uppercase text-gray-400 dark:text-gray-500">
-            Publicidad <span aria-hidden="true">—</span> Patrocina{" "}
-            <a
-              href="https://vacantes.lat/checkout/ad-sponsor"
-              target="_blank"
-              rel="noreferrer"
-              className="text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              este espacio
-            </a>
-          </p>
-          <div className="group mt-2">
-            <div className="text-base font-semibold leading-snug text-gray-800 dark:text-gray-100">
-              <Editable
-                value={issue.sponsor?.title ?? ""}
-                onChange={(title) => patchSponsor({ title })}
-                placeholder="Título del anuncio"
-              />
-            </div>
-            <div className="mt-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-              <Editable
-                value={issue.sponsor?.description ?? ""}
-                onChange={(description) => patchSponsor({ description })}
-                placeholder="Descripción de una línea (opcional)"
-              />
-            </div>
-            <LinkLine
-              value={issue.sponsor?.href ?? ""}
-              onChange={(href) => patchSponsor({ href })}
-            />
-          </div>
-        </div>
+        {adPlacement === "top" && sponsorSlot}
 
         {/* 01 — Stories */}
         <SectionHeader title="Esta semana en IA" compact />
@@ -416,6 +446,7 @@ export function EditableCanvas({
             })
           }
         />
+        {adPlacement === "after_stories" && sponsorSlot}
 
         {/* 02 — Essay */}
         <SectionHeader
@@ -471,6 +502,7 @@ export function EditableCanvas({
             />
           </div>
         </div>
+        {adPlacement === "after_essay" && sponsorSlot}
 
         {/* 03 — Events */}
         <SectionHeader
@@ -689,6 +721,7 @@ export function EditableCanvas({
             />
           </div>
         </div>
+        {adPlacement === "before_footer" && sponsorSlot}
 
         <footer className="mt-10 border-t border-gray-200 pt-8 text-gray-400 dark:border-white/10 dark:text-gray-500">
           <p className="mb-6 text-sm leading-6">

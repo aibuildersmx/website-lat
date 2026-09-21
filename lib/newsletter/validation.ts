@@ -1,3 +1,4 @@
+import { isAdPlacement } from "./ad-placement";
 import type {
   BaseIssue,
   BuildersMexicoItem,
@@ -102,7 +103,7 @@ function sponsor(value: unknown): value is SponsorPlacement {
 
 const BASE_KEYS = [
   "slug", "archivePublished", "subject", "preview", "issueLabel", "showIssueLabel",
-  "date", "readingTime", "title", "subtitle", "sponsor", "stories", "essay", "useCases",
+  "date", "readingTime", "title", "subtitle", "adPlacement", "sponsor", "stories", "essay", "useCases",
   "projectsLabel", "projects", "eventsLabel", "events", "buildersMexico",
   "buildersMexicoItems", "community", "jobs",
 ] as const;
@@ -115,6 +116,7 @@ function baseIssue(value: unknown): value is BaseIssue {
     && (value.showIssueLabel === undefined || typeof value.showIssueLabel === "boolean")
     && text(value.date) && text(value.readingTime) && text(value.title)
     && text(value.subtitle, MAX_BODY_TEXT)
+    && (value.adPlacement === undefined || isAdPlacement(value.adPlacement))
     && (value.sponsor === undefined || sponsor(value.sponsor))
     && arrayOf(value.stories, story) && essay(value.essay) && arrayOf(value.useCases, useCase)
     && (value.projectsLabel === undefined || text(value.projectsLabel))

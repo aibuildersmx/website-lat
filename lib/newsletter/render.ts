@@ -1,4 +1,4 @@
-import type { BaseIssue, Issue } from "./types";
+import type { AdPlacement, BaseIssue, Issue } from "./types";
 
 function esc(s: string): string {
   return s
@@ -37,6 +37,28 @@ function eyebrow(text: string): string {
 function eventLocation(label: string): string {
   const location = label.replace(/^(AI BUILDERS|AIBM)\s*[-·]\s*/i, "").trim();
   return /^ONLINE$/i.test(location) ? "VIRTUAL" : location || "VIRTUAL";
+}
+
+type SectionAnchor = "stories" | "essay" | "projects" | "events" | "builders" | "community";
+
+function insertSponsor(
+  rendered: string[],
+  anchors: SectionAnchor[],
+  placement: AdPlacement | undefined,
+  block: string,
+): string {
+  const body = rendered.join("\n");
+  const resolved = placement ?? "top";
+  if (resolved === "before_footer") return body ? `${body}\n${block}` : block;
+  if (resolved === "top") return body ? `${block}\n${body}` : block;
+
+  const anchor = resolved === "after_stories" ? "stories" : "essay";
+  const index = anchors.indexOf(anchor);
+  // A missing section has nowhere to follow, so the slot stays at the top.
+  if (index === -1) return body ? `${block}\n${body}` : block;
+  const before = rendered.slice(0, index + 1).join("\n");
+  const after = rendered.slice(index + 1).join("\n");
+  return after ? `${before}\n${block}\n${after}` : `${before}\n${block}`;
 }
 
 function sectionHeader(title: string, compact = false): string {
@@ -183,32 +205,32 @@ function renderIssue(issue: BaseIssue): string {
   // Sections render only when they carry content, and the "NN / TOTAL" counter
   // is computed from how many actually render — so an issue without an essay
   // shows "01 / 04" instead of a hardcoded "/ 05" with an empty card.
-  const sections: Array<[string, string, boolean?]> = [];
+  const sections: Array<{ anchor: SectionAnchor; title: string; body: string; compact?: boolean }> = [];
   if (issue.stories.length)
-    sections.push(["Esta semana en IA", `<tr><td>${stories}</td></tr>`, true]);
-  if (issue.essay.title.trim()) sections.push(["Pensamiento de la semana", essayBlock]);
+    sections.push({ anchor: "stories", title: "Esta semana en IA", body: `<tr><td>${stories}</td></tr>`, compact: true });
+  if (issue.essay.title.trim()) sections.push({ anchor: "essay", title: "Pensamiento de la semana", body: essayBlock });
   if (issue.projects?.length)
-    sections.push([
-      issue.projectsLabel?.trim() || "Proyectos de la comunidad",
-      `<tr><td>${projects}</td></tr>`,
-    ]);
+    sections.push({
+      anchor: "projects",
+      title: issue.projectsLabel?.trim() || "Proyectos de la comunidad",
+      body: `<tr><td>${projects}</td></tr>`,
+    });
   if (issue.events.length)
-    sections.push([
-      issue.eventsLabel?.trim() || "Próximos eventos",
-      `<tr><td>${events}</td></tr>`,
-      true,
-    ]);
+    sections.push({
+      anchor: "events",
+      title: issue.eventsLabel?.trim() || "Próximos eventos",
+      body: `<tr><td>${events}</td></tr>`,
+      compact: true,
+    });
   if (buildersMexicoContent)
-    sections.push(["Desde AI Builders México", buildersMexicoBlock, true]);
+    sections.push({ anchor: "builders", title: "Desde AI Builders México", body: buildersMexicoBlock, compact: true });
   if (communityContent)
-    sections.push(["Comunidad", communityBlock, true]);
+    sections.push({ anchor: "community", title: "Comunidad", body: communityBlock, compact: true });
 
-  const sectionsHtml = sections
-    .map(
-      ([title, body, compact], index) =>
-        (index > 0 ? hr(32) : "") + sectionHeader(title, compact) + body,
-    )
-    .join("\n");
+  const renderedSections = sections.map(
+    (section, index) =>
+      (index > 0 ? hr(32) : "") + sectionHeader(section.title, section.compact) + section.body,
+  );
 
   const sponsor = issue.sponsor;
   const sponsorDescription = sponsor?.description?.trim()
@@ -223,6 +245,12 @@ function renderIssue(issue: BaseIssue): string {
     <p style="margin:0;color:${QUIET};font-family:${MONO};font-size:10px;font-weight:500;line-height:1.4;text-transform:uppercase;">Publicidad &mdash; Patrocina <a href="https://vacantes.lat/checkout/ad-sponsor" style="color:${MUTED};text-decoration:underline;">este espacio</a></p>
     ${sponsorContent}
   </td></tr>`;
+  const bodyWithSponsor = insertSponsor(
+    renderedSections,
+    sections.map((section) => section.anchor),
+    issue.adPlacement,
+    sponsorPlacement,
+  );
 
   return `<!doctype html>
 <html lang="es">
@@ -259,9 +287,7 @@ function renderIssue(issue: BaseIssue): string {
   </td></tr>
   ${hr()}
 
-  ${sponsorPlacement}
-
-  ${sectionsHtml}
+  ${bodyWithSponsor}
 
   ${hr(40)}
   <tr><td style="padding:32px 0 0;">

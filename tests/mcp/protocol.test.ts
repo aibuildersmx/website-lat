@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  placeAd: vi.fn(),
   rate: vi.fn(),
   audit: vi.fn(),
 }));
@@ -15,6 +16,7 @@ vi.mock("@/lib/mcp/newsletters", () => ({
   getNewsletterDraft: mocks.get,
   createNewsletterDraft: mocks.create,
   updateNewsletterDraft: mocks.update,
+  setNewsletterAdPlacement: mocks.placeAd,
 }));
 vi.mock("@/lib/mcp/audit", () => ({
   withinMcpMutationRateLimit: mocks.rate,
@@ -50,6 +52,7 @@ describe("newsletter MCP protocol", () => {
       "get_newsletter_draft",
       "create_newsletter_draft",
       "update_newsletter_draft",
+      "set_newsletter_ad_placement",
     ]);
     expect(NEWSLETTER_MCP_TOOLS.map((tool) => tool.name).join(" ")).not.toMatch(/publish|delete|send|translate/);
   });
@@ -151,5 +154,64 @@ describe("newsletter MCP protocol", () => {
     }, actor);
     expect(response && "result" in response ? response.result.isError : false).toBe(true);
     expect(mocks.audit).toHaveBeenCalledWith(expect.not.objectContaining({ newsletterId: expect.anything() }));
+  });
+
+  it("moves a draft ad slot without replacing the issue", async () => {
+    mocks.placeAd.mockResolvedValueOnce({ id: "10000000-0000-4000-8000-000000000099", version: 2 });
+    const response = await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 5,
+      method: "tools/call",
+      params: {
+        name: "set_newsletter_ad_placement",
+        arguments: {
+          id: "10000000-0000-4000-8000-000000000099",
+          expected_revision: 1,
+          placement: "after_essay",
+        },
+      },
+    }, actor);
+    expect(response && "result" in response ? response.result.isError : true).toBeUndefined();
+    expect(mocks.placeAd).toHaveBeenCalledWith(
+      "10000000-0000-4000-8000-000000000099",
+      1,
+      "after_essay",
+    );
+  });
+
+  it("rejects an unknown ad placement before persistence", async () => {
+    const response = await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 6,
+      method: "tools/call",
+      params: {
+        name: "set_newsletter_ad_placement",
+        arguments: {
+          id: "10000000-0000-4000-8000-000000000099",
+          expected_revision: 1,
+          placement: "middle",
+        },
+      },
+    }, actor);
+    expect(response && "result" in response ? response.result.isError : false).toBe(true);
+    expect(mocks.placeAd).not.toHaveBeenCalled();
+  });
+
+  it("hides ad placement from read-only credentials", async () => {
+    const response = await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 7,
+      method: "tools/call",
+      params: {
+        name: "set_newsletter_ad_placement",
+        arguments: {
+          id: "10000000-0000-4000-8000-000000000099",
+          expected_revision: 1,
+          placement: "top",
+        },
+      },
+    }, { ...actor, scopes: [MCP_READ_SCOPE] });
+    expect(response && "result" in response ? response.result.isError : false).toBe(true);
+    expect(mocks.placeAd).not.toHaveBeenCalled();
   });
 });

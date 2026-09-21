@@ -26,6 +26,12 @@ describe("MCP newsletter runtime validation", () => {
     expect(parseIssue(issue)).toEqual(issue);
   });
 
+  it("accepts a known ad placement and rejects an unknown one", () => {
+    expect(parseIssue({ ...emptyIssue("007"), adPlacement: "after_stories" })?.adPlacement)
+      .toBe("after_stories");
+    expect(parseIssue({ ...emptyIssue("007"), adPlacement: "middle" })).toBeNull();
+  });
+
   it("rejects unexpected fields and unsafe link protocols", () => {
     expect(parseIssue({ ...emptyIssue("007"), status: "sent" })).toBeNull();
     expect(parseIssue({

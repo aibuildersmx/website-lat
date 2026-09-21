@@ -41,6 +41,37 @@ describe("renderBuildLog", () => {
     expect(out).toContain("Construye agentes de voz");
     expect(out).toContain("Infraestructura para equipos");
     expect(out).toContain("https://sponsor.example/product");
+    expect(out.indexOf("Construye agentes de voz")).toBeLessThan(out.indexOf(issue002.stories[0].title));
+  });
+
+  it("moves the sponsor slot to the requested section", () => {
+    const sponsor = {
+      title: "Anuncio de prueba",
+      href: "https://sponsor.example/moved",
+    };
+    const afterEssay = renderBuildLog({ ...issue002, adPlacement: "after_essay", sponsor });
+    expect(afterEssay.indexOf(issue002.essay.title)).toBeLessThan(afterEssay.indexOf("Anuncio de prueba"));
+    expect(afterEssay.indexOf("Anuncio de prueba")).toBeLessThan(afterEssay.indexOf(issue002.events[0].title));
+
+    const beforeFooter = renderBuildLog({ ...issue002, adPlacement: "before_footer", sponsor });
+    expect(beforeFooter.indexOf(issue002.community.title)).toBeLessThan(beforeFooter.indexOf("Anuncio de prueba"));
+    expect(beforeFooter.indexOf("Anuncio de prueba")).toBeLessThan(beforeFooter.indexOf("Patrocina una edición"));
+
+    const missingStories = renderBuildLog({
+      ...issue002,
+      stories: [],
+      adPlacement: "after_stories",
+      sponsor,
+    });
+    expect(missingStories.indexOf("Anuncio de prueba")).toBeLessThan(missingStories.indexOf(issue002.essay.title));
+  });
+
+  it("renders the Spanish copy's ad placement", () => {
+    const spanish = structuredClone(issue002);
+    spanish.adPlacement = "before_footer";
+    spanish.sponsor = { title: "Anuncio en español", href: "https://sponsor.example/es" };
+    const out = renderBuildLog({ ...issue002, adPlacement: "top", spanish });
+    expect(out.indexOf(spanish.community.title)).toBeLessThan(out.indexOf("Anuncio en español"));
   });
 
   it("renders every story title and link", () => {

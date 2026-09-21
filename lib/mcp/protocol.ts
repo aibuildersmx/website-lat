@@ -10,8 +10,11 @@ import {
   DraftConflictError,
   getNewsletterDraft,
   listNewsletterDrafts,
+  setNewsletterAdPlacement,
   updateNewsletterDraft,
 } from "./newsletters";
+import { isAdPlacement } from "@/lib/newsletter/ad-placement";
+import { AD_PLACEMENTS } from "@/lib/newsletter/types";
 import { newsletterIssueJsonSchema, parseIssue } from "@/lib/newsletter/validation";
 
 type JsonRpcId = string | number | null;
@@ -75,6 +78,22 @@ export const NEWSLETTER_MCP_TOOLS = [
         issue: newsletterIssueJsonSchema,
       },
       required: ["id", "expected_revision", "issue"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "set_newsletter_ad_placement",
+    title: "Set newsletter ad placement",
+    description: "Move the sponsor slot in a draft without rewriting the issue. Placements are top (after the masthead), after_stories, after_essay, and before_footer. If the chosen section is empty, the slot stays at the top. A Spanish copy is moved to the same place. This cannot publish or send.",
+    scope: MCP_WRITE_SCOPE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        expected_revision: { type: "integer", minimum: 1 },
+        placement: { type: "string", enum: [...AD_PLACEMENTS] },
+      },
+      required: ["id", "expected_revision", "placement"],
       additionalProperties: false,
     },
   },
@@ -167,6 +186,27 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
     }
   }
 
+  if (name === "set_newsletter_ad_placement") {
+    if (!validArguments(args, ["id", "expected_revision", "placement"]) || !uuid(args.id)) {
+      return { result: toolResult("id, expected_revision, and placement are required.", true), errorCode: "invalid_arguments" };
+    }
+    if (!Number.isInteger(args.expected_revision) || Number(args.expected_revision) < 1) {
+      return { result: toolResult("expected_revision must be a positive integer.", true), errorCode: "invalid_arguments" };
+    }
+    if (!isAdPlacement(args.placement)) {
+      return { result: toolResult("placement must be top, after_stories, after_essay, or before_footer.", true), errorCode: "invalid_arguments" };
+    }
+    try {
+      const draft = await setNewsletterAdPlacement(args.id, Number(args.expected_revision), args.placement);
+      return { result: toolResult(draft), newsletterId: args.id };
+    } catch (cause) {
+      if (cause instanceof DraftConflictError) {
+        return { result: toolResult("The draft is missing, no longer editable, or has a newer revision. Read it again before retrying.", true), errorCode: cause.code };
+      }
+      throw cause;
+    }
+  }
+
   return { protocolError: error(null, -32602, "Unknown tool.") };
 }
 
@@ -202,7 +242,7 @@ export async function handleMcpRequest(
         : MCP_PROTOCOL_VERSION,
       capabilities: { tools: { listChanged: false } },
       serverInfo: { name: MCP_SERVER_NAME, version: "1.0.0" },
-      instructions: "Use these tools only for AI Builders newsletter drafts. Publishing, sending, and deletion are intentionally unavailable.",
+      instructions: "Use these tools only for AI Builders newsletter drafts. Publishing, sending, and deletion are intentionally unavailable. Use set_newsletter_ad_placement to move the sponsor slot without replacing the issue.",
     });
   }
 

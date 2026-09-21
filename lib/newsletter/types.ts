@@ -79,6 +79,10 @@ export interface BuildersMexicoItem {
   href: string;
 }
 
+export const AD_PLACEMENTS = ["top", "after_stories", "after_essay", "before_footer"] as const;
+
+export type AdPlacement = (typeof AD_PLACEMENTS)[number];
+
 export interface SponsorPlacement {
   title: string;
   description?: string;
@@ -96,6 +100,7 @@ export interface BaseIssue {
   readingTime: string; // "6 min de lectura"
   title: string; // "The Build Log"
   subtitle: string;
+  adPlacement?: AdPlacement; // where the sponsor slot renders; defaults to top
   sponsor?: SponsorPlacement;
   stories: Story[];
   essay: Essay;

@@ -28,6 +28,7 @@ export default async function McpAdminPage() {
         <h1 className="mt-1 text-3xl font-medium text-gray-800 dark:text-gray-100">Conexiones MCP</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">
           Conecta Codex o Claude Code para trabajar con borradores de The Build Log desde tu terminal.
+          Desde ahí también puedes mover el anuncio: después del encabezado, de las historias, del ensayo, o antes del pie.
         </p>
       </div>
 

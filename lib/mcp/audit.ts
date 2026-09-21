@@ -49,7 +49,7 @@ export async function withinMcpMutationRateLimit(
   if (operation === "create_newsletter_draft") {
     return claimMcpRateLimit(`token:${actor.tokenId}:create`, 10);
   }
-  if (operation === "update_newsletter_draft") {
+  if (operation === "update_newsletter_draft" || operation === "set_newsletter_ad_placement") {
     return claimMcpRateLimit(`token:${actor.tokenId}:update`, 30);
   }
   return true;
