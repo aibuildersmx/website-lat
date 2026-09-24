@@ -19,19 +19,33 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-// Input is already escaped. Links first so their text can still carry emphasis.
-function inline(escaped: string, style: MarkdownStyle): string {
+function emphasis(escaped: string): string {
   return escaped
-    .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, (match, text: string, href: string) => {
-      const raw = href.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-      return SAFE_HREF.test(raw) ? `<a href="${esc(raw)}" style="${style.a}">${text}</a>` : match;
-    })
     .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
 }
 
+// One level of balanced parentheses, so Wikipedia-style URLs survive.
+const LINK = /\[([^\]\n]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g;
+const TOKEN = /\u0000(\d+)\u0000/g;
+
+// Input is already escaped. Links become placeholder tokens while emphasis
+// runs, so `*` inside a URL can never be rewritten into markup.
+function inline(escaped: string, style: MarkdownStyle): string {
+  const links: string[] = [];
+  const withTokens = escaped.replace(LINK, (match, text: string, href: string) => {
+    const raw = href.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    if (!SAFE_HREF.test(raw)) return match;
+    // ' too: the tracking redirector only rewrites hrefs without quotes.
+    links.push(`<a href="${esc(raw).replace(/'/g, "&#39;")}" style="${style.a}">${emphasis(text)}</a>`);
+    return `\u0000${links.length - 1}\u0000`;
+  });
+  return emphasis(withTokens).replace(TOKEN, (_, index: string) => links[Number(index)]);
+}
+
 export function renderMarkdown(source: string, style: MarkdownStyle): string {
-  const blocks = source.replace(/\r\n?/g, "\n").split(/\n\s*\n/);
+  // NUL is reserved for link placeholders in inline().
+  const blocks = source.replace(/\u0000/g, "").replace(/\r\n?/g, "\n").split(/\n\s*\n/);
   const out: string[] = [];
   for (const block of blocks) {
     const trimmed = block.trim();

@@ -49,4 +49,25 @@ describe("renderMarkdown", () => {
   it("returns empty string for blank input", () => {
     expect(md("  \n\n ")).toBe("");
   });
+
+  it("never rewrites emphasis inside a link's URL", () => {
+    expect(md("[x](https://a.com/*a*)")).toContain('href="https://a.com/*a*"');
+    const out = md("[x](https://a.com/*) foo*");
+    expect(out).toContain('href="https://a.com/*"');
+    expect(out).not.toContain("<em>");
+  });
+
+  it("keeps balanced parentheses in URLs (Wikipedia style)", () => {
+    expect(md("[IA](https://es.wikipedia.org/wiki/Mercurio_(planeta))")).toContain(
+      'href="https://es.wikipedia.org/wiki/Mercurio_(planeta)"',
+    );
+  });
+
+  it("escapes apostrophes in URLs so link tracking still wraps them", () => {
+    expect(md("[x](https://a.com/it's)")).toContain('href="https://a.com/it&#39;s"');
+  });
+
+  it("ignores placeholder-looking control characters in author text", () => {
+    expect(md("a \u00000\u0000 b")).toBe('<p style="P">a 0 b</p>');
+  });
 });
