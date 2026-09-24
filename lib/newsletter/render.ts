@@ -1,32 +1,18 @@
+import {
+  BG,
+  LINE,
+  MONO,
+  MUTED,
+  PANEL,
+  QUIET,
+  SANS,
+  TEXT,
+  esc,
+  hr,
+  legalFooterLinks,
+  OPEN_PIXEL_TAG,
+} from "./email-style";
 import type { AdPlacement, BaseIssue, Issue } from "./types";
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-// Palette — light-first, mirroring the admin preview canvas (Tailwind gray
-// scale on white). The email ships light; dark-mode clients (Apple Mail, etc.)
-// auto-invert cleanly thanks to the color-scheme meta in <head>. See the
-// editable-canvas component for the source-of-truth color choices.
-const BG = "#ffffff"; // body / page (canvas: bg-white)
-const PANEL = "#fafaf9"; // card surfaces (canvas: stone-50)
-const TEXT = "#111827"; // headings (gray-900)
-const MUTED = "#6b7280"; // body copy (gray-500)
-const QUIET = "#9ca3af"; // eyebrows, counters, mono labels (gray-400)
-const LINE = "#e5e7eb"; // hairlines + card borders (gray-200)
-const ACCENT = "#111827"; // links that need emphasis (text color, underlined)
-
-const SANS =
-  "Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-const MONO = "'SF Mono', Menlo, Consolas, monospace";
-
-function hr(topPadding = 0): string {
-  return `<tr><td style="padding:${topPadding}px 0 0;"><div style="height:1px;line-height:1px;font-size:1px;background:${LINE};">&nbsp;</div></td></tr>`;
-}
 
 function eyebrow(text: string): string {
   return `<p style="margin:0 0 18px;color:${QUIET};font-family:${MONO};font-size:13px;font-weight:500;letter-spacing:normal;text-transform:uppercase;">${esc(
@@ -296,19 +282,13 @@ function renderIssue(issue: BaseIssue): string {
       <p style="margin:0 0 8px;">¿Quieres promocionarte en The Build Log? <a href="https://vacantes.lat/checkout/ad-sponsor" style="color:#2563eb;text-decoration:underline;">Patrocina una edición</a>.</p>
       <p style="margin:0;">¿Buscas trabajo en IA? <a href="https://vacantes.lat" style="color:#2563eb;text-decoration:underline;">Explora vacantes</a>.</p>
     </div>
-    <p style="margin:0;color:${QUIET};font-family:${MONO};font-size:12px;letter-spacing:normal;">
-      <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${ACCENT};text-decoration:underline;">Cancelar suscripción</a>
-      &nbsp;·&nbsp; <a href="https://aibuilders.lat" style="color:#2563eb;text-decoration:underline;">AI BUILDERS LATAM</a>
-      &nbsp;·&nbsp; <a href="https://aibuilders.mx" style="color:#2563eb;text-decoration:underline;">AI BUILDERS MEXICO</a>
-    </p>
+    ${legalFooterLinks()}
   </td></tr>
 
 </table>
 </td></tr>
 </table>
-<!-- First-party open pixel. Swapped for a signed per-contact URL at send time
-     (lib/newsletter/tracking.ts); stripped in previews/tests. -->
-<img src="{{{OPEN_PIXEL}}}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;overflow:hidden;">
+${OPEN_PIXEL_TAG}
 </body>
 </html>`;
 }

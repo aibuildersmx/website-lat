@@ -1,14 +1,12 @@
-import { stripTracking } from "./open-pixel";
-import { renderBuildLog } from "./render";
+import { emailPreviewHtml } from "./render-email";
+import type { StandaloneEmail } from "./standalone-types";
 import type { Issue } from "./types";
 
 // Exactly what the send would produce, minus tracking, with Resend's
 // unsubscribe placeholder resolved to a no-op link. Shared by the composer's
 // iframe preview (lib/actions/newsletter.ts) and the MCP preview tool.
 export function previewHtml(issue: Issue): string {
-  return stripTracking(
-    renderBuildLog(issue).replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, "#"),
-  );
+  return emailPreviewHtml({ kind: "build_log", data: issue });
 }
 
 // Non-blocking heads-ups for authors: valid but probably not ready to ship.
@@ -40,5 +38,17 @@ export function issueWarnings(issue: Issue): string[] {
   sent.jobs.forEach((job, index) => {
     if (!job.href) warnings.push(`jobs[${index}].href está vacío.`);
   });
+  return warnings;
+}
+
+export function standaloneWarnings(email: StandaloneEmail): string[] {
+  const warnings: string[] = [];
+  if (!email.subject.trim()) warnings.push("subject está vacío.");
+  if (email.subject.length > 150) {
+    warnings.push(`subject tiene ${email.subject.length} caracteres; el inbox trunca arriba de ~150.`);
+  }
+  if (!email.preview.trim()) warnings.push("preview (texto de inbox) está vacío.");
+  if (!email.title.trim()) warnings.push("title está vacío.");
+  if (!email.body.trim()) warnings.push("body está vacío.");
   return warnings;
 }
