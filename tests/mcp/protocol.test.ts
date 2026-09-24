@@ -44,6 +44,10 @@ vi.mock("@/lib/newsletter/render-email", () => ({
 }));
 vi.mock("@/lib/newsletter/standalone-store", () => ({
   StandaloneConflictError: class StandaloneConflictError extends Error { readonly code = "draft_conflict"; },
+  WrongEmailKindError: class WrongEmailKindError extends Error {
+    readonly code = "wrong_kind";
+    constructor(readonly actual: string) { super(actual); }
+  },
   insertStandaloneDraft: mocks.createStandalone,
   updateStandaloneDraft: mocks.updateStandalone,
 }));
@@ -405,6 +409,26 @@ describe("newsletter MCP protocol", () => {
         params: { name: "list_newsletter_drafts", arguments: { kind: "promo" } },
       }, actor);
       expect(bad && "result" in bad ? bad.result.isError : false).toBe(true);
+    });
+
+    it("tells the agent which tool to use when the kind is wrong", async () => {
+      const { WrongEmailKindError } = await import("@/lib/newsletter/standalone-store");
+      mocks.update.mockRejectedValueOnce(new WrongEmailKindError("standalone"));
+      const onBuildLogTool = await handleMcpRequest({
+        jsonrpc: "2.0", id: 29, method: "tools/call",
+        params: { name: "update_newsletter_draft", arguments: { id: draftId, expected_revision: 1, issue: emptyIssue("050") } },
+      }, actor);
+      const first = onBuildLogTool && "result" in onBuildLogTool ? onBuildLogTool.result : null;
+      expect(first?.isError).toBe(true);
+      expect((first?.content as Array<{ text: string }>)[0]?.text).toContain("update_standalone_email");
+
+      mocks.updateStandalone.mockRejectedValueOnce(new WrongEmailKindError("build_log"));
+      const onStandaloneTool = await handleMcpRequest({
+        jsonrpc: "2.0", id: 30, method: "tools/call",
+        params: { name: "update_standalone_email", arguments: { id: draftId, expected_revision: 1, email: standalone } },
+      }, actor);
+      const second = onStandaloneTool && "result" in onStandaloneTool ? onStandaloneTool.result : null;
+      expect((second?.content as Array<{ text: string }>)[0]?.text).toContain("update_newsletter_draft");
     });
   });
 });

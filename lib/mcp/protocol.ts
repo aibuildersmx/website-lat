@@ -22,6 +22,7 @@ import {
   insertStandaloneDraft,
   StandaloneConflictError,
   updateStandaloneDraft,
+  WrongEmailKindError,
 } from "@/lib/newsletter/standalone-store";
 import { EMAIL_KINDS, isEmailKind, type StandaloneEmail } from "@/lib/newsletter/standalone-types";
 import { AD_PLACEMENTS, type Issue } from "@/lib/newsletter/types";
@@ -190,6 +191,11 @@ function withoutSlug(email: StandaloneEmail): Partial<StandaloneEmail> {
   return content;
 }
 
+function wrongKindMessage(cause: WrongEmailKindError): string {
+  const tool = cause.actual === "standalone" ? "update_standalone_email" : "update_newsletter_draft";
+  return `This draft is a ${cause.actual} email. Use ${tool} (read it with get_newsletter_draft).`;
+}
+
 function isRecord(value: unknown): value is RecordValue {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -287,6 +293,9 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
       const draft = await updateNewsletterDraft(args.id, Number(args.expected_revision), validated.issue);
       return { result: toolResult(draft), newsletterId: args.id };
     } catch (cause) {
+      if (cause instanceof WrongEmailKindError) {
+        return { result: toolResult(wrongKindMessage(cause), true), errorCode: cause.code };
+      }
       if (cause instanceof DraftConflictError) {
         return { result: toolResult("The draft is missing, no longer editable, or has a newer revision. Read it again before retrying.", true), errorCode: cause.code };
       }
@@ -308,6 +317,9 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
       const draft = await setNewsletterAdPlacement(args.id, Number(args.expected_revision), args.placement);
       return { result: toolResult(draft), newsletterId: args.id };
     } catch (cause) {
+      if (cause instanceof WrongEmailKindError) {
+        return { result: toolResult(wrongKindMessage(cause), true), errorCode: cause.code };
+      }
       if (cause instanceof DraftConflictError) {
         return { result: toolResult("The draft is missing, no longer editable, or has a newer revision. Read it again before retrying.", true), errorCode: cause.code };
       }
@@ -374,6 +386,9 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
       const draft = await updateStandaloneDraft(args.id, Number(args.expected_revision), validated.email);
       return { result: toolResult(draft), newsletterId: args.id };
     } catch (cause) {
+      if (cause instanceof WrongEmailKindError) {
+        return { result: toolResult(wrongKindMessage(cause), true), errorCode: cause.code };
+      }
       if (cause instanceof StandaloneConflictError) {
         return {
           result: toolResult("The draft is missing, not a standalone email, no longer editable, or has a newer revision. Read it again before retrying.", true),

@@ -3,7 +3,7 @@ import { db } from "@/lib/db/client";
 import { newsletterIssues } from "@/lib/db/schema";
 import { syncAdPlacement } from "@/lib/newsletter/ad-placement";
 import { insertNewsletterDraft } from "@/lib/newsletter/draft-create";
-import { rowToDraft } from "@/lib/newsletter/standalone-store";
+import { assertDraftKind, rowToDraft } from "@/lib/newsletter/standalone-store";
 import type { EmailKind } from "@/lib/newsletter/standalone-types";
 import type { AdPlacement, Issue } from "@/lib/newsletter/types";
 
@@ -78,7 +78,10 @@ export async function updateNewsletterDraft(
       ),
     )
     .limit(1);
-  if (!current) throw new DraftConflictError("Draft not found or revision is stale.");
+  if (!current) {
+    await assertDraftKind(id, "build_log");
+    throw new DraftConflictError("Draft not found or revision is stale.");
+  }
 
   // The public issue identifier is immutable through MCP. Status, send IDs,
   // archive controls, and other row-level fields are never accepted as input.
@@ -129,7 +132,10 @@ export async function setNewsletterAdPlacement(
       ),
     )
     .limit(1);
-  if (!current) throw new DraftConflictError("Draft not found or revision is stale.");
+  if (!current) {
+    await assertDraftKind(id, "build_log");
+    throw new DraftConflictError("Draft not found or revision is stale.");
+  }
 
   const issue = syncAdPlacement({ ...current.data, adPlacement: placement });
   const [updated] = await db

@@ -52,16 +52,16 @@ d("standalone email persistence", () => {
     await expect(store.updateStandaloneDraft(row.id, 99, row.email)).rejects.toBeInstanceOf(store.StandaloneConflictError);
     const buildLog = await draftCreate.insertNewsletterDraft();
     ids.push(buildLog.id);
-    await expect(store.updateStandaloneDraft(buildLog.id, null, row.email)).rejects.toBeInstanceOf(store.StandaloneConflictError);
+    await expect(store.updateStandaloneDraft(buildLog.id, null, row.email)).rejects.toBeInstanceOf(store.WrongEmailKindError);
   });
 
   it("Build Log MCP writes refuse a standalone id", async () => {
     const row = await store.insertStandaloneDraft();
     ids.push(row.id);
     await expect(newsletters.updateNewsletterDraft(row.id, 1, emptyIssue("999")))
-      .rejects.toBeInstanceOf(newsletters.DraftConflictError);
+      .rejects.toMatchObject({ code: "wrong_kind", actual: "standalone" });
     await expect(newsletters.setNewsletterAdPlacement(row.id, 1, "top"))
-      .rejects.toBeInstanceOf(newsletters.DraftConflictError);
+      .rejects.toMatchObject({ code: "wrong_kind", actual: "standalone" });
   });
 
   it("MCP reads expose kind and the standalone payload", async () => {

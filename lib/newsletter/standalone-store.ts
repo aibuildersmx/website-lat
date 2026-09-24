@@ -11,6 +11,24 @@ export class StandaloneConflictError extends Error {
   readonly code = "draft_conflict";
 }
 
+// The id exists but belongs to the other kind of email. Agents get told which
+// tool to use instead of a generic "re-read and retry".
+export class WrongEmailKindError extends Error {
+  readonly code = "wrong_kind";
+  constructor(readonly actual: EmailKind) {
+    super(`This draft is a ${actual} email.`);
+  }
+}
+
+export async function assertDraftKind(id: string, expected: EmailKind): Promise<void> {
+  const [row] = await db
+    .select({ kind: newsletterIssues.kind })
+    .from(newsletterIssues)
+    .where(and(eq(newsletterIssues.id, id), eq(newsletterIssues.status, "draft")))
+    .limit(1);
+  if (row && row.kind !== expected) throw new WrongEmailKindError(row.kind);
+}
+
 export interface StandaloneRow {
   id: string;
   slug: string;
@@ -78,7 +96,10 @@ export async function updateStandaloneDraft(
     ...(expectedVersion === null ? [] : [eq(newsletterIssues.version, expectedVersion)]),
   );
   const [current] = await db.select({ slug: newsletterIssues.slug }).from(newsletterIssues).where(where).limit(1);
-  if (!current) throw new StandaloneConflictError("Draft not found, not standalone, or revision is stale.");
+  if (!current) {
+    await assertDraftKind(id, "standalone");
+    throw new StandaloneConflictError("Draft not found or revision is stale.");
+  }
 
   const email: StandaloneEmail = { ...input, slug: current.slug }; // slug is immutable
   const [updated] = await db
