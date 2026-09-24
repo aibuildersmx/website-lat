@@ -21,7 +21,7 @@ describe("Issue JSON Schema ↔ runtime validation contract", () => {
     // must be rejected by both sides.
     expect(declared).toContain("spanish");
     expect(declared).toContain("spanishTranslationStale");
-    expect(declared.length).toBe(24); // 22 BaseIssue keys + spanish + stale flag
+    expect(declared.length).toBe(25); // 23 BaseIssue keys + spanish + stale flag
   });
 
   it("every schema-required field is required by the validator", () => {
