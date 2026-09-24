@@ -64,6 +64,59 @@ versión en español que se envía la genera el editor en el composer.
    importantes.
 4. Entrega el `Issue` JSON final (archivo `.json`) al editor. Fin de tu parte.
 
+## Encabezados editables del Build Log
+
+El título (`title`), el subtítulo (`subtitle`) y los encabezados de sección ya
+no están fijos. Campos opcionales del `Issue` (vacío u omitido = el default de
+siempre):
+
+| Campo | Default |
+|---|---|
+| `storiesLabel` | Esta semana en IA |
+| `essayLabel` | Pensamiento de la semana |
+| `projectsLabel` | Proyectos de la comunidad |
+| `eventsLabel` | Próximos eventos |
+| `buildersLabel` | Desde AI Builders México |
+| `communityLabel` | Comunidad |
+
+En el composer web también se editan directo sobre el canvas.
+
+## Emails sueltos
+
+Para anuncios o invitaciones que **no** son The Build Log: un email libre con
+título, cuerpo y un botón opcional. Sale a la misma lista y por el mismo
+pipeline (envío por tandas, tracking, link de baja), pero no aparece en el
+archivo público ni en el RSS. Es un solo idioma: escríbelo ya en el idioma
+final.
+
+```json
+{
+  "subject": "Hackathon este sábado",
+  "preview": "Quedan 20 lugares",
+  "title": "Nos vemos el sábado",
+  "subtitle": "Build night en CDMX",
+  "body": "Hola **builders**.\n\n## Agenda\n\n- 10:00 Kickoff\n- 18:00 Demos\n\nDetalles en [el sitio](https://aibuilders.mx).",
+  "cta": { "text": "Regístrate", "href": "https://aibuilders.mx/eventos" }
+}
+```
+
+`body` acepta markdown restringido: párrafos (línea en blanco), `## encabezado`,
+`- lista`, `**negritas**`, `*itálicas*` y `[texto](https://…)` o `mailto:`.
+Cualquier otra cosa (incluido HTML) sale como texto literal. No mandes `slug`:
+lo asigna el servidor.
+
+| Tool | Quién la ve | Qué hace |
+|---|---|---|
+| `preview_standalone_email({ email })` | tokens solo-preview y editor completo | valida y devuelve el HTML; no guarda nada |
+| `create_standalone_email({ email })` | editor completo | crea el borrador |
+| `update_standalone_email({ id, expected_revision, email })` | editor completo | reemplaza el borrador si nadie lo cambió desde que lo leíste |
+
+`list_newsletter_drafts` acepta `kind: "standalone"` y `get_newsletter_draft`
+devuelve `email` (en vez de `issue`) para estos borradores.
+
+**Ninguna tool envía.** El envío lo hace una persona desde `/admin/newsletter`
+con "Enviar prueba" / "Enviar por tandas".
+
 ## Límites
 
 - 20 previews por minuto por token (y 120 requests/min en total).
