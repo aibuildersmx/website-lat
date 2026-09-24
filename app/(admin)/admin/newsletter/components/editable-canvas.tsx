@@ -372,11 +372,11 @@ export function EditableCanvas({
       <article className="rounded-2xl border border-black/5 bg-white px-6 py-10 sm:px-10 dark:border-white/10 dark:bg-neutral-900">
         {/* Masthead */}
         <h1 className="text-[38px] font-semibold leading-[1.1] text-gray-900 dark:text-white">
-          {issue.title}
+          <Editable value={issue.title} onChange={(v) => patch({ title: v })} placeholder="Título del email" />
         </h1>
-        <p className="mt-2.5 text-lg leading-[1.4] text-gray-500 dark:text-gray-400">
-          {issue.subtitle}
-        </p>
+        <div className="mt-2.5 text-lg leading-[1.4] text-gray-500 dark:text-gray-400">
+          <Editable value={issue.subtitle} onChange={(v) => patch({ subtitle: v })} placeholder="Subtítulo" multiline />
+        </div>
 
         {/* Meta line */}
         <div className="mt-[18px] flex flex-wrap gap-x-2.5 gap-y-1 border-b border-gray-200 pb-3 dark:border-white/10">
@@ -401,7 +401,12 @@ export function EditableCanvas({
         {adPlacement === "top" && sponsorSlot}
 
         {/* 01 — Stories */}
-        <SectionHeader title="Esta semana en IA" compact />
+        <SectionHeader
+          editableTitle={issue.storiesLabel ?? "Esta semana en IA"}
+          onTitleChange={(v) => patch({ storiesLabel: v })}
+          titlePlaceholder="Esta semana en IA"
+          compact
+        />
         {issue.stories.map((s, i) => (
           <ItemShell
             key={i}
@@ -450,7 +455,9 @@ export function EditableCanvas({
 
         {/* 02 — Essay */}
         <SectionHeader
-          title="Pensamiento de la semana"
+          editableTitle={issue.essayLabel ?? "Pensamiento de la semana"}
+          onTitleChange={(v) => patch({ essayLabel: v })}
+          titlePlaceholder="Pensamiento de la semana"
           separated={Boolean(issue.stories.length && issue.essay.title.trim())}
         />
         <div className="group rounded-[18px] border border-gray-200 bg-stone-50 p-8 dark:border-white/10 dark:bg-white/5">
@@ -506,7 +513,9 @@ export function EditableCanvas({
 
         {/* 03 — Events */}
         <SectionHeader
-          title={issue.eventsLabel?.trim() || "Próximos eventos"}
+          editableTitle={issue.eventsLabel ?? "Próximos eventos"}
+          onTitleChange={(v) => patch({ eventsLabel: v })}
+          titlePlaceholder="Próximos eventos"
           compact
           separated={Boolean(
             issue.events.length && (issue.stories.length || issue.essay.title.trim()),
@@ -592,7 +601,9 @@ export function EditableCanvas({
         />
 
         <SectionHeader
-          title="Desde AI Builders México"
+          editableTitle={issue.buildersLabel ?? "Desde AI Builders México"}
+          onTitleChange={(v) => patch({ buildersLabel: v })}
+          titlePlaceholder="Desde AI Builders México"
           compact
           separated={Boolean(
             buildersMexicoItems.some((item) => item.title.trim() || item.body.trim()) &&
@@ -652,7 +663,9 @@ export function EditableCanvas({
         />
 
         <SectionHeader
-          title="Comunidad"
+          editableTitle={issue.communityLabel ?? "Comunidad"}
+          onTitleChange={(v) => patch({ communityLabel: v })}
+          titlePlaceholder="Comunidad"
           compact
           separated={Boolean(
             issue.community.title.trim() ||

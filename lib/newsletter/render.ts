@@ -193,8 +193,8 @@ function renderIssue(issue: BaseIssue): string {
   // shows "01 / 04" instead of a hardcoded "/ 05" with an empty card.
   const sections: Array<{ anchor: SectionAnchor; title: string; body: string; compact?: boolean }> = [];
   if (issue.stories.length)
-    sections.push({ anchor: "stories", title: "Esta semana en IA", body: `<tr><td>${stories}</td></tr>`, compact: true });
-  if (issue.essay.title.trim()) sections.push({ anchor: "essay", title: "Pensamiento de la semana", body: essayBlock });
+    sections.push({ anchor: "stories", title: issue.storiesLabel?.trim() || "Esta semana en IA", body: `<tr><td>${stories}</td></tr>`, compact: true });
+  if (issue.essay.title.trim()) sections.push({ anchor: "essay", title: issue.essayLabel?.trim() || "Pensamiento de la semana", body: essayBlock });
   if (issue.projects?.length)
     sections.push({
       anchor: "projects",
@@ -209,9 +209,9 @@ function renderIssue(issue: BaseIssue): string {
       compact: true,
     });
   if (buildersMexicoContent)
-    sections.push({ anchor: "builders", title: "Desde AI Builders México", body: buildersMexicoBlock, compact: true });
+    sections.push({ anchor: "builders", title: issue.buildersLabel?.trim() || "Desde AI Builders México", body: buildersMexicoBlock, compact: true });
   if (communityContent)
-    sections.push({ anchor: "community", title: "Comunidad", body: communityBlock, compact: true });
+    sections.push({ anchor: "community", title: issue.communityLabel?.trim() || "Comunidad", body: communityBlock, compact: true });
 
   const renderedSections = sections.map(
     (section, index) =>

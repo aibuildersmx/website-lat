@@ -192,4 +192,22 @@ describe("renderBuildLog", () => {
     expect(out).toContain("A &amp; B &lt;script&gt;");
     expect(out).not.toContain("<script>");
   });
+  it("uses custom section headings when provided", () => {
+    const out = renderBuildLog({
+      ...issue002,
+      storiesLabel: "Lo nuevo",
+      essayLabel: "Columna",
+      buildersLabel: "Desde MX",
+      communityLabel: "La banda",
+    });
+    expect(out).toContain("Lo nuevo");
+    expect(out).toContain("Columna");
+    expect(out).not.toContain("Esta semana en IA");
+    expect(out).not.toContain("Pensamiento de la semana");
+  });
+
+  it("renders identically when labels are empty or whitespace", () => {
+    const blank = { ...issue002, storiesLabel: " ", essayLabel: "", buildersLabel: "", communityLabel: "" };
+    expect(renderBuildLog(blank)).toBe(renderBuildLog(issue002));
+  });
 });

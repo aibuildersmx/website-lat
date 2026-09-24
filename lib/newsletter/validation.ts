@@ -183,6 +183,7 @@ const BASE_KEYS = [
   "date", "readingTime", "title", "subtitle", "adPlacement", "sponsor", "stories", "essay", "useCases",
   "projectsLabel", "projects", "eventsLabel", "events", "buildersMexico",
   "buildersMexicoItems", "community", "jobs",
+  "storiesLabel", "essayLabel", "buildersLabel", "communityLabel",
 ] as const;
 
 function checkBaseIssue(ctx: Ctx, path: string, value: RecordValue): boolean {
@@ -211,6 +212,9 @@ function checkBaseIssue(ctx: Ctx, path: string, value: RecordValue): boolean {
   ok = (value.buildersMexicoItems === undefined || checkArray(ctx, `${path}.buildersMexicoItems`, value.buildersMexicoItems, checkBuildersItem)) && ok;
   ok = checkCommunity(ctx, `${path}.community`, value.community) && ok;
   ok = checkArray(ctx, `${path}.jobs`, value.jobs, checkJob) && ok;
+  for (const key of ["storiesLabel", "essayLabel", "buildersLabel", "communityLabel"] as const) {
+    ok = (value[key] === undefined || checkText(ctx, `${path}.${key}`, value[key])) && ok;
+  }
   return ok;
 }
 

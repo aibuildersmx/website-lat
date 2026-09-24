@@ -46,6 +46,11 @@ describe("MCP newsletter runtime validation", () => {
 });
 
 describe("validateIssue error paths", () => {
+  it("accepts the new optional Build Log labels", () => {
+    const issue = { ...emptyIssue("010"), storiesLabel: "Lo nuevo", communityLabel: "La banda" };
+    expect(validateIssue(issue).errors).toBeUndefined();
+  });
+
   it("returns the issue for a valid input", () => {
     const result = validateIssue(emptyIssue("008"));
     expect(result.errors).toBeUndefined();

@@ -105,6 +105,10 @@ export interface BaseIssue {
   stories: Story[];
   essay: Essay;
   useCases: UseCase[];
+  storiesLabel?: string; // section heading for `stories` (default "Esta semana en IA")
+  essayLabel?: string; // section heading for `essay` (default "Pensamiento de la semana")
+  buildersLabel?: string; // section heading for builders items (default "Desde AI Builders México")
+  communityLabel?: string; // section heading for `community` (default "Comunidad")
   projectsLabel?: string; // section heading for `projects` (default "Proyectos de la comunidad")
   projects?: ShowcaseProject[];
   eventsLabel?: string; // section heading for `events` (default "Próximos eventos")
