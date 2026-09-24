@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getIssue, getIssueProgress } from "@/lib/actions/newsletter";
 import { IssueEditor } from "../components/issue-editor";
+import { StandaloneEditor } from "../components/standalone-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,18 @@ export default async function NewsletterIssuePage({
   const issue = await getIssue(id);
   if (!issue) notFound();
   if (issue.status === "sent") redirect(`/admin/newsletter/sent/${id}`);
-  if (issue.kind === "standalone") notFound(); // editor lands in the next commit
 
   const progress = await getIssueProgress(id);
+  if (issue.kind === "standalone") {
+    return (
+      <StandaloneEditor
+        id={issue.id}
+        initialData={issue.data}
+        status={issue.status}
+        initialProgress={progress}
+      />
+    );
+  }
 
   return (
     <div>

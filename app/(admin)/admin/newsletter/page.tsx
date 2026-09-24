@@ -6,6 +6,7 @@ import {
   normalizeAdminLanguage,
 } from "@/lib/admin/language";
 import {
+  createStandaloneDraft,
   deleteDraftIssue,
   listIssues,
   toggleIssueArchiveVisibility,
@@ -16,6 +17,8 @@ export const dynamic = "force-dynamic";
 const COPY = {
   es: {
     newIssue: "Nuevo issue",
+    newStandalone: "Nuevo email suelto",
+    standalone: "Email suelto",
     status: {
       sent: "Enviado",
       sending: "Enviando...",
@@ -32,6 +35,8 @@ const COPY = {
   },
   en: {
     newIssue: "New issue",
+    newStandalone: "New standalone email",
+    standalone: "Standalone email",
     status: {
       sent: "Sent",
       sending: "Sending...",
@@ -142,12 +147,22 @@ export default async function NewsletterListPage() {
             Newsletter
           </h1>
         </div>
-        <Link
-          href="/admin/newsletter/new"
-          className="cursor-pointer rounded-full bg-gray-900 px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-normal text-white transition hover:bg-gray-700 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-        >
-          {copy.newIssue}
-        </Link>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <form action={createStandaloneDraft}>
+            <button
+              type="submit"
+              className="cursor-pointer rounded-full border border-black/10 bg-white px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-normal text-gray-700 transition hover:border-black/30 hover:text-black dark:border-white/15 dark:bg-neutral-900 dark:text-gray-200 dark:hover:border-white/40 dark:hover:text-white"
+            >
+              {copy.newStandalone}
+            </button>
+          </form>
+          <Link
+            href="/admin/newsletter/new"
+            className="cursor-pointer rounded-full bg-gray-900 px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-normal text-white transition hover:bg-gray-700 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+          >
+            {copy.newIssue}
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 overflow-hidden rounded-2xl border border-black/5 bg-white dark:border-white/10 dark:bg-neutral-900">
@@ -177,17 +192,27 @@ export default async function NewsletterListPage() {
                       </p>
                     </Link>
                     <p className="mt-0.5 text-xs font-medium text-gray-400 dark:text-gray-500">
-                      Issue {issue.slug}
-                      {issue.date ? ` · ${issue.date}` : ""}
+                      {issue.kind === "standalone" ? (
+                        <span className="rounded-full bg-black/5 px-2 py-0.5 text-[11px] text-gray-500 dark:bg-white/10 dark:text-gray-300">
+                          {copy.standalone}
+                        </span>
+                      ) : (
+                        <>
+                          Issue {issue.slug}
+                          {issue.date ? ` · ${issue.date}` : ""}
+                        </>
+                      )}
                     </p>
                   </div>
                   <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
-                    <ArchiveToggle
-                      id={issue.id}
-                      status={issue.status}
-                      archivePublished={issue.archivePublished}
-                      language={language}
-                    />
+                    {issue.kind === "build_log" && (
+                      <ArchiveToggle
+                        id={issue.id}
+                        status={issue.status}
+                        archivePublished={issue.archivePublished}
+                        language={language}
+                      />
+                    )}
                     <DraftDeleteButton id={issue.id} status={issue.status} language={language} />
                   </div>
                   <StatusDot status={issue.status} language={language} />
