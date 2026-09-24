@@ -64,6 +64,13 @@
       "when": 1788836395735,
       "tag": "0008_aspiring_wallflower",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790289172105,
+      "tag": "0009_rich_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }

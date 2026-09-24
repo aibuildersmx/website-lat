@@ -1,4 +1,5 @@
 import { isAdPlacement } from "./ad-placement";
+import type { StandaloneEmail } from "./standalone-types";
 import { AD_PLACEMENTS, type Issue } from "./types";
 
 const MAX_SERIALIZED_CHARS = 200_000;
@@ -250,4 +251,44 @@ export function validateIssue(value: unknown): IssueValidation {
 
 export function parseIssue(value: unknown): Issue | null {
   return validateIssue(value).issue ?? null;
+}
+
+const STANDALONE_KEYS = ["slug", "subject", "preview", "title", "subtitle", "body", "cta"] as const;
+
+export type StandaloneValidation =
+  | { email: StandaloneEmail; errors?: undefined }
+  | { email?: undefined; errors: string[] };
+
+export function validateStandalone(value: unknown): StandaloneValidation {
+  let serialized: string | undefined;
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    return { errors: ["email: no es serializable a JSON"] };
+  }
+  if (serialized === undefined) return { errors: ["email: no es serializable a JSON"] };
+  if (serialized.length > MAX_SERIALIZED_CHARS) {
+    return { errors: [`email: excede ${MAX_SERIALIZED_CHARS} caracteres serializado`] };
+  }
+  if (!isRecord(value)) return { errors: ["email: falta o no es objeto"] };
+
+  const ctx: Ctx = { errors: [] };
+  checkKeys(ctx, "email", value, STANDALONE_KEYS);
+  checkText(ctx, "email.slug", value.slug, 64);
+  checkText(ctx, "email.subject", value.subject);
+  checkText(ctx, "email.preview", value.preview);
+  checkText(ctx, "email.title", value.title);
+  if (value.subtitle !== undefined) checkText(ctx, "email.subtitle", value.subtitle, MAX_BODY_TEXT);
+  checkText(ctx, "email.body", value.body, MAX_BODY_TEXT);
+  if (value.cta !== undefined) {
+    checkObject(ctx, "email.cta", value.cta, ["text", "href"], (c, p, v) => {
+      let ok = checkText(c, `${p}.text`, v.text);
+      ok = checkUrl(c, `${p}.href`, v.href) && ok;
+      if (ok && v.href === "") ok = fail(c, `${p}.href: requerido cuando hay CTA`);
+      return ok;
+    });
+  }
+
+  if (ctx.errors.length > 0) return { errors: ctx.errors };
+  return { email: value as unknown as StandaloneEmail };
 }

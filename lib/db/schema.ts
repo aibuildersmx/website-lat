@@ -10,6 +10,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { EmailKind } from "@/lib/newsletter/standalone-types";
 import type { Issue } from "@/lib/newsletter/types";
 import type { ArticleContent } from "@/lib/blog/article-types";
 
@@ -112,6 +113,7 @@ export const newsletterIssues = pgTable("newsletter_issues", {
   slug: text("slug").notNull().unique(), // e.g. "003"; also Issue.slug
   subject: text("subject").notNull().default(""), // denormalized for list views
   status: text("status").notNull().default("draft"), // "draft" | "sending" | "sent"
+  kind: text("kind").$type<EmailKind>().notNull().default("build_log"), // "build_log" | "standalone"
   data: jsonb("data").$type<Issue>().notNull(), // the full Issue object
   version: integer("version").notNull().default(1), // optimistic concurrency for external editors
   resendBroadcastId: text("resend_broadcast_id"), // set once broadcast

@@ -1,0 +1,1 @@
+ALTER TABLE "newsletter_issues" ADD COLUMN "kind" text DEFAULT 'build_log' NOT NULL;
