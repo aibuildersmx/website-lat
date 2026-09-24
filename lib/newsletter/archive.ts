@@ -38,6 +38,7 @@ export async function listPublishedIssues(): Promise<ArchiveCard[]> {
     .where(
       and(
         eq(newsletterIssues.status, "sent"),
+        eq(newsletterIssues.kind, "build_log"),
         sql`coalesce((${newsletterIssues.data}->>'archivePublished')::boolean, true) = true`,
       ),
     )
@@ -67,6 +68,7 @@ export async function listPublishedFeedIssues(): Promise<PublishedFeedIssue[]> {
     .where(
       and(
         eq(newsletterIssues.status, "sent"),
+        eq(newsletterIssues.kind, "build_log"),
         sql`coalesce((${newsletterIssues.data}->>'archivePublished')::boolean, true) = true`,
       ),
     )
@@ -106,6 +108,7 @@ export async function getPublishedIssue(slug: string): Promise<PublishedIssue | 
       and(
         eq(newsletterIssues.slug, slug),
         eq(newsletterIssues.status, "sent"),
+        eq(newsletterIssues.kind, "build_log"),
         sql`coalesce((${newsletterIssues.data}->>'archivePublished')::boolean, true) = true`,
       ),
     )

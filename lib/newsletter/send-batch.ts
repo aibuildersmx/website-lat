@@ -2,8 +2,8 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Resend } from "resend";
 import type { DB } from "@/lib/db/client";
 import { contacts, newsletterIssues, newsletterSends, newsletterWarmup } from "@/lib/db/schema";
-import type { Issue } from "./types";
-import { renderBuildLog } from "./render";
+import { emailSubject, renderEmail } from "./render-email";
+import { rowToDraft } from "./standalone-store";
 import { wrapEmailLinks } from "./links";
 import { injectUnsubscribe, unsubscribeHeaders } from "./unsubscribe";
 import { injectTracking } from "./tracking";
@@ -29,12 +29,12 @@ export async function processSendBatch(
   const { db, resend, from, replyTo } = deps;
 
   const [issueRow] = await db
-    .select({ data: newsletterIssues.data })
+    .select({ kind: newsletterIssues.kind, data: newsletterIssues.data })
     .from(newsletterIssues)
     .where(eq(newsletterIssues.id, issueId))
     .limit(1);
-  const issue = issueRow?.data as Issue | undefined;
-  if (!issue) return; // issue deleted mid-flight; nothing to do
+  if (!issueRow) return; // issue deleted mid-flight; nothing to do
+  const draft = rowToDraft(issueRow);
 
   const pending = await db
     .select({ contactId: newsletterSends.contactId, email: contacts.email })
@@ -53,12 +53,12 @@ export async function processSendBatch(
     return;
   }
 
-  const html = renderBuildLog(issue);
+  const html = renderEmail(draft);
   const res = await resend.batch.send(
     pending.map((r) => ({
       from,
       to: [r.email],
-      subject: issue.spanish?.subject ?? issue.subject,
+      subject: emailSubject(draft),
       html: injectTracking(
         wrapEmailLinks(injectUnsubscribe(html, r.contactId, issueId)),
         r.contactId,

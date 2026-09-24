@@ -13,6 +13,7 @@ export default async function NewsletterIssuePage({
   const issue = await getIssue(id);
   if (!issue) notFound();
   if (issue.status === "sent") redirect(`/admin/newsletter/sent/${id}`);
+  if (issue.kind === "standalone") notFound(); // editor lands in the next commit
 
   const progress = await getIssueProgress(id);
 

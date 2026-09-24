@@ -9,8 +9,17 @@ import { getUser } from "@/lib/auth";
 import type { BaseIssue, Issue } from "@/lib/newsletter/types";
 import { emptyIssue } from "@/lib/newsletter/issue";
 import { insertNewsletterDraft } from "@/lib/newsletter/draft-create";
+import { listIssueItem, type IssueListItem } from "@/lib/newsletter/list-item";
 import { previewHtml } from "@/lib/newsletter/preview";
-import { renderBuildLog } from "@/lib/newsletter/render";
+import { emailPreviewHtml, emailSubject, renderEmail, type EmailDraft } from "@/lib/newsletter/render-email";
+import {
+  insertStandaloneDraft,
+  rowToDraft,
+  StandaloneConflictError,
+  updateStandaloneDraft,
+} from "@/lib/newsletter/standalone-store";
+import type { StandaloneEmail } from "@/lib/newsletter/standalone-types";
+import { validateStandalone } from "@/lib/newsletter/validation";
 import { loadNewsletterConfig, MissingEnvError } from "@/lib/newsletter/resend";
 import { subscribedRecipients, chunk } from "@/lib/newsletter/recipients";
 import { injectUnsubscribe, siteUrl } from "@/lib/newsletter/unsubscribe";
@@ -135,22 +144,12 @@ async function uploadedText(value: FormDataEntryValue | null): Promise<string> {
   return "";
 }
 
-export interface IssueListItem {
-  id: string;
-  slug: string;
-  subject: string;
-  status: string;
-  archivePublished: boolean;
-  date: string;
-  sentAt: Date | null;
-  updatedAt: Date;
-}
-
 export async function listIssues(): Promise<IssueListItem[]> {
   if (await gate()) return [];
   const rows = await db
     .select({
       id: newsletterIssues.id,
+      kind: newsletterIssues.kind,
       slug: newsletterIssues.slug,
       subject: newsletterIssues.subject,
       status: newsletterIssues.status,
@@ -161,11 +160,7 @@ export async function listIssues(): Promise<IssueListItem[]> {
     .from(newsletterIssues)
     .orderBy(desc(newsletterIssues.updatedAt));
   return rows
-    .map(({ data, ...row }) => ({
-      ...row,
-      date: data.date,
-      archivePublished: data.archivePublished !== false,
-    }))
+    .map(listIssueItem)
     .sort((a, b) => {
       const aDate = issueDateSortValue(a.date);
       const bDate = issueDateSortValue(b.date);
@@ -180,18 +175,24 @@ export async function listIssues(): Promise<IssueListItem[]> {
     });
 }
 
-export interface IssueDetail {
+export type IssueDetail = {
   id: string;
   slug: string;
   status: string;
   sentAt: Date | null;
-  data: Issue;
-}
+} & EmailDraft;
 
 function sendReadinessError(detail: IssueDetail | null): ActionError | null {
   if (!detail) return { error: "Issue no encontrado." };
   if (detail.status === "sent") return { error: "Este issue ya fue enviado." };
   if (detail.status === "sending") return { error: "Este issue ya se está enviando." };
+  if (detail.kind === "standalone") {
+    const { email, errors } = validateStandalone(detail.data);
+    if (errors) return { error: `El email no es válido: ${errors[0]}` };
+    if (!email.subject.trim()) return { error: "Agrega un asunto antes de enviar." };
+    if (!email.body.trim()) return { error: "Agrega el cuerpo del email antes de enviar." };
+    return null;
+  }
   if (!detail.data.spanish) return { error: "Genera la versión en español antes de enviar." };
   if (detail.data.spanishTranslationStale) {
     return { error: "La traducción está desactualizada. Actualízala antes de enviar." };
@@ -219,7 +220,7 @@ export async function getIssue(id: string): Promise<IssueDetail | null> {
     slug: row.slug,
     status: row.status,
     sentAt: row.sentAt,
-    data: row.data,
+    ...rowToDraft(row),
   };
 }
 
@@ -470,10 +471,15 @@ export async function sendTest(
   email: string,
 ): Promise<ActionOk | ActionError> {
   if (await gate()) return { error: "No autorizado." };
-  const to = email.trim().toLowerCase();
-  if (!to.includes("@")) return { error: "Ingresa un correo válido." };
   if (!data.spanish) return { error: "Genera la versión en español antes de enviar una prueba." };
   if (!data.spanish.subject.trim()) return { error: "La versión en español necesita un subject." };
+  return deliverTest({ kind: "build_log", data }, email);
+}
+
+// Callers gate first; this is not exported, so it is never a server action.
+async function deliverTest(draft: EmailDraft, email: string): Promise<ActionOk | ActionError> {
+  const to = email.trim().toLowerCase();
+  if (!to.includes("@")) return { error: "Ingresa un correo válido." };
 
   let cfg;
   try {
@@ -492,11 +498,12 @@ export async function sendTest(
     .from(contacts)
     .where(eq(contacts.email, to))
     .limit(1);
+  const rendered = renderEmail(draft);
   // Strip the open pixel — a test send has no persisted issue id to attribute to.
   const html = stripTracking(
     contact
-      ? injectUnsubscribe(renderBuildLog(data), contact.id)
-      : renderBuildLog(data).replace(
+      ? injectUnsubscribe(rendered, contact.id)
+      : rendered.replace(
           /\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g,
           `${siteUrl()}/unsubscribe`,
         ),
@@ -505,12 +512,51 @@ export async function sendTest(
   const res = await cfg.resend.emails.send({
     from: cfg.from,
     to: [to],
-    subject: `[TEST] ${data.spanish.subject}`,
+    subject: `[TEST] ${emailSubject(draft)}`,
     html,
     replyTo: cfg.replyTo,
   });
   if (res.error) return { error: `Envío de prueba falló: ${res.error.message}` };
   return { ok: true, message: `Prueba enviada a ${to}.` };
+}
+
+export async function createStandaloneDraft(): Promise<void> {
+  if (await gate()) redirect("/login");
+  const row = await insertStandaloneDraft();
+  revalidatePath(LIST_PATH);
+  redirect(`${LIST_PATH}/${row.id}`);
+}
+
+export async function saveStandalone(
+  id: string,
+  email: StandaloneEmail,
+): Promise<ActionOk | ActionError> {
+  if (await gate()) return { error: "No autorizado." };
+  const { email: valid, errors } = validateStandalone(email);
+  if (errors) return { error: errors[0] };
+  try {
+    await updateStandaloneDraft(id, null, valid);
+  } catch (error) {
+    if (error instanceof StandaloneConflictError) return { error: "Este email ya no es un borrador editable." };
+    throw error;
+  }
+  revalidatePath(`${LIST_PATH}/${id}`);
+  revalidatePath(LIST_PATH);
+  return { ok: true };
+}
+
+export async function renderStandalonePreview(email: StandaloneEmail): Promise<string> {
+  if (await gate()) return "<!doctype html><title>No autorizado</title>";
+  return emailPreviewHtml({ kind: "standalone", data: email });
+}
+
+export async function sendStandaloneTest(
+  email: StandaloneEmail,
+  to: string,
+): Promise<ActionOk | ActionError> {
+  if (await gate()) return { error: "No autorizado." };
+  if (!email.subject.trim()) return { error: "Agrega un asunto antes de enviar una prueba." };
+  return deliverTest({ kind: "standalone", data: email }, to);
 }
 
 export async function sendIssue(id: string): Promise<ActionOk | ActionError> {

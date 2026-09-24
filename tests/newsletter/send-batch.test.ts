@@ -49,12 +49,20 @@ d("processSendBatch (integration)", () => {
     }
   });
 
-  async function seed(n: number) {
+  async function seed(n: number, standalone?: Record<string, unknown>) {
     const slug = `t-${process.pid}-${Date.now()}`;
-    const data = { ...emptyIssue(slug), subject: "Test subject" };
+    const data = standalone
+      ? { slug, subject: "Solo", preview: "", title: "Hola standalone", body: "Texto del email", ...standalone }
+      : { ...emptyIssue(slug), subject: "Test subject" };
     const [issue] = await db
       .insert(schema.newsletterIssues)
-      .values({ slug, subject: data.subject, status: "sending", data })
+      .values({
+        slug,
+        subject: String(data.subject),
+        status: "sending",
+        kind: standalone ? "standalone" : "build_log",
+        data: data as never,
+      })
       .returning({ id: schema.newsletterIssues.id });
     issueId = issue.id;
     const inserted = await db
@@ -97,6 +105,19 @@ d("processSendBatch (integration)", () => {
       .where(eq(schema.newsletterIssues.id, issueId));
     expect(issue.status).toBe("sent");
     expect(issue.sentAt).not.toBeNull();
+  });
+
+  it("renders standalone emails with their own subject, unsubscribe and pixel", async () => {
+    await seed(1, {});
+    const r = fakeResend();
+    await sb.processSendBatch(deps(r.client), { issueId, contactIds });
+
+    const [payload] = r.calls[0] as Array<{ subject: string; html: string }>;
+    expect(payload.subject).toBe("Solo");
+    expect(payload.html).toContain("Hola standalone");
+    expect(payload.html).not.toContain("The Build Log");
+    expect(payload.html).not.toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
+    expect(payload.html).not.toContain("{{{OPEN_PIXEL}}}");
   });
 
   it("does not finalize while a warm-up plan still has recipients to stage", async () => {

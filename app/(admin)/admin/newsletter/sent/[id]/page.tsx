@@ -1,17 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getIssue, getIssueEngagement } from "@/lib/actions/newsletter";
-import { renderBuildLog } from "@/lib/newsletter/render";
-import { stripTracking } from "@/lib/newsletter/tracking";
+import { emailPreviewHtml } from "@/lib/newsletter/render-email";
 import { EngagementPanel } from "../../components/engagement-panel";
 
 export const dynamic = "force-dynamic";
-
-function previewHtml(issue: Parameters<typeof renderBuildLog>[0]): string {
-  return stripTracking(
-    renderBuildLog(issue).replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, "#"),
-  );
-}
 
 function formatDate(date: Date | null): string {
   if (!date) return "Fecha de envío no disponible";
@@ -32,6 +25,8 @@ export default async function SentNewsletterIssuePage({
   if (issue.status !== "sent") redirect(`/admin/newsletter/${id}`);
 
   const engagement = await getIssueEngagement(id);
+  const standalone = issue.kind === "standalone";
+  const heading = standalone ? issue.data.title || issue.data.subject : `Issue ${issue.data.slug}`;
 
   return (
     <div>
@@ -45,7 +40,7 @@ export default async function SentNewsletterIssuePage({
           </Link>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <h1 className="text-3xl font-medium text-gray-800 dark:text-gray-100">
-              Issue {issue.data.slug}
+              {heading}
             </h1>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-[11px] font-bold text-green-700 dark:text-green-400">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -56,13 +51,13 @@ export default async function SentNewsletterIssuePage({
             {issue.data.subject || "Sin subject"} · {formatDate(issue.sentAt)}
           </p>
         </div>
-        <Link
+        {!standalone && <Link
           href={`/newsletters/${issue.data.slug}`}
           target="_blank"
           className="rounded-full border border-black/10 px-4 py-2 font-sans text-xs font-bold uppercase tracking-normal text-gray-600 transition hover:border-black/30 dark:border-white/15 dark:text-gray-300 dark:hover:border-white/40"
         >
           Ver público
-        </Link>
+        </Link>}
       </div>
 
       <EngagementPanel data={engagement} />
@@ -74,8 +69,8 @@ export default async function SentNewsletterIssuePage({
           </p>
         </div>
         <iframe
-          title={`Issue ${issue.data.slug}`}
-          srcDoc={previewHtml(issue.data)}
+          title={heading}
+          srcDoc={emailPreviewHtml(issue)}
           className="h-[78vh] w-full bg-black"
         />
       </div>
