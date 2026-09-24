@@ -10,6 +10,10 @@ const mocks = vi.hoisted(() => ({
   audit: vi.fn(),
   preview: vi.fn(),
   warnings: vi.fn(),
+  createStandalone: vi.fn(),
+  updateStandalone: vi.fn(),
+  standalonePreview: vi.fn(),
+  standaloneWarnings: vi.fn(),
 }));
 
 vi.mock("@/lib/mcp/newsletters", () => ({
@@ -33,6 +37,15 @@ vi.mock("@/lib/mcp/auth", () => ({
 vi.mock("@/lib/newsletter/preview", () => ({
   previewHtml: mocks.preview,
   issueWarnings: mocks.warnings,
+  standaloneWarnings: mocks.standaloneWarnings,
+}));
+vi.mock("@/lib/newsletter/render-email", () => ({
+  emailPreviewHtml: mocks.standalonePreview,
+}));
+vi.mock("@/lib/newsletter/standalone-store", () => ({
+  StandaloneConflictError: class StandaloneConflictError extends Error { readonly code = "draft_conflict"; },
+  insertStandaloneDraft: mocks.createStandalone,
+  updateStandaloneDraft: mocks.updateStandalone,
 }));
 
 import { MCP_READ_SCOPE, MCP_WRITE_SCOPE } from "@/lib/mcp/auth";
@@ -53,6 +66,8 @@ describe("newsletter MCP protocol", () => {
     mocks.audit.mockResolvedValue(undefined);
     mocks.preview.mockReturnValue("<!doctype html><html>preview</html>");
     mocks.warnings.mockReturnValue(["stories está vacío."]);
+    mocks.standalonePreview.mockReturnValue("<!doctype html><html>standalone</html>");
+    mocks.standaloneWarnings.mockReturnValue([]);
   });
 
   it("exposes only draft-safe tools", () => {
@@ -63,6 +78,9 @@ describe("newsletter MCP protocol", () => {
       "update_newsletter_draft",
       "set_newsletter_ad_placement",
       "preview_newsletter_issue",
+      "create_standalone_email",
+      "update_standalone_email",
+      "preview_standalone_email",
     ]);
     expect(NEWSLETTER_MCP_TOOLS.map((tool) => tool.name).join(" ")).not.toMatch(/publish|delete|send|translate/);
   });
@@ -130,7 +148,7 @@ describe("newsletter MCP protocol", () => {
         structuredContent: { drafts: [] },
       },
     });
-    expect(mocks.list).toHaveBeenCalledWith(10);
+    expect(mocks.list).toHaveBeenCalledWith(10, undefined);
   });
 
   it("treats initialized as a notification with no response", async () => {
@@ -272,13 +290,13 @@ describe("newsletter MCP protocol", () => {
     expect(tools.map((tool) => tool.name)).not.toContain("preview_newsletter_issue");
   });
 
-  it("a preview-only token sees exactly one tool", async () => {
+  it("a preview-only token sees exactly the two preview tools", async () => {
     const response = await handleMcpRequest(
       { jsonrpc: "2.0", id: "p", method: "tools/list" },
       { ...actor, scopes: ["newsletter:preview"] },
     );
     const tools = response && "result" in response ? (response.result.tools as Array<{ name: string }>) : [];
-    expect(tools.map((tool) => tool.name)).toEqual(["preview_newsletter_issue"]);
+    expect(tools.map((tool) => tool.name)).toEqual(["preview_newsletter_issue", "preview_standalone_email"]);
   });
 
   it("surfaces field-level details when create receives a bad issue", async () => {
@@ -292,5 +310,101 @@ describe("newsletter MCP protocol", () => {
     expect(result?.isError).toBe(true);
     expect((result?.content as Array<{ text: string }>)[0]?.text).toContain("claves desconocidas: nope");
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  describe("standalone emails", () => {
+    const standalone = { subject: "Hola", preview: "p", title: "T", body: "Texto" };
+    const draftId = "10000000-0000-4000-8000-000000000123";
+
+    it("creates a standalone draft without a slug", async () => {
+      mocks.createStandalone.mockResolvedValueOnce({ id: draftId, version: 1 });
+      const response = await handleMcpRequest({
+        jsonrpc: "2.0", id: 20, method: "tools/call",
+        params: { name: "create_standalone_email", arguments: { email: standalone } },
+      }, actor);
+      expect(response && "result" in response ? response.result.isError : true).toBeUndefined();
+      expect(mocks.createStandalone).toHaveBeenCalledWith(standalone);
+    });
+
+    it("rejects an unsafe CTA before persistence", async () => {
+      const response = await handleMcpRequest({
+        jsonrpc: "2.0", id: 21, method: "tools/call",
+        params: {
+          name: "create_standalone_email",
+          arguments: { email: { ...standalone, cta: { text: "x", href: "javascript:alert(1)" } } },
+        },
+      }, actor);
+      const result = response && "result" in response ? response.result : null;
+      expect(result?.isError).toBe(true);
+      expect((result?.content as Array<{ text: string }>)[0]?.text).toContain("email.cta.href");
+      expect(mocks.createStandalone).not.toHaveBeenCalled();
+    });
+
+    it("rejects Build Log shaped input", async () => {
+      const response = await handleMcpRequest({
+        jsonrpc: "2.0", id: 22, method: "tools/call",
+        params: { name: "create_standalone_email", arguments: { email: emptyIssue("050") } },
+      }, actor);
+      expect(response && "result" in response ? response.result.isError : false).toBe(true);
+      expect(mocks.createStandalone).not.toHaveBeenCalled();
+    });
+
+    it("updates at the expected revision", async () => {
+      mocks.updateStandalone.mockResolvedValueOnce({ id: draftId, version: 3 });
+      const response = await handleMcpRequest({
+        jsonrpc: "2.0", id: 23, method: "tools/call",
+        params: { name: "update_standalone_email", arguments: { id: draftId, expected_revision: 2, email: standalone } },
+      }, actor);
+      expect(response && "result" in response ? response.result.isError : true).toBeUndefined();
+      expect(mocks.updateStandalone).toHaveBeenCalledWith(draftId, 2, expect.objectContaining({ subject: "Hola" }));
+    });
+
+    it("maps a standalone version conflict to an error result", async () => {
+      const { StandaloneConflictError } = await import("@/lib/newsletter/standalone-store");
+      mocks.updateStandalone.mockRejectedValueOnce(new StandaloneConflictError("stale"));
+      const response = await handleMcpRequest({
+        jsonrpc: "2.0", id: 24, method: "tools/call",
+        params: { name: "update_standalone_email", arguments: { id: draftId, expected_revision: 1, email: standalone } },
+      }, actor);
+      const result = response && "result" in response ? response.result : null;
+      expect(result?.isError).toBe(true);
+      expect((result?.content as Array<{ text: string }>)[0]?.text).toContain("newer revision");
+    });
+
+    it("previews statelessly with a preview-only token", async () => {
+      const response = await handleMcpRequest({
+        jsonrpc: "2.0", id: 25, method: "tools/call",
+        params: { name: "preview_standalone_email", arguments: { email: standalone } },
+      }, { ...actor, scopes: ["newsletter:preview"] });
+      expect(response).toMatchObject({
+        result: { structuredContent: { valid: true, warnings: [], html: "<!doctype html><html>standalone</html>" } },
+      });
+      expect(mocks.createStandalone).not.toHaveBeenCalled();
+      expect(mocks.updateStandalone).not.toHaveBeenCalled();
+    });
+
+    it("refuses standalone writes to read-only credentials", async () => {
+      const response = await handleMcpRequest({
+        jsonrpc: "2.0", id: 26, method: "tools/call",
+        params: { name: "create_standalone_email", arguments: { email: standalone } },
+      }, { ...actor, scopes: [MCP_READ_SCOPE] });
+      expect(response && "result" in response ? response.result.isError : false).toBe(true);
+      expect(mocks.createStandalone).not.toHaveBeenCalled();
+    });
+
+    it("filters drafts by kind and rejects unknown kinds", async () => {
+      mocks.list.mockResolvedValueOnce([]);
+      await handleMcpRequest({
+        jsonrpc: "2.0", id: 27, method: "tools/call",
+        params: { name: "list_newsletter_drafts", arguments: { kind: "standalone" } },
+      }, actor);
+      expect(mocks.list).toHaveBeenCalledWith(20, "standalone");
+
+      const bad = await handleMcpRequest({
+        jsonrpc: "2.0", id: 28, method: "tools/call",
+        params: { name: "list_newsletter_drafts", arguments: { kind: "promo" } },
+      }, actor);
+      expect(bad && "result" in bad ? bad.result.isError : false).toBe(true);
+    });
   });
 });

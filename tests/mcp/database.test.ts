@@ -106,4 +106,12 @@ d("MCP database boundaries", () => {
     expect(claims.filter(Boolean)).toHaveLength(3);
     await db.delete(schema.mcpRateLimits).where(eq(schema.mcpRateLimits.key, key));
   });
+
+  it("standalone creates share the create rate-limit bucket", async () => {
+    const actor = { userId, tokenId: `rl-${process.pid}-${Date.now()}`, scopes: [] };
+    const results = [];
+    for (let i = 0; i < 11; i++) results.push(await audit.withinMcpOperationRateLimit(actor, i % 2 ? "create_standalone_email" : "create_newsletter_draft"));
+    expect(results.filter(Boolean)).toHaveLength(10);
+    await db.delete(schema.mcpRateLimits).where(eq(schema.mcpRateLimits.key, `token:${actor.tokenId}:create`));
+  });
 });

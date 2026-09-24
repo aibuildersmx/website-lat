@@ -15,9 +15,17 @@ import {
 } from "./newsletters";
 import { isAdPlacement } from "@/lib/newsletter/ad-placement";
 import { newsletterIssueJsonSchema } from "@/lib/newsletter/issue-schema";
-import { issueWarnings, previewHtml } from "@/lib/newsletter/preview";
+import { issueWarnings, previewHtml, standaloneWarnings } from "@/lib/newsletter/preview";
+import { emailPreviewHtml } from "@/lib/newsletter/render-email";
+import { standaloneEmailJsonSchema } from "@/lib/newsletter/standalone-schema";
+import {
+  insertStandaloneDraft,
+  StandaloneConflictError,
+  updateStandaloneDraft,
+} from "@/lib/newsletter/standalone-store";
+import { EMAIL_KINDS, isEmailKind, type StandaloneEmail } from "@/lib/newsletter/standalone-types";
 import { AD_PLACEMENTS, type Issue } from "@/lib/newsletter/types";
-import { validateIssue } from "@/lib/newsletter/validation";
+import { validateIssue, validateStandalone } from "@/lib/newsletter/validation";
 
 type JsonRpcId = string | number | null;
 type JsonRpcResponse =
@@ -33,18 +41,25 @@ export const NEWSLETTER_MCP_TOOLS = [
   {
     name: "list_newsletter_drafts",
     title: "List newsletter drafts",
-    description: "List recent AI Builders newsletter drafts. Sent or sending newsletters are never returned.",
+    description:
+      "List recent AI Builders newsletter drafts. Sent or sending newsletters are never returned. " +
+      "Each row has a kind: build_log (The Build Log) or standalone (one-off email). Filter with kind.",
     scope: MCP_READ_SCOPE,
     inputSchema: {
       type: "object",
-      properties: { limit: { type: "integer", minimum: 1, maximum: 50, default: 20 } },
+      properties: {
+        limit: { type: "integer", minimum: 1, maximum: 50, default: 20 },
+        kind: { type: "string", enum: [...EMAIL_KINDS] },
+      },
       additionalProperties: false,
     },
   },
   {
     name: "get_newsletter_draft",
     title: "Get a newsletter draft",
-    description: "Read a newsletter draft and its revision for safe editing.",
+    description:
+      "Read a newsletter draft and its revision for safe editing. " +
+      "Returns `issue` for Build Log drafts and `email` for standalone drafts.",
     scope: MCP_READ_SCOPE,
     inputSchema: {
       type: "object",
@@ -114,7 +129,66 @@ export const NEWSLETTER_MCP_TOOLS = [
       additionalProperties: false,
     },
   },
+  {
+    name: "create_standalone_email",
+    title: "Create a standalone email draft",
+    description:
+      "Create a one-off email to the newsletter list (announcement, invitation) — not The Build Log. " +
+      "This tool cannot send it: a human sends it from /admin/newsletter.",
+    scope: MCP_WRITE_SCOPE,
+    inputSchema: {
+      type: "object",
+      properties: { email: standaloneEmailJsonSchema },
+      required: ["email"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "update_standalone_email",
+    title: "Update a standalone email draft",
+    description:
+      "Replace a standalone draft at an expected revision. " +
+      "Fails if it is not a standalone draft, was sent, or changed since it was read.",
+    scope: MCP_WRITE_SCOPE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        expected_revision: { type: "integer", minimum: 1 },
+        email: standaloneEmailJsonSchema,
+      },
+      required: ["id", "expected_revision", "email"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "preview_standalone_email",
+    title: "Preview a standalone email",
+    description:
+      "Validate a standalone email and render the exact HTML the send would produce. " +
+      "Stateless: reads and writes nothing. " +
+      "The html field is large: save it to a file and open it in a browser; never echo it into the conversation.",
+    scope: MCP_PREVIEW_SCOPE,
+    inputSchema: {
+      type: "object",
+      properties: { email: standaloneEmailJsonSchema },
+      required: ["email"],
+      additionalProperties: false,
+    },
+  },
 ] as const;
+
+// The server owns standalone slugs; authors omit them. A placeholder lets the
+// shared validator run, and persistence replaces it.
+function standaloneInput(value: RecordValue) {
+  return validateStandalone({ ...value, slug: typeof value.slug === "string" ? value.slug : "s-pending0" });
+}
+
+function withoutSlug(email: StandaloneEmail): Partial<StandaloneEmail> {
+  const content: Partial<StandaloneEmail> = { ...email };
+  delete content.slug;
+  return content;
+}
 
 function isRecord(value: unknown): value is RecordValue {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -156,12 +230,15 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
 
   if (name === "list_newsletter_drafts") {
     const input = args ?? {};
-    if (!validArguments(input, ["limit"])) return { result: toolResult("Invalid arguments.", true), errorCode: "invalid_arguments" };
+    if (!validArguments(input, ["limit", "kind"])) return { result: toolResult("Invalid arguments.", true), errorCode: "invalid_arguments" };
     const limit = input.limit === undefined ? 20 : input.limit;
     if (!Number.isInteger(limit) || Number(limit) < 1 || Number(limit) > 50) {
       return { result: toolResult("limit must be an integer from 1 to 50.", true), errorCode: "invalid_arguments" };
     }
-    return { result: toolResult({ drafts: await listNewsletterDrafts(Number(limit)) }) };
+    if (input.kind !== undefined && !isEmailKind(input.kind)) {
+      return { result: toolResult("kind must be build_log or standalone.", true), errorCode: "invalid_arguments" };
+    }
+    return { result: toolResult({ drafts: await listNewsletterDrafts(Number(limit), input.kind) }) };
   }
 
   if (name === "get_newsletter_draft") {
@@ -256,6 +333,55 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
         html: previewHtml(validated.issue),
       }),
     };
+  }
+
+  if (name === "create_standalone_email" || name === "preview_standalone_email") {
+    if (!validArguments(args, ["email"]) || !isRecord(args.email)) {
+      return { result: toolResult("email es requerido.", true), errorCode: "invalid_arguments" };
+    }
+    const validated = standaloneInput(args.email);
+    if (validated.errors) {
+      return {
+        result: toolResult({ valid: false, errors: validated.errors }, true),
+        errorCode: name === "preview_standalone_email" ? "invalid_email" : "invalid_arguments",
+      };
+    }
+    if (name === "preview_standalone_email") {
+      return {
+        result: toolResult({
+          valid: true,
+          warnings: standaloneWarnings(validated.email),
+          html: emailPreviewHtml({ kind: "standalone", data: validated.email }),
+        }),
+      };
+    }
+    const draft = await insertStandaloneDraft(withoutSlug(validated.email));
+    return { result: toolResult(draft), newsletterId: draft.id };
+  }
+
+  if (name === "update_standalone_email") {
+    if (!validArguments(args, ["id", "expected_revision", "email"]) || !uuid(args.id) || !isRecord(args.email)) {
+      return { result: toolResult("id, expected_revision, and email are required.", true), errorCode: "invalid_arguments" };
+    }
+    if (!Number.isInteger(args.expected_revision) || Number(args.expected_revision) < 1) {
+      return { result: toolResult("expected_revision must be a positive integer.", true), errorCode: "invalid_arguments" };
+    }
+    const validated = standaloneInput(args.email);
+    if (validated.errors) {
+      return { result: toolResult({ valid: false, errors: validated.errors }, true), errorCode: "invalid_arguments" };
+    }
+    try {
+      const draft = await updateStandaloneDraft(args.id, Number(args.expected_revision), validated.email);
+      return { result: toolResult(draft), newsletterId: args.id };
+    } catch (cause) {
+      if (cause instanceof StandaloneConflictError) {
+        return {
+          result: toolResult("The draft is missing, not a standalone email, no longer editable, or has a newer revision. Read it again before retrying.", true),
+          errorCode: cause.code,
+        };
+      }
+      throw cause;
+    }
   }
 
   return { protocolError: error(null, -32602, "Unknown tool.") };

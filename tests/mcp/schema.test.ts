@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { emptyIssue } from "@/lib/newsletter/issue";
 import { validateIssue } from "@/lib/newsletter/validation";
 import { BASE_ISSUE_REQUIRED, newsletterIssueJsonSchema } from "@/lib/newsletter/issue-schema";
+import { standaloneEmailJsonSchema } from "@/lib/newsletter/standalone-schema";
+import { validateStandalone } from "@/lib/newsletter/validation";
 
 type SchemaObject = {
   type: string;
@@ -54,5 +56,25 @@ describe("Issue JSON Schema ↔ runtime validation contract", () => {
 
   it("the canonical empty issue passes validation", () => {
     expect(validateIssue(emptyIssue("009")).errors).toBeUndefined();
+  });
+});
+
+describe("Standalone email JSON Schema ↔ runtime validation contract", () => {
+  const standaloneSchema = standaloneEmailJsonSchema as unknown as SchemaObject;
+
+  it("declares exactly the keys the validator accepts", () => {
+    expect(standaloneSchema.additionalProperties).toBe(false);
+    expect(Object.keys(standaloneSchema.properties).sort()).toEqual(
+      ["body", "cta", "preview", "slug", "subject", "subtitle", "title"],
+    );
+  });
+
+  it("every schema-required field is required by the validator", () => {
+    const email: Record<string, unknown> = { slug: "s-abc12345", subject: "S", preview: "P", title: "T", body: "B" };
+    for (const field of standaloneSchema.required) {
+      const missing = { ...email };
+      delete missing[field];
+      expect(validateStandalone(missing).errors).toContain(`email.${field}: falta o no es string`);
+    }
   });
 });

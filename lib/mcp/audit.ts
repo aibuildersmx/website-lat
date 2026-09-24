@@ -46,13 +46,17 @@ export async function withinMcpOperationRateLimit(
   actor: McpActor,
   operation: string,
 ): Promise<boolean> {
-  if (operation === "create_newsletter_draft") {
+  if (operation === "create_newsletter_draft" || operation === "create_standalone_email") {
     return claimMcpRateLimit(`token:${actor.tokenId}:create`, 10);
   }
-  if (operation === "update_newsletter_draft" || operation === "set_newsletter_ad_placement") {
+  if (
+    operation === "update_newsletter_draft"
+    || operation === "set_newsletter_ad_placement"
+    || operation === "update_standalone_email"
+  ) {
     return claimMcpRateLimit(`token:${actor.tokenId}:update`, 30);
   }
-  if (operation === "preview_newsletter_issue") {
+  if (operation === "preview_newsletter_issue" || operation === "preview_standalone_email") {
     return claimMcpRateLimit(`token:${actor.tokenId}:preview`, 20);
   }
   return true;
