@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ctaProblem, formToEmail } from "@/lib/newsletter/standalone-form";
 import type { StandaloneEmail } from "@/lib/newsletter/standalone-types";
 import {
   deleteDraftIssue,
@@ -19,27 +20,6 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 const INPUT =
   "h-10 w-full rounded-lg border border-black/10 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-black/40 disabled:opacity-60 dark:border-white/15 dark:bg-neutral-900 dark:text-gray-100 dark:focus:border-white/40";
 const LABEL = "mb-1.5 block text-xs font-medium text-gray-500 dark:text-gray-400";
-
-// Form fields keep empty strings while editing; the saved email drops empty
-// optional parts so they don't render (and a half-filled CTA never ships).
-function toEmail(fields: {
-  base: StandaloneEmail;
-  subtitle: string;
-  ctaText: string;
-  ctaHref: string;
-}): StandaloneEmail {
-  const { base, subtitle, ctaText, ctaHref } = fields;
-  const email: StandaloneEmail = {
-    slug: base.slug,
-    subject: base.subject,
-    preview: base.preview,
-    title: base.title,
-    body: base.body,
-  };
-  if (subtitle.trim()) email.subtitle = subtitle;
-  if (ctaText.trim() && ctaHref.trim()) email.cta = { text: ctaText, href: ctaHref.trim() };
-  return email;
-}
 
 export function StandaloneEditor({
   id,
@@ -65,12 +45,12 @@ export function StandaloneEditor({
   const [busy, setBusy] = useState(false);
   const firstRender = useRef(true);
 
-  const email = toEmail({ base, subtitle, ctaText, ctaHref });
+  const email = formToEmail({ base, subtitle, ctaText, ctaHref });
   const emailKey = JSON.stringify(email);
   const draft = status === "draft";
   const sending = status === "sending";
   const sent = status === "sent";
-  const ctaIncomplete = Boolean(ctaText.trim()) !== Boolean(ctaHref.trim());
+  const ctaWarning = ctaProblem(ctaText, ctaHref);
 
   // Debounced autosave (skip the first render), same rhythm as the Build Log.
   useEffect(() => {
@@ -82,7 +62,9 @@ export function StandaloneEditor({
     const t = setTimeout(async () => {
       const res = await saveStandalone(id, JSON.parse(emailKey) as StandaloneEmail);
       setSaveState("error" in res ? "error" : "saved");
-      if ("error" in res) setMessage({ kind: "err", text: res.error });
+      setMessage((current) =>
+        "error" in res ? { kind: "err", text: res.error } : current?.kind === "err" ? null : current,
+      );
     }, 1000);
     return () => clearTimeout(t);
   }, [emailKey, id, draft]);
@@ -354,8 +336,10 @@ export function StandaloneEditor({
                 onChange={(e) => onField(setCtaHref)(e.target.value)}
               />
             </div>
-            {ctaIncomplete && (
-              <p className="text-xs text-amber-700 sm:col-span-2 dark:text-amber-300">El botón necesita texto y URL.</p>
+            {ctaWarning && (
+              <p className="text-xs text-amber-700 sm:col-span-2 dark:text-amber-300">
+                {ctaWarning} Mientras tanto el email se guarda sin botón.
+              </p>
             )}
           </div>
         </fieldset>
