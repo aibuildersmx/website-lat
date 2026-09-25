@@ -50,5 +50,13 @@ export function standaloneWarnings(email: StandaloneEmail): string[] {
   if (!email.preview.trim()) warnings.push("preview (texto de inbox) está vacío.");
   if (!email.title.trim()) warnings.push("title está vacío.");
   if (!email.body.trim()) warnings.push("body está vacío.");
+  const images = email.body.match(/^!\[[^\]\n]*\]\([^)\n]*\)$/gm)?.length ?? 0;
+  if (images > 0) {
+    const text = email.body.replace(/^!\[[^\]\n]*\]\([^)\n]*\)$/gm, "").replace(/\s+/g, " ").trim();
+    if (text.length < 300) {
+      warnings.push(`Hay ${images} imagen(es) y solo ${text.length} caracteres de texto: los filtros de spam castigan emails de pura imagen. Agrega texto.`);
+    }
+    if (images > 5) warnings.push(`Hay ${images} imágenes; arriba de 5 el email pesa y carga lento.`);
+  }
   return warnings;
 }

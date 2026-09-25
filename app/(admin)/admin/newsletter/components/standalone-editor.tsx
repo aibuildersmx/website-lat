@@ -44,6 +44,8 @@ export function StandaloneEditor({
   const [srcDoc, setSrcDoc] = useState("");
   const [busy, setBusy] = useState(false);
   const firstRender = useRef(true);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const email = formToEmail({ base, subtitle, ctaText, ctaHref });
   const emailKey = JSON.stringify(email);
@@ -51,6 +53,30 @@ export function StandaloneEditor({
   const sending = status === "sending";
   const sent = status === "sent";
   const ctaWarning = ctaProblem(ctaText, ctaHref);
+
+  // Upload, then drop the markdown line at the cursor as its own paragraph.
+  async function uploadImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/admin/newsletter/images", { method: "POST", body: form });
+      const json = (await res.json().catch(() => ({}))) as { markdown?: string; error?: string };
+      if (!res.ok || !json.markdown) {
+        setMessage({ kind: "err", text: json.error ?? "No se pudo subir la imagen." });
+        return;
+      }
+      const at = bodyRef.current?.selectionStart ?? base.body.length;
+      const before = base.body.slice(0, at).replace(/\s*$/, "");
+      const after = base.body.slice(at).replace(/^\s*/, "");
+      patch({ body: [before, json.markdown, after].filter(Boolean).join("\n\n") });
+    } finally {
+      setUploading(false);
+    }
+  }
 
   // Debounced autosave (skip the first render), same rhythm as the Build Log.
   useEffect(() => {
@@ -309,8 +335,17 @@ export function StandaloneEditor({
             <input id="standalone-subtitle" className={INPUT} value={subtitle} onChange={(e) => onField(setSubtitle)(e.target.value)} />
           </div>
           <div>
-            <label className={LABEL} htmlFor="standalone-body">Cuerpo</label>
+            <div className="flex items-center justify-between">
+              <label className={LABEL} htmlFor="standalone-body">Cuerpo</label>
+              {draft && (
+                <label className="mb-1.5 cursor-pointer text-xs font-medium text-gray-500 underline-offset-2 hover:underline dark:text-gray-400">
+                  {uploading ? "Subiendo…" : "Subir imagen"}
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic" className="hidden" disabled={uploading} onChange={uploadImage} />
+                </label>
+              )}
+            </div>
             <textarea
+              ref={bodyRef}
               id="standalone-body"
               rows={16}
               className={`${INPUT} h-auto py-2.5 font-mono leading-relaxed`}
@@ -319,6 +354,7 @@ export function StandaloneEditor({
             />
             <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
               Markdown: **negritas**, *itálicas*, [link](https://…), ## encabezado, - lista. Línea en blanco = párrafo nuevo.
+              Las imágenes van solas en su párrafo; cambia el texto entre [ ] por una descripción.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

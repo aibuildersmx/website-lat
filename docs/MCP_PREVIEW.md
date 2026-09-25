@@ -114,6 +114,33 @@ lo asigna el servidor.
 `list_newsletter_drafts` acepta `kind: "standalone"` y `get_newsletter_draft`
 devuelve `email` (en vez de `issue`) para estos borradores.
 
+### Imágenes
+
+Sube la imagen y pega la línea de markdown que te devuelve **sola en su
+párrafo** (línea en blanco antes y después), con una descripción real:
+
+```
+![Equipo presentando en el demo day](https://aibuilders.lat/img/<id>-1200x675.jpg)
+```
+
+Para subirla:
+
+- **Con terminal (recomendado):**
+  `curl -H "Authorization: Bearer $TOKEN" -F file=@foto.jpg https://aibuilders.lat/api/mcp/images`
+  devuelve `{ url, width, height, markdown }`.
+- **Por MCP:** `upload_newsletter_image({ data_base64, alt })`. Solo sirve
+  para archivos chicos (~180 KB); para fotos usa el `curl`.
+- **En el admin:** "Subir imagen" arriba del cuerpo.
+
+JPG, PNG, WebP, GIF, AVIF o HEIC de hasta 5 MB. Se reduce a 1200px de ancho,
+se le quitan los metadatos (EXIF, GPS) y sale como JPG (PNG si tiene
+transparencia). SVG no. Las imágenes de otros sitios se rechazan: solo
+URLs `aibuilders.lat/img/...`.
+
+Se ve a lo ancho de la columna (600px) y se encoge en celular; las chicas se
+quedan a su tamaño. Si el email es casi pura imagen, el preview te avisa:
+los filtros de spam lo castigan.
+
 ### Mandar un email suelto a una persona
 
 Con un token **"Editor + envío individual"** aparece una tool más:
@@ -138,5 +165,6 @@ El envío **a la lista** sigue siendo solo desde `/admin/newsletter`, con
 
 - 20 previews por minuto por token (y 120 requests/min en total).
 - Envíos individuales: 5 por minuto y 50 al día por token.
+- Imágenes: 20 por minuto por token, 5 MB por archivo.
 - Issue de hasta 200 KB serializado.
 - Cada request queda en el audit log del sitio.

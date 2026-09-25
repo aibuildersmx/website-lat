@@ -1,4 +1,5 @@
 import { ACCENT, BG, MUTED, SANS, TEXT, esc, hr, legalFooterLinks, OPEN_PIXEL_TAG } from "./email-style";
+import { displayWidth, parseImageUrl } from "./image-url";
 import { renderMarkdown } from "./render-markdown";
 import type { StandaloneEmail } from "./standalone-types";
 
@@ -7,6 +8,10 @@ const MARKDOWN_STYLE = {
   h2: `margin:32px 0 16px;color:${TEXT};font-family:${SANS};font-size:26px;font-weight:600;line-height:1.2;`,
   li: `margin:0 0 8px;color:${MUTED};font-family:${SANS};font-size:18px;line-height:1.55;`,
   a: `color:${ACCENT};text-decoration:underline;`,
+  imageWidth: (src: string) => {
+    const ref = parseImageUrl(src);
+    return ref ? displayWidth(ref) : null;
+  },
 };
 
 // A one-off list email: same brand shell and legal footer as The Build Log,
@@ -34,7 +39,7 @@ export function renderStandalone(email: StandaloneEmail): string {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(email.preview)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
 <tr><td align="center" style="padding:32px 16px 64px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
 
   <tr><td style="padding:0 0 24px;">
     <h1 style="margin:0;color:${TEXT};font-family:${SANS};font-size:38px;font-weight:600;line-height:1.1;">${esc(email.title)}</h1>

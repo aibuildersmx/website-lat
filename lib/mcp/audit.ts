@@ -59,6 +59,9 @@ export async function withinMcpOperationRateLimit(
   if (operation === "preview_newsletter_issue" || operation === "preview_standalone_email") {
     return claimMcpRateLimit(`token:${actor.tokenId}:preview`, 20);
   }
+  if (operation === "upload_newsletter_image") {
+    return claimMcpRateLimit(`token:${actor.tokenId}:images`, 20);
+  }
   if (operation === "send_standalone_email") {
     return (
       (await claimMcpRateLimit(`token:${actor.tokenId}:send-single`, 5))

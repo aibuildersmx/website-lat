@@ -15,6 +15,8 @@ import {
 } from "./newsletters";
 import { isAdPlacement } from "@/lib/newsletter/ad-placement";
 import { DirectSendError, sendStandaloneTo } from "@/lib/newsletter/direct-send";
+import { ImageUploadError, imageMarkdown } from "@/lib/newsletter/image-process";
+import { storeImage } from "@/lib/newsletter/images";
 import { newsletterIssueJsonSchema } from "@/lib/newsletter/issue-schema";
 import { issueWarnings, previewHtml, standaloneWarnings } from "@/lib/newsletter/preview";
 import { emailPreviewHtml } from "@/lib/newsletter/render-email";
@@ -175,6 +177,26 @@ export const NEWSLETTER_MCP_TOOLS = [
       type: "object",
       properties: { email: standaloneEmailJsonSchema },
       required: ["email"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "upload_newsletter_image",
+    title: "Upload an image for a standalone email",
+    description:
+      "Upload an image and get back its URL and a ready markdown line (![alt](url)) for a standalone email body. " +
+      "Put that line in its own paragraph (blank line before and after) and write real alt text. " +
+      "Resized to 1200px and converted to JPG/PNG for email clients. Images from other hosts are rejected in the body. " +
+      "For files over ~180 KB, don't use this tool: POST the file to https://aibuilders.lat/api/mcp/images " +
+      "with the same Bearer token, e.g. curl -H \"Authorization: Bearer $TOKEN\" -F file=@photo.jpg <url>.",
+    scope: MCP_WRITE_SCOPE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        data_base64: { type: "string", maxLength: 250_000, description: "The image file, base64-encoded" },
+        alt: { type: "string", maxLength: 300, description: "Alt text for the returned markdown line" },
+      },
+      required: ["data_base64"],
       additionalProperties: false,
     },
   },
@@ -416,6 +438,24 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
           errorCode: cause.code,
         };
       }
+      throw cause;
+    }
+  }
+
+  if (name === "upload_newsletter_image") {
+    if (!validArguments(args, ["data_base64", "alt"]) || typeof args.data_base64 !== "string"
+      || (args.alt !== undefined && typeof args.alt !== "string")) {
+      return { result: toolResult("data_base64 (string) is required; alt is optional text.", true), errorCode: "invalid_arguments" };
+    }
+    const base64 = args.data_base64.replace(/^data:[^,]*,/, "").replace(/\s+/g, "");
+    if (!/^[A-Za-z0-9+/_-]*={0,2}$/.test(base64)) {
+      return { result: toolResult("data_base64 is not valid base64.", true), errorCode: "invalid_arguments" };
+    }
+    try {
+      const image = await storeImage(Buffer.from(base64, "base64"), { tokenId: actor.tokenId });
+      return { result: toolResult({ ...image, markdown: imageMarkdown(image.url, args.alt as string | undefined) }) };
+    } catch (cause) {
+      if (cause instanceof ImageUploadError) return { result: toolResult(cause.message, true), errorCode: cause.code };
       throw cause;
     }
   }

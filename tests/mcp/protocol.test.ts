@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   standalonePreview: vi.fn(),
   standaloneWarnings: vi.fn(),
   sendSingle: vi.fn(),
+  storeImage: vi.fn(),
 }));
 
 vi.mock("@/lib/mcp/newsletters", () => ({
@@ -61,6 +62,8 @@ vi.mock("@/lib/newsletter/direct-send", () => ({
   sendStandaloneTo: mocks.sendSingle,
 }));
 
+vi.mock("@/lib/newsletter/images", () => ({ storeImage: mocks.storeImage }));
+
 import { MCP_READ_SCOPE, MCP_WRITE_SCOPE } from "@/lib/mcp/auth";
 import { DirectSendError } from "@/lib/newsletter/direct-send";
 import { DraftConflictError } from "@/lib/mcp/newsletters";
@@ -95,10 +98,30 @@ describe("newsletter MCP protocol", () => {
       "create_standalone_email",
       "update_standalone_email",
       "preview_standalone_email",
+      "upload_newsletter_image",
       "send_standalone_email",
     ]);
     const names = NEWSLETTER_MCP_TOOLS.map((tool) => tool.name).filter((name) => name !== "send_standalone_email");
     expect(names.join(" ")).not.toMatch(/publish|delete|send|translate/);
+  });
+
+  it("uploads a base64 image and returns a markdown line", async () => {
+    const url = "https://aibuilders.lat/img/3f2b8c1e-4a5d-4e6f-8a9b-0c1d2e3f4a5b-1200x675.jpg";
+    mocks.storeImage.mockResolvedValueOnce({ url, width: 1200, height: 675, bytes: 1000, contentType: "image/jpeg" });
+    const response = await handleMcpRequest({
+      jsonrpc: "2.0", id: 1, method: "tools/call",
+      params: { name: "upload_newsletter_image", arguments: { data_base64: "data:image/jpeg;base64,aGVsbG8=", alt: "Demo day" } },
+    }, actor);
+    expect(mocks.storeImage).toHaveBeenCalledWith(Buffer.from("hello"), { tokenId: actor.tokenId });
+    expect(response && "result" in response ? response.result.structuredContent : null)
+      .toMatchObject({ url, markdown: `![Demo day](${url})` });
+
+    const bad = await handleMcpRequest({
+      jsonrpc: "2.0", id: 2, method: "tools/call",
+      params: { name: "upload_newsletter_image", arguments: { data_base64: "no es base64!" } },
+    }, actor);
+    expect(bad && "result" in bad ? bad.result.isError : false).toBe(true);
+    expect(mocks.storeImage).toHaveBeenCalledTimes(1);
   });
 
   it("hides send_standalone_email unless the token has the send scope", async () => {

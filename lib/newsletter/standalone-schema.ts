@@ -7,7 +7,8 @@ export const standaloneEmailJsonSchema = {
   type: "object",
   description:
     "Email suelto a la lista (no The Build Log). Un solo idioma. body es markdown restringido: " +
-    "párrafos (línea en blanco), '## encabezado', '- lista', **negritas**, *itálicas*, [texto](https://…). " +
+    "párrafos (línea en blanco), '## encabezado', '- lista', **negritas**, *itálicas*, [texto](https://…), " +
+    "e imágenes '![texto alternativo](url)' solas en su párrafo, con url de upload_newsletter_image. " +
     "Cualquier HTML sale escapado.",
   properties: {
     slug: { type: "string", maxLength: 64, description: "Asignado por el servidor; se ignora al crear/editar." },

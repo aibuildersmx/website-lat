@@ -1,4 +1,6 @@
 import { isAdPlacement } from "./ad-placement";
+import { parseImageUrl } from "./image-url";
+import { IMAGE_LINE } from "./render-markdown";
 import type { StandaloneEmail } from "./standalone-types";
 import { AD_PLACEMENTS, type Issue } from "./types";
 
@@ -263,6 +265,25 @@ export type StandaloneValidation =
   | { email: StandaloneEmail; errors?: undefined }
   | { email?: undefined; errors: string[] };
 
+const IMAGE_TOKEN = /!\[[^\]\n]*\]\([^)\n]*\)/;
+
+// Images must be a paragraph of their own, uploaded to us, and carry alt text
+// (many clients block images on first open, so alt is what gets read).
+function checkBodyImages(ctx: Ctx, body: string): void {
+  body.replace(/\r\n?/g, "\n").split(/\n\s*\n/).forEach((block, index) => {
+    if (!IMAGE_TOKEN.test(block)) return;
+    const path = `email.body (párrafo ${index + 1})`;
+    const match = IMAGE_LINE.exec(block.trim());
+    if (!match) {
+      fail(ctx, `${path}: una imagen va sola en su párrafo, con una línea en blanco antes y después`);
+    } else if (!parseImageUrl(match[2])) {
+      fail(ctx, `${path}: la imagen debe estar subida a AI Builders (upload_newsletter_image); no se aceptan links externos`);
+    } else if (!match[1].trim()) {
+      fail(ctx, `${path}: la imagen necesita texto alternativo: ![descripción](url)`);
+    }
+  });
+}
+
 export function validateStandalone(value: unknown): StandaloneValidation {
   let serialized: string | undefined;
   try {
@@ -283,7 +304,7 @@ export function validateStandalone(value: unknown): StandaloneValidation {
   checkText(ctx, "email.preview", value.preview);
   checkText(ctx, "email.title", value.title);
   if (value.subtitle !== undefined) checkText(ctx, "email.subtitle", value.subtitle, MAX_BODY_TEXT);
-  checkText(ctx, "email.body", value.body, MAX_BODY_TEXT);
+  if (checkText(ctx, "email.body", value.body, MAX_BODY_TEXT)) checkBodyImages(ctx, value.body as string);
   if (value.cta !== undefined) {
     checkObject(ctx, "email.cta", value.cta, ["text", "href"], (c, p, v) => {
       let ok = checkText(c, `${p}.text`, v.text);

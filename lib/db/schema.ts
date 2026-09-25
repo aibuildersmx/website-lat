@@ -9,6 +9,7 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  customType,
 } from "drizzle-orm/pg-core";
 import type { EmailKind } from "@/lib/newsletter/standalone-types";
 import type { Issue } from "@/lib/newsletter/types";
@@ -298,6 +299,27 @@ export const newsletterDirectSends = pgTable(
 );
 
 export type NewsletterDirectSendRow = typeof newsletterDirectSends.$inferSelect;
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => "bytea",
+});
+
+// Images embedded in newsletter emails, served from /img/<id>-<w>x<h>.<ext>.
+// Already resized and re-encoded (see lib/newsletter/images.ts), so rows stay
+// small; sha256 dedupes re-uploads of the same processed file.
+export const newsletterImages = pgTable("newsletter_images", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  sha256: text("sha256").notNull().unique(),
+  tokenId: uuid("token_id").references(() => mcpApiTokens.id, { onDelete: "set null" }),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type NewsletterImageRow = typeof newsletterImages.$inferSelect;
 
 // Domain-warmup plan for a staged send. The worker's hourly cron reads the single
 // `active` row and, per tick, enqueues up to `chunkSize` more recipients until the

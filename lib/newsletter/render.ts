@@ -257,7 +257,7 @@ function renderIssue(issue: BaseIssue): string {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(issue.preview)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
 <tr><td align="center" style="padding:32px 16px 64px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
 
   <tr><td style="padding:0;">
     <h1 style="margin:0;color:${TEXT};font-family:${SANS};font-size:38px;font-weight:600;line-height:1.1;">${esc(

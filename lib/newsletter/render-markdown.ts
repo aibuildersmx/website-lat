@@ -7,6 +7,8 @@ export interface MarkdownStyle {
   h2: string;
   li: string;
   a: string;
+  /** Returns the display width for an allowed image src, or null to leave the line literal. */
+  imageWidth?: (src: string) => number | null;
 }
 
 const SAFE_HREF = /^(https?:\/\/|mailto:)[^\s"<>]+$/i;
@@ -28,6 +30,17 @@ function emphasis(escaped: string): string {
 // One level of balanced parentheses, so Wikipedia-style URLs survive.
 const LINK = /\[([^\]\n]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g;
 const TOKEN = /\u0000(\d+)\u0000/g;
+// An image is its own block: `![alt](src)` alone on a line.
+export const IMAGE_LINE = /^!\[([^\]\n]*)\]\(([^()\s]+)\)$/;
+
+// width attr for Outlook (ignores CSS); width:100% + max-width shrinks it on
+// phones; display:block kills Gmail's gap under inline images.
+function image(alt: string, src: string, width: number): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0 0 20px;">`
+    + `<img src="${esc(src)}" alt="${esc(alt)}" width="${width}" `
+    + `style="display:block;width:100%;max-width:${width}px;height:auto;border:0;outline:none;text-decoration:none;border-radius:12px;">`
+    + `</td></tr></table>`;
+}
 
 // Input is already escaped. Links become placeholder tokens while emphasis
 // runs, so `*` inside a URL can never be rewritten into markup.
@@ -51,7 +64,11 @@ export function renderMarkdown(source: string, style: MarkdownStyle): string {
     const trimmed = block.trim();
     if (!trimmed) continue;
     const lines = trimmed.split("\n");
-    if (lines.length === 1 && lines[0].startsWith("## ")) {
+    const img = lines.length === 1 ? IMAGE_LINE.exec(lines[0]) : null;
+    const width = img && style.imageWidth ? style.imageWidth(img[2]) : null;
+    if (img && width) {
+      out.push(image(img[1].trim(), img[2], width));
+    } else if (lines.length === 1 && lines[0].startsWith("## ")) {
       out.push(`<h2 style="${style.h2}">${inline(esc(lines[0].slice(3).trim()), style)}</h2>`);
     } else if (lines.every((line) => /^\s*-\s+/.test(line))) {
       const items = lines
