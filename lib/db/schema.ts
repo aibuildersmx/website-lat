@@ -275,6 +275,30 @@ export const newsletterSends = pgTable(
 export type NewsletterSendRow = typeof newsletterSends.$inferSelect;
 export type NewNewsletterSendRow = typeof newsletterSends.$inferInsert;
 
+// One-off sends of a standalone email to a single address (MCP
+// send_standalone_email). Unlike newsletter_sends the recipient may not be a
+// contact. The unique (issueId, email) index is the claim: a draft reaches the
+// same address at most once, so a retrying agent can't double-send.
+export const newsletterDirectSends = pgTable(
+  "newsletter_direct_sends",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    issueId: uuid("issue_id")
+      .notNull()
+      .references(() => newsletterIssues.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
+    tokenId: uuid("token_id").references(() => mcpApiTokens.id, { onDelete: "set null" }),
+    resendId: text("resend_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    issueEmailIdx: uniqueIndex("newsletter_direct_sends_issue_email_idx").on(t.issueId, t.email),
+  }),
+);
+
+export type NewsletterDirectSendRow = typeof newsletterDirectSends.$inferSelect;
+
 // Domain-warmup plan for a staged send. The worker's hourly cron reads the single
 // `active` row and, per tick, enqueues up to `chunkSize` more recipients until the
 // current day's cap is hit — ramping volume over days instead of one cold blast.

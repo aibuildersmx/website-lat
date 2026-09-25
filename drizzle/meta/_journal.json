@@ -71,6 +71,13 @@
       "when": 1790289172105,
       "tag": "0009_rich_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790350411788,
+      "tag": "0010_eager_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

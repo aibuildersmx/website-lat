@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 import { mcpApiTokens } from "@/lib/db/schema";
-import { DEFAULT_MCP_SCOPES, PREVIEW_ONLY_MCP_SCOPES } from "@/lib/mcp/auth";
+import { DEFAULT_MCP_SCOPES, PREVIEW_ONLY_MCP_SCOPES, SENDER_MCP_SCOPES } from "@/lib/mcp/auth";
 import { generateMcpToken } from "@/lib/mcp/tokens";
 
 const MCP_PATH = "/admin/mcp";
@@ -58,10 +58,13 @@ export async function createMcpToken(
   if (!name || name.length > 80) return { error: "Usa un nombre de hasta 80 caracteres." };
 
   const preset = String(formData.get("scopes") ?? "editor");
-  if (preset !== "editor" && preset !== "preview") {
-    return { error: "Preset de permisos inválido." };
-  }
-  const scopes = preset === "preview" ? [...PREVIEW_ONLY_MCP_SCOPES] : [...DEFAULT_MCP_SCOPES];
+  const presets: Record<string, readonly string[]> = {
+    editor: DEFAULT_MCP_SCOPES,
+    preview: PREVIEW_ONLY_MCP_SCOPES,
+    sender: SENDER_MCP_SCOPES,
+  };
+  if (!Object.hasOwn(presets, preset)) return { error: "Preset de permisos inválido." };
+  const scopes = [...presets[preset]];
 
   const token = generateMcpToken();
   await db.insert(mcpApiTokens).values({

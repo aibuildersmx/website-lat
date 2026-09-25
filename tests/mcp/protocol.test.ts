@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   updateStandalone: vi.fn(),
   standalonePreview: vi.fn(),
   standaloneWarnings: vi.fn(),
+  sendSingle: vi.fn(),
 }));
 
 vi.mock("@/lib/mcp/newsletters", () => ({
@@ -32,6 +33,7 @@ vi.mock("@/lib/mcp/auth", () => ({
   MCP_READ_SCOPE: "newsletter:drafts:read",
   MCP_WRITE_SCOPE: "newsletter:drafts:write",
   MCP_PREVIEW_SCOPE: "newsletter:preview",
+  MCP_SEND_SINGLE_SCOPE: "newsletter:send:single",
   hasScope: (actor: { scopes: string[] }, scope: string) => actor.scopes.includes(scope),
 }));
 vi.mock("@/lib/newsletter/preview", () => ({
@@ -52,7 +54,15 @@ vi.mock("@/lib/newsletter/standalone-store", () => ({
   updateStandaloneDraft: mocks.updateStandalone,
 }));
 
+vi.mock("@/lib/newsletter/direct-send", () => ({
+  DirectSendError: class DirectSendError extends Error {
+    constructor(readonly code: string, message: string, readonly details?: string[]) { super(message); }
+  },
+  sendStandaloneTo: mocks.sendSingle,
+}));
+
 import { MCP_READ_SCOPE, MCP_WRITE_SCOPE } from "@/lib/mcp/auth";
+import { DirectSendError } from "@/lib/newsletter/direct-send";
 import { DraftConflictError } from "@/lib/mcp/newsletters";
 import { handleMcpRequest, NEWSLETTER_MCP_TOOLS } from "@/lib/mcp/protocol";
 import { emptyIssue } from "@/lib/newsletter/issue";
@@ -85,8 +95,56 @@ describe("newsletter MCP protocol", () => {
       "create_standalone_email",
       "update_standalone_email",
       "preview_standalone_email",
+      "send_standalone_email",
     ]);
-    expect(NEWSLETTER_MCP_TOOLS.map((tool) => tool.name).join(" ")).not.toMatch(/publish|delete|send|translate/);
+    const names = NEWSLETTER_MCP_TOOLS.map((tool) => tool.name).filter((name) => name !== "send_standalone_email");
+    expect(names.join(" ")).not.toMatch(/publish|delete|send|translate/);
+  });
+
+  it("hides send_standalone_email unless the token has the send scope", async () => {
+    const list = async (scopes: string[]) => {
+      const response = await handleMcpRequest({ jsonrpc: "2.0", id: "t", method: "tools/list" }, { ...actor, scopes });
+      const tools = response && "result" in response ? response.result.tools as { name: string }[] : [];
+      return tools.map((tool) => tool.name);
+    };
+    expect(await list(actor.scopes)).not.toContain("send_standalone_email");
+    expect(await list([...actor.scopes, "newsletter:send:single"])).toContain("send_standalone_email");
+
+    const call = await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: "send_standalone_email", arguments: { id: "10000000-0000-4000-8000-000000000003", to: "a@b.co" } },
+    }, actor);
+    expect(call && "result" in call ? call.result.isError : false).toBe(true);
+    expect(mocks.sendSingle).not.toHaveBeenCalled();
+  });
+
+  it("sends one standalone email and relays warnings and refusals", async () => {
+    const sender = { ...actor, scopes: [...actor.scopes, "newsletter:send:single"] };
+    const id = "10000000-0000-4000-8000-000000000003";
+    mocks.sendSingle.mockResolvedValueOnce({ sent: true, to: "x@y.co", isContact: false, warnings: ["x@y.co is not in the AI Builders contacts list."] });
+    const ok = await handleMcpRequest({
+      jsonrpc: "2.0", id: 1, method: "tools/call",
+      params: { name: "send_standalone_email", arguments: { id, to: "x@y.co" } },
+    }, sender);
+    expect(mocks.sendSingle).toHaveBeenCalledWith(id, "x@y.co", actor.tokenId);
+    expect(ok && "result" in ok ? ok.result.structuredContent : null).toMatchObject({ sent: true, warnings: [expect.stringContaining("not in")] });
+
+    mocks.sendSingle.mockRejectedValueOnce(new DirectSendError("unsubscribed", "x@y.co unsubscribed"));
+    const refused = await handleMcpRequest({
+      jsonrpc: "2.0", id: 2, method: "tools/call",
+      params: { name: "send_standalone_email", arguments: { id, to: "x@y.co" } },
+    }, sender);
+    expect(refused && "result" in refused ? refused.result.isError : false).toBe(true);
+    expect(mocks.audit).toHaveBeenLastCalledWith(expect.objectContaining({ errorCode: "unsubscribed", newsletterId: id }));
+
+    const bad = await handleMcpRequest({
+      jsonrpc: "2.0", id: 3, method: "tools/call",
+      params: { name: "send_standalone_email", arguments: { id, to: "x@y.co", cc: "z@y.co" } },
+    }, sender);
+    expect(bad && "result" in bad ? bad.result.isError : false).toBe(true);
+    expect(mocks.sendSingle).toHaveBeenCalledTimes(2);
   });
 
   it("negotiates tools and describes the draft-only boundary", async () => {

@@ -6,8 +6,12 @@ import { hashMcpToken } from "./tokens";
 export const MCP_READ_SCOPE = "newsletter:drafts:read";
 export const MCP_WRITE_SCOPE = "newsletter:drafts:write";
 export const MCP_PREVIEW_SCOPE = "newsletter:preview";
+// Sends one real standalone email to one address. Never part of the default
+// preset: an admin opts in per token.
+export const MCP_SEND_SINGLE_SCOPE = "newsletter:send:single";
 export const DEFAULT_MCP_SCOPES = [MCP_READ_SCOPE, MCP_WRITE_SCOPE, MCP_PREVIEW_SCOPE] as const;
 export const PREVIEW_ONLY_MCP_SCOPES = [MCP_PREVIEW_SCOPE] as const;
+export const SENDER_MCP_SCOPES = [...DEFAULT_MCP_SCOPES, MCP_SEND_SINGLE_SCOPE] as const;
 
 export interface McpActor {
   userId: string;

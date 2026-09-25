@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { MCP_PREVIEW_SCOPE, MCP_READ_SCOPE, MCP_WRITE_SCOPE, hasScope, type McpActor } from "./auth";
+import { MCP_PREVIEW_SCOPE, MCP_READ_SCOPE, MCP_SEND_SINGLE_SCOPE, MCP_WRITE_SCOPE, hasScope, type McpActor } from "./auth";
 import {
   recordMcpAudit,
   withinMcpOperationRateLimit,
@@ -14,6 +14,7 @@ import {
   updateNewsletterDraft,
 } from "./newsletters";
 import { isAdPlacement } from "@/lib/newsletter/ad-placement";
+import { DirectSendError, sendStandaloneTo } from "@/lib/newsletter/direct-send";
 import { newsletterIssueJsonSchema } from "@/lib/newsletter/issue-schema";
 import { issueWarnings, previewHtml, standaloneWarnings } from "@/lib/newsletter/preview";
 import { emailPreviewHtml } from "@/lib/newsletter/render-email";
@@ -174,6 +175,26 @@ export const NEWSLETTER_MCP_TOOLS = [
       type: "object",
       properties: { email: standaloneEmailJsonSchema },
       required: ["email"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "send_standalone_email",
+    title: "Send a standalone email to one person",
+    description:
+      "WARNING: sends a REAL email immediately to one address. It cannot be undone. " +
+      "Only call it when the user explicitly asked to send this email to this address. " +
+      "Only standalone drafts (never The Build Log); the list send stays in /admin/newsletter. " +
+      "Each draft reaches the same address at most once. Addresses that unsubscribed are refused. " +
+      "Addresses outside the contacts list are sent but come back with a warning: relay it to the user.",
+    scope: MCP_SEND_SINGLE_SCOPE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        to: { type: "string", format: "email", maxLength: 320 },
+      },
+      required: ["id", "to"],
       additionalProperties: false,
     },
   },
@@ -399,6 +420,22 @@ async function invokeTool(name: string, args: unknown, actor: McpActor) {
     }
   }
 
+  if (name === "send_standalone_email") {
+    if (!validArguments(args, ["id", "to"]) || !uuid(args.id) || typeof args.to !== "string") {
+      return { result: toolResult("id (UUID) and to (email) are required.", true), errorCode: "invalid_arguments" };
+    }
+    try {
+      const sent = await sendStandaloneTo(args.id, args.to, actor.tokenId);
+      return { result: toolResult(sent), newsletterId: args.id };
+    } catch (cause) {
+      if (cause instanceof DirectSendError) {
+        const body = cause.details ? { error: cause.message, details: cause.details } : cause.message;
+        return { result: toolResult(body, true), errorCode: cause.code, newsletterId: args.id };
+      }
+      throw cause;
+    }
+  }
+
   return { protocolError: error(null, -32602, "Unknown tool.") };
 }
 
@@ -434,7 +471,10 @@ export async function handleMcpRequest(
         : MCP_PROTOCOL_VERSION,
       capabilities: { tools: { listChanged: false } },
       serverInfo: { name: MCP_SERVER_NAME, version: "1.0.0" },
-      instructions: "Use these tools only for AI Builders newsletter drafts. Publishing, sending, and deletion are intentionally unavailable. Use set_newsletter_ad_placement to move the sponsor slot without replacing the issue.",
+      instructions:
+        "Use these tools only for AI Builders newsletter drafts. Publishing, sending to the list, and deletion are intentionally unavailable. " +
+        "send_standalone_email (only on credentials that have it) sends one real email to one address: use it only when the user asked for that exact send. " +
+        "Use set_newsletter_ad_placement to move the sponsor slot without replacing the issue.",
     });
   }
 

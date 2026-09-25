@@ -114,11 +114,29 @@ lo asigna el servidor.
 `list_newsletter_drafts` acepta `kind: "standalone"` y `get_newsletter_draft`
 devuelve `email` (en vez de `issue`) para estos borradores.
 
-**Ninguna tool envía.** El envío lo hace una persona desde `/admin/newsletter`
-con "Enviar prueba" / "Enviar por tandas".
+### Mandar un email suelto a una persona
+
+Con un token **"Editor + envío individual"** aparece una tool más:
+
+| Tool | Quién la ve | Qué hace |
+|---|---|---|
+| `send_standalone_email({ id, to })` | editor + envío individual | manda **de verdad** ese borrador standalone a una sola dirección |
+
+- Solo borradores standalone. The Build Log nunca sale por aquí.
+- Cada borrador llega **una sola vez** a cada dirección; repetirlo da `already_sent`.
+- Si la dirección se dio de baja, se rechaza (`unsubscribed`).
+- Si la dirección no está en los contactos, **sí se envía**, pero la respuesta
+  trae un `warnings` que dice que no es contacto. Revisa que la dirección sea la
+  correcta y que esa persona espere el correo.
+- Asunto real, sin `[TEST]`. Sin tracking de aperturas ni clics.
+- Máximo 5 por minuto y 50 al día por token. Cada envío queda registrado.
+
+El envío **a la lista** sigue siendo solo desde `/admin/newsletter`, con
+"Enviar prueba" y "Enviar por tandas".
 
 ## Límites
 
 - 20 previews por minuto por token (y 120 requests/min en total).
+- Envíos individuales: 5 por minuto y 50 al día por token.
 - Issue de hasta 200 KB serializado.
 - Cada request queda en el audit log del sitio.

@@ -114,4 +114,14 @@ d("MCP database boundaries", () => {
     expect(results.filter(Boolean)).toHaveLength(10);
     await db.delete(schema.mcpRateLimits).where(eq(schema.mcpRateLimits.key, `token:${actor.tokenId}:create`));
   });
+
+  it("caps single sends at 5 per minute", async () => {
+    const actor = { userId, tokenId: `rl-send-${process.pid}-${Date.now()}`, scopes: [] };
+    const results = [];
+    for (let i = 0; i < 6; i++) results.push(await audit.withinMcpOperationRateLimit(actor, "send_standalone_email"));
+    expect(results.filter(Boolean)).toHaveLength(5);
+    for (const suffix of ["send-single", "send-single-day"]) {
+      await db.delete(schema.mcpRateLimits).where(eq(schema.mcpRateLimits.key, `token:${actor.tokenId}:${suffix}`));
+    }
+  });
 });
