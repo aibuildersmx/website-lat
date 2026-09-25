@@ -207,7 +207,7 @@ export const NEWSLETTER_MCP_TOOLS = [
       "WARNING: sends a REAL email immediately to one address. It cannot be undone. " +
       "Only call it when the user explicitly asked to send this email to this address. " +
       "Only standalone drafts (never The Build Log); the list send stays in /admin/newsletter. " +
-      "Each draft reaches the same address at most once. Addresses that unsubscribed are refused. " +
+      "Each version of a draft reaches the same address at most once; edit it to re-send. Addresses that unsubscribed are refused. " +
       "Addresses outside the contacts list are sent but come back with a warning: relay it to the user.",
     scope: MCP_SEND_SINGLE_SCOPE,
     inputSchema: {

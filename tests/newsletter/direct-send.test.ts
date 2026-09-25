@@ -67,6 +67,22 @@ d("sendStandaloneTo", () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
 
+  it("lets an edited draft be sent again to the same address", async () => {
+    const to = `edit+${tag}@example.com`;
+    const first = await direct.sendStandaloneTo(emailId, to, null);
+    await expect(direct.sendStandaloneTo(emailId, to, null)).rejects.toMatchObject({ code: "already_sent" });
+    await store.updateStandaloneDraft(emailId, null, {
+      slug: "ignored",
+      subject: "Hackathon (v2)",
+      preview: "20 lugares",
+      title: "Nos vemos el sábado",
+      body: "Hola **builders**, ahora con más detalles.",
+    });
+    const second = await direct.sendStandaloneTo(emailId, to, null);
+    expect(second.version).toBe(first.version + 1);
+    expect(send.mock.calls[1][0].subject).toBe("Hackathon (v2)");
+  });
+
   it("signs the unsubscribe link for contacts and adds one-click headers", async () => {
     const result = await direct.sendStandaloneTo(emailId, member, null);
     expect(result).toMatchObject({ isContact: true, warnings: [] });

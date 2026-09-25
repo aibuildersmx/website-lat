@@ -278,8 +278,9 @@ export type NewNewsletterSendRow = typeof newsletterSends.$inferInsert;
 
 // One-off sends of a standalone email to a single address (MCP
 // send_standalone_email). Unlike newsletter_sends the recipient may not be a
-// contact. The unique (issueId, email) index is the claim: a draft reaches the
-// same address at most once, so a retrying agent can't double-send.
+// contact. The unique (issueId, email, version) index is the claim: each
+// revision of a draft reaches the same address at most once, so a retrying
+// agent can't double-send, but an edited draft can be re-tested.
 export const newsletterDirectSends = pgTable(
   "newsletter_direct_sends",
   {
@@ -288,13 +289,18 @@ export const newsletterDirectSends = pgTable(
       .notNull()
       .references(() => newsletterIssues.id, { onDelete: "cascade" }),
     email: text("email").notNull(),
+    version: integer("version").notNull().default(1), // newsletter_issues.version that was sent
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
     tokenId: uuid("token_id").references(() => mcpApiTokens.id, { onDelete: "set null" }),
     resendId: text("resend_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    issueEmailIdx: uniqueIndex("newsletter_direct_sends_issue_email_idx").on(t.issueId, t.email),
+    issueEmailVersionIdx: uniqueIndex("newsletter_direct_sends_issue_email_version_idx").on(
+      t.issueId,
+      t.email,
+      t.version,
+    ),
   }),
 );
 

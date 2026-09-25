@@ -12,7 +12,7 @@ import { validateStandalone } from "./validation";
 // Sends one standalone email to one address, outside the list/warmup pipeline.
 // Guardrails live here, not in the MCP layer: only standalone drafts (never
 // The Build Log), never to someone who unsubscribed, at most once per
-// (draft, address). Recipients outside the contacts table are allowed but
+// (draft revision, address). Recipients outside the contacts table are allowed but
 // come back with a warning.
 
 const EMAIL_RE = /^[^\s@<>",;]+@[^\s@<>",;]+\.[^\s@<>",;]+$/;
@@ -35,6 +35,7 @@ export class DirectSendError extends Error {
 export interface DirectSendResult {
   sent: true;
   to: string;
+  version: number;
   subject: string;
   isContact: boolean;
   resendId: string | null;
@@ -52,7 +53,7 @@ export async function sendStandaloneTo(
   }
 
   const [row] = await db
-    .select({ kind: newsletterIssues.kind, data: newsletterIssues.data })
+    .select({ kind: newsletterIssues.kind, data: newsletterIssues.data, version: newsletterIssues.version })
     .from(newsletterIssues)
     .where(eq(newsletterIssues.id, issueId))
     .limit(1);
@@ -87,10 +88,15 @@ export async function sendStandaloneTo(
 
   const [claim] = await db
     .insert(newsletterDirectSends)
-    .values({ issueId, email: to, contactId: contact?.id ?? null, tokenId })
+    .values({ issueId, email: to, version: row.version, contactId: contact?.id ?? null, tokenId })
     .onConflictDoNothing()
     .returning({ id: newsletterDirectSends.id });
-  if (!claim) throw new DirectSendError("already_sent", `This email was already sent to ${to}.`);
+  if (!claim) {
+    throw new DirectSendError(
+      "already_sent",
+      `This version of the email was already sent to ${to}. Edit it (update_standalone_email) to send again.`,
+    );
+  }
 
   const draft = { kind: "standalone", data: email } as const;
   const rendered = renderEmail(draft);
@@ -127,5 +133,5 @@ export async function sendStandaloneTo(
       `${to} is not in the AI Builders contacts list. It was sent anyway: check the address is right and that this person expects the email. Their unsubscribe link can't remove them from anything.`,
     );
   }
-  return { sent: true, to, subject: email.subject, isContact: !!contact, resendId, warnings };
+  return { sent: true, to, version: row.version, subject: email.subject, isContact: !!contact, resendId, warnings };
 }

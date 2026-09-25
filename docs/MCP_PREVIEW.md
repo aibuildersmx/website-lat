@@ -150,7 +150,7 @@ Con un token **"Editor + envío individual"** aparece una tool más:
 | `send_standalone_email({ id, to })` | editor + envío individual | manda **de verdad** ese borrador standalone a una sola dirección |
 
 - Solo borradores standalone. The Build Log nunca sale por aquí.
-- Cada borrador llega **una sola vez** a cada dirección; repetirlo da `already_sent`.
+- Cada versión del borrador llega **una sola vez** a cada dirección; repetirlo da `already_sent`. Si lo editas, lo puedes volver a mandar.
 - Si la dirección se dio de baja, se rechaza (`unsubscribed`).
 - Si la dirección no está en los contactos, **sí se envía**, pero la respuesta
   trae un `warnings` que dice que no es contacto. Revisa que la dirección sea la
