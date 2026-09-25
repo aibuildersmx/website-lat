@@ -13,7 +13,7 @@ iterar el contenido desde tu terminal y entregar un JSON listo para subir.
 
 | Campo | Valor |
 |---|---|
-| **Endpoint** | `https://aibuilders.mx/api/mcp` |
+| **Endpoint** | `https://aibuilders.lat/api/mcp` |
 | **Auth** | `Authorization: Bearer <tu-token>` |
 | **Token** | (te lo pasan por canal privado — empieza con `aibl_mcp_v1_`) |
 
@@ -27,14 +27,14 @@ otro. **No lo subas a un repo ni lo pegues en chats públicos.**
 
 ```toml
 [mcp_servers.build_log]
-url = "https://aibuilders.mx/api/mcp"
+url = "https://aibuilders.lat/api/mcp"
 bearer_token_env_var = "AI_BUILDERS_MCP_TOKEN"
 ```
 
 ### Claude Code
 
 ```bash
-claude mcp add --transport http build-log https://aibuilders.mx/api/mcp \
+claude mcp add --transport http build-log https://aibuilders.lat/api/mcp \
   --header "Authorization: Bearer aibl_mcp_v1_TU_TOKEN"
 ```
 
